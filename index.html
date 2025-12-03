@@ -1,0 +1,2538 @@
+<!doctype doctype>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GainGrid Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --deep-purple: #5B2E8A;
+      --vivid-magenta: #E33D7A;
+      --soft-pink: #FF98BD;
+      --electric-blue: #4AA3FF;
+      --bg-dark: #0F0F14;
+      --bg-panel: #0B0B0D;
+      --text-secondary: #9AA0A6;
+      --gcoin-gold: #FFC857;
+      --white: #FFFFFF;
+      --spacing-base: 8px;
+      --radius-xs: 6px;
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-dark);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      min-height: 100%;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Header */
+    .app-header {
+      width: 100%;
+      background: var(--bg-panel);
+      padding: calc(var(--spacing-base) * 2) calc(var(--spacing-base) * 3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1.5);
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .app-title {
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .balance-chip {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+      background: linear-gradient(135deg, rgba(91, 46, 138, 0.3), rgba(227, 61, 122, 0.3));
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 200, 87, 0.3);
+    }
+
+    .coin-icon {
+      width: 20px;
+      height: 20px;
+      animation: spin 3s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotateY(0deg); }
+      100% { transform: rotateY(360deg); }
+    }
+
+    .balance-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gcoin-gold);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      width: 100%;
+      padding: calc(var(--spacing-base) * 3) calc(var(--spacing-base) * 2);
+      padding-bottom: calc(var(--spacing-base) * 10);
+      overflow-y: auto;
+    }
+
+    .screen {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Feed Cards */
+    .feed-container {
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 2);
+    }
+
+    .post-card {
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      padding: calc(var(--spacing-base) * 2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .post-card:hover {
+      border-color: rgba(91, 46, 138, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1.5);
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--deep-purple), var(--electric-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .post-meta {
+      flex: 1;
+    }
+
+    .poster-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 2px;
+    }
+
+    .post-time {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .post-content {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--white);
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .post-media {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, rgba(91, 46, 138, 0.2), rgba(74, 163, 255, 0.2));
+      border-radius: var(--radius-sm);
+      margin-bottom: calc(var(--spacing-base) * 2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .earnings-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 200, 87, 0.1);
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 1.5);
+      border-radius: var(--radius-xs);
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .earnings-label {
+      font-size: 12px;
+      color: var(--gcoin-gold);
+      font-weight: 600;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: calc(var(--spacing-base) * 2);
+    }
+
+    .action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--spacing-base) * 1);
+      padding: calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--white);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.05);
+    }
+
+    .action-btn.liked {
+      background: rgba(227, 61, 122, 0.2);
+      color: var(--vivid-magenta);
+    }
+
+    .action-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Task Board */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 2);
+    }
+
+    .task-card {
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      padding: calc(var(--spacing-base) * 2);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    .task-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .task-info {
+      flex: 1;
+    }
+
+    .task-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: calc(var(--spacing-base) * 1);
+    }
+
+    .task-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .task-reward {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 0.5);
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 200, 87, 0.15);
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gcoin-gold);
+    }
+
+    .task-footer {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1.5);
+    }
+
+    .task-btn {
+      flex: 1;
+      padding: calc(var(--spacing-base) * 1.5);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .task-btn.primary {
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      color: var(--white);
+    }
+
+    .task-btn.primary:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(91, 46, 138, 0.4);
+    }
+
+    .task-btn.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--white);
+    }
+
+    .task-btn.secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Watch & Earn */
+    .watch-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: calc(var(--spacing-base) * 2);
+    }
+
+    .video-card {
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .video-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(74, 163, 255, 0.4);
+    }
+
+    .video-thumbnail {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, rgba(91, 46, 138, 0.3), rgba(74, 163, 255, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .play-icon {
+      width: 48px;
+      height: 48px;
+      opacity: 0.9;
+    }
+
+    .video-duration {
+      position: absolute;
+      bottom: calc(var(--spacing-base) * 1);
+      right: calc(var(--spacing-base) * 1);
+      background: rgba(0, 0, 0, 0.8);
+      padding: calc(var(--spacing-base) * 0.5) calc(var(--spacing-base) * 1);
+      border-radius: var(--radius-xs);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .video-info {
+      padding: calc(var(--spacing-base) * 2);
+    }
+
+    .video-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: calc(var(--spacing-base) * 1);
+    }
+
+    .video-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .video-reward {
+      color: var(--gcoin-gold);
+      font-weight: 600;
+    }
+
+    /* Profile */
+    .profile-section {
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 3);
+    }
+
+    .profile-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 2);
+      padding: calc(var(--spacing-base) * 3);
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .profile-name {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .profile-username {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: calc(var(--spacing-base) * 2);
+      width: 100%;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 0.5);
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--electric-blue);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .profile-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: calc(var(--spacing-base) * 2) calc(var(--spacing-base) * 2.5);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--white);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .menu-item:last-child {
+      border-bottom: none;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .menu-icon {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: var(--bg-panel);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      justify-content: space-around;
+      padding: calc(var(--spacing-base) * 1.5) 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 0.5);
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      color: var(--white);
+    }
+
+    .nav-item.active {
+      color: var(--electric-blue);
+    }
+
+    .nav-item.active .nav-icon {
+      transform: scale(1.1);
+    }
+
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      transition: transform 0.12s ease;
+    }
+
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--spacing-base) * 10);
+      right: calc(var(--spacing-base) * 2);
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--vivid-magenta), var(--soft-pink));
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(227, 61, 122, 0.4);
+      transition: all 0.12s ease;
+      z-index: 99;
+    }
+
+    .fab:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 24px rgba(227, 61, 122, 0.6);
+    }
+
+    .fab-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 200;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: calc(var(--spacing-base) * 2);
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 500px;
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      padding: calc(var(--spacing-base) * 3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: calc(var(--spacing-base) * 3);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.1);
+    }
+
+    .close-icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    .composer-form {
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 2);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 1);
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      color: var(--white);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.12s ease;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--electric-blue);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .submit-btn {
+      padding: calc(var(--spacing-base) * 2);
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--white);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .submit-btn:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 16px rgba(91, 46, 138, 0.4);
+    }
+
+    /* Browser Frame Modal */
+    .browser-frame {
+      width: 100%;
+      height: 70%;
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .browser-header {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+      padding: calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .browser-dots {
+      display: flex;
+      gap: calc(var(--spacing-base) * 0.75);
+    }
+
+    .browser-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+    }
+
+    .browser-url {
+      flex: 1;
+      padding: calc(var(--spacing-base) * 0.75) calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-xs);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .browser-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: calc(var(--spacing-base) * 3);
+    }
+
+    /* Task Board Styles */
+    .task-board-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: calc(var(--spacing-base) * 2);
+      padding: calc(var(--spacing-base) * 2);
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .task-counter {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+      font-size: 14px;
+    }
+
+    .counter-label {
+      color: var(--text-secondary);
+    }
+
+    .counter-value {
+      font-weight: 700;
+      color: var(--electric-blue);
+    }
+
+    .new-task-btn {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--white);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .new-task-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .platform-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .platform-icon.youtube {
+      color: #FF0000;
+    }
+
+    .platform-icon.telegram {
+      color: #0088cc;
+    }
+
+    .platform-icon.website {
+      color: #4AA3FF;
+    }
+
+    .platform-icon.whatsapp {
+      color: #25D366;
+    }
+
+    .task-header {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1.5);
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .task-progress {
+      margin-top: calc(var(--spacing-base) * 1);
+      display: flex;
+      flex-direction: column;
+      gap: calc(var(--spacing-base) * 0.5);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--electric-blue), var(--soft-pink));
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    /* Watch & Earn Styles */
+    .watch-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: calc(var(--spacing-base) * 2);
+      padding: calc(var(--spacing-base) * 2);
+      background: var(--bg-panel);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .daily-limit {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .cleanup-btn {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 0.75);
+      padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 1.5);
+      background: rgba(227, 61, 122, 0.15);
+      border: 1px solid rgba(227, 61, 122, 0.3);
+      border-radius: var(--radius-sm);
+      color: var(--vivid-magenta);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .cleanup-btn:hover {
+      background: rgba(227, 61, 122, 0.25);
+      transform: scale(1.05);
+    }
+
+    .video-advertiser {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 0.75);
+      margin-bottom: calc(var(--spacing-base) * 1);
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .video-card.watched {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .watched-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: checkmarkPop 0.3s ease;
+    }
+
+    @keyframes checkmarkPop {
+      0% { transform: translate(-50%, -50%) scale(0); }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .collected-badge {
+      color: var(--electric-blue);
+      font-weight: 600;
+    }
+
+    /* Composer Styles */
+    .suggestions-popup {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: calc(var(--spacing-base) * 0.5);
+      background: var(--bg-panel);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      padding: calc(var(--spacing-base) * 1);
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 10;
+    }
+
+    .suggestion-item {
+      padding: calc(var(--spacing-base) * 1);
+      cursor: pointer;
+      border-radius: var(--radius-xs);
+      font-size: 14px;
+      transition: all 0.12s ease;
+    }
+
+    .suggestion-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .media-attach-area {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1.5);
+    }
+
+    .attach-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--spacing-base) * 1);
+      padding: calc(var(--spacing-base) * 2);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .attach-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--electric-blue);
+      color: var(--white);
+    }
+
+    .reward-type-selector {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1);
+    }
+
+    .reward-option {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: calc(var(--spacing-base) * 1.5);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .reward-option:has(input:checked) {
+      background: rgba(74, 163, 255, 0.2);
+      border-color: var(--electric-blue);
+      color: var(--electric-blue);
+    }
+
+    .reward-option input {
+      display: none;
+    }
+
+    .reward-preview {
+      padding: calc(var(--spacing-base) * 2);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .preview-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: calc(var(--spacing-base) * 1);
+    }
+
+    .preview-card {
+      background: var(--bg-dark);
+      border-radius: var(--radius-xs);
+      padding: calc(var(--spacing-base) * 1);
+    }
+
+    /* Profile Styles */
+    .profile-actions {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1.5);
+      width: 100%;
+      margin-top: calc(var(--spacing-base) * 2);
+    }
+
+    .profile-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: calc(var(--spacing-base) * 1);
+      padding: calc(var(--spacing-base) * 1.5);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .profile-action-btn.primary {
+      background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+      color: var(--white);
+    }
+
+    .profile-action-btn.primary:hover {
+      transform: scale(1.02);
+    }
+
+    .profile-action-btn.secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .profile-tabs {
+      display: flex;
+      gap: calc(var(--spacing-base) * 1);
+      background: var(--bg-panel);
+      padding: calc(var(--spacing-base) * 1);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .profile-tab {
+      flex: 1;
+      padding: calc(var(--spacing-base) * 1.5);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .profile-tab.active {
+      background: rgba(74, 163, 255, 0.15);
+      color: var(--electric-blue);
+    }
+
+    .profile-tab-content {
+      margin-top: calc(var(--spacing-base) * 2);
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .activity-item,
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1.5);
+      padding: calc(var(--spacing-base) * 2);
+      background: var(--bg-panel);
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: calc(var(--spacing-base) * 1.5);
+    }
+
+    .activity-icon,
+    .transaction-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    .activity-icon.completed {
+      background: rgba(74, 163, 255, 0.2);
+      color: var(--electric-blue);
+    }
+
+    .transaction-icon.earn {
+      background: rgba(74, 163, 255, 0.2);
+      color: var(--electric-blue);
+    }
+
+    .transaction-icon.spend {
+      background: rgba(227, 61, 122, 0.2);
+      color: var(--vivid-magenta);
+    }
+
+    .activity-details,
+    .transaction-details {
+      flex: 1;
+    }
+
+    .activity-title,
+    .transaction-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .activity-time,
+    .transaction-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .activity-reward,
+    .transaction-amount {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .activity-reward,
+    .transaction-amount.earn {
+      color: var(--gcoin-gold);
+    }
+
+    .transaction-amount.spend {
+      color: var(--vivid-magenta);
+    }
+
+    .wallet-balance-card {
+      padding: calc(var(--spacing-base) * 3);
+      background: linear-gradient(135deg, rgba(91, 46, 138, 0.3), rgba(74, 163, 255, 0.3));
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: calc(var(--spacing-base) * 2);
+      text-align: center;
+    }
+
+    .wallet-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: calc(var(--spacing-base) * 1);
+    }
+
+    .wallet-amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--gcoin-gold);
+      margin-bottom: calc(var(--spacing-base) * 2);
+    }
+
+    .wallet-trend {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 1);
+    }
+
+    /* Timer Modal Styles */
+    .timer-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: calc(var(--spacing-base) * 3);
+      padding: calc(var(--spacing-base) * 4) 0;
+    }
+
+    .timer-circle {
+      position: relative;
+      width: 150px;
+      height: 150px;
+    }
+
+    .timer-svg {
+      transform: rotate(-90deg);
+    }
+
+    .timer-circle-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 8;
+    }
+
+    .timer-circle-progress {
+      fill: none;
+      stroke: url(#timer-gradient);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .timer-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .timer-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .claim-reward-btn {
+      padding: calc(var(--spacing-base) * 2) calc(var(--spacing-base) * 4);
+      background: linear-gradient(135deg, var(--gcoin-gold), #FFD87A);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--bg-dark);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .claim-reward-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Coin Animation */
+    @keyframes coinFly {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: translate(-100px, -150px) scale(1.5);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translate(-200px, -250px) scale(0.5);
+        opacity: 0;
+      }
+    }
+
+    .coin-animation {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      animation: coinFly 0.6s ease-out forwards;
+    }
+
+    /* Like Heart Animation */
+    @keyframes heartPop {
+      0% {
+        transform: scale(0.6);
+      }
+      50% {
+        transform: scale(1.15);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .action-btn.liked .action-icon {
+      animation: heartPop 0.3s ease;
+    }
+
+    @keyframes sparkle {
+      0% {
+        transform: translate(0, 0) scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--vivid-magenta);
+      border-radius: 50%;
+      animation: sparkle 0.6s ease-out forwards;
+    }
+
+    @media (min-width: 768px) {
+      .app-container {
+        max-width: 430px;
+        margin: 0 auto;
+      }
+
+      .watch-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="app-container"><!-- Header -->
+   <header class="app-header">
+    <div class="logo-section">
+     <svg class="logo-icon" viewbox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="8" fill="url(#logo-gradient)" /> <path d="M10 16L14 20L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /> <defs>
+       <lineargradient id="logo-gradient" x1="0" y1="0" x2="32" y2="32">
+        <stop stop-color="#5B2E8A" />
+        <stop offset="1" stop-color="#E33D7A" />
+       </lineargradient>
+      </defs>
+     </svg>
+     <h1 class="app-title" id="app-title">GainGrid</h1>
+    </div>
+    <div class="balance-chip">
+     <svg class="coin-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" stroke="#FFD87A" stroke-width="1" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="12" font-weight="700">
+       G
+      </text>
+     </svg><span class="balance-text" id="balance-text">2,847</span>
+    </div>
+   </header><!-- Main Content -->
+   <main class="main-content"><!-- GridHome / Feed -->
+    <section class="screen active" id="gridhome">
+     <div class="feed-container">
+      <article class="post-card">
+       <div class="post-header">
+        <div class="avatar">
+         JD
+        </div>
+        <div class="post-meta">
+         <div class="poster-name">
+          John Doe
+         </div>
+         <div class="post-time">
+          2 hours ago
+         </div>
+        </div>
+       </div>
+       <p class="post-content">Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available! 🚀</p>
+       <div class="post-media"><span>Image Content</span>
+       </div>
+       <div class="earnings-bar"><span class="earnings-label">💰 Earn up to 50 G-coins</span>
+       </div>
+       <div class="post-actions"><button class="action-btn" onclick="handleLike(this)">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Like</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Visit</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Comment</span> </button>
+       </div>
+      </article>
+      <article class="post-card">
+       <div class="post-header">
+        <div class="avatar">
+         SK
+        </div>
+        <div class="post-meta">
+         <div class="poster-name">
+          Sarah Kim
+         </div>
+         <div class="post-time">
+          5 hours ago
+         </div>
+        </div>
+       </div>
+       <p class="post-content">New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes! 📋</p>
+       <div class="earnings-bar"><span class="earnings-label">💰 Earn up to 30 G-coins</span>
+       </div>
+       <div class="post-actions"><button class="action-btn" onclick="handleLike(this)">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Like</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Join</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Comment</span> </button>
+       </div>
+      </article>
+      <article class="post-card">
+       <div class="post-header">
+        <div class="avatar">
+         MP
+        </div>
+        <div class="post-meta">
+         <div class="poster-name">
+          Mike Peters
+         </div>
+         <div class="post-time">
+          1 day ago
+         </div>
+        </div>
+       </div>
+       <p class="post-content">Watch this short video and get rewarded! No sign-up required. Just watch and earn! 🎥</p>
+       <div class="post-media"><span>Video Thumbnail</span>
+       </div>
+       <div class="earnings-bar"><span class="earnings-label">💰 Earn up to 25 G-coins</span>
+       </div>
+       <div class="post-actions"><button class="action-btn" onclick="handleLike(this)">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Like</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Watch</span> </button> <button class="action-btn">
+         <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+         </svg><span>Comment</span> </button>
+       </div>
+      </article>
+     </div>
+    </section><!-- Task Board -->
+    <section class="screen" id="tasks">
+     <div class="task-board-header">
+      <div class="task-counter"><span class="counter-label">Tasks today:</span> <span class="counter-value" id="task-counter">6/20</span>
+      </div><button class="new-task-btn" onclick="openNewTaskModal()">
+       <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg><span>New Task</span> </button>
+     </div>
+     <div class="task-list">
+      <article class="task-card">
+       <div class="task-header">
+        <div class="platform-icon youtube">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M8 6L14 10L8 14V6Z" fill="white" />
+         </svg>
+        </div>
+        <div class="task-info">
+         <h3 class="task-title">Watch YouTube Video</h3>
+         <p class="task-description">Watch full video and like. Stay 02:30 for reward.</p>
+         <div class="task-progress">
+          <div class="progress-bar">
+           <div class="progress-fill" style="width: 0%"></div>
+          </div><span class="progress-text">Not started</span>
+         </div>
+        </div>
+        <div class="task-reward">
+         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
+           G
+          </text>
+         </svg><span>50</span>
+        </div>
+       </div>
+       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Survey Task')">Start Task</button> <button class="task-btn secondary">Details</button>
+       </div>
+      </article>
+      <article class="task-card">
+       <div class="task-header">
+        <div class="platform-icon telegram">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M5 10L8 13L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+         </svg>
+        </div>
+        <div class="task-info">
+         <h3 class="task-title">Join Telegram Channel</h3>
+         <p class="task-description">Join channel and stay active. Stay 00:45 for reward.</p>
+         <div class="task-progress">
+          <div class="progress-bar">
+           <div class="progress-fill" style="width: 0%"></div>
+          </div><span class="progress-text">Not started</span>
+         </div>
+        </div>
+        <div class="task-reward">
+         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
+           G
+          </text>
+         </svg><span>35</span>
+        </div>
+       </div>
+       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Join Telegram')">Start Task</button> <button class="task-btn secondary">Details</button>
+       </div>
+      </article>
+      <article class="task-card">
+       <div class="task-header">
+        <div class="platform-icon website">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <circle cx="10" cy="10" r="6" stroke="white" stroke-width="1.5" /> <path d="M10 4V16M4 10H16" stroke="white" stroke-width="1.5" />
+         </svg>
+        </div>
+        <div class="task-info">
+         <h3 class="task-title">Visit Website &amp; Sign Up</h3>
+         <p class="task-description">Visit partner site and complete registration. Stay 01:15 for reward.</p>
+         <div class="task-progress">
+          <div class="progress-bar">
+           <div class="progress-fill" style="width: 0%"></div>
+          </div><span class="progress-text">Not started</span>
+         </div>
+        </div>
+        <div class="task-reward">
+         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
+           G
+          </text>
+         </svg><span>30</span>
+        </div>
+       </div>
+       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Twitter Task')">Start Task</button> <button class="task-btn secondary">Details</button>
+       </div>
+      </article>
+      <article class="task-card">
+       <div class="task-header">
+        <div class="platform-icon whatsapp">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M14 11C14 11.5 13.5 12 13 12H7L5 14V7C5 6.5 5.5 6 6 6H13C13.5 6 14 6.5 14 7V11Z" fill="white" />
+         </svg>
+        </div>
+        <div class="task-info">
+         <h3 class="task-title">Join WhatsApp Group</h3>
+         <p class="task-description">Join community group and interact. Stay 01:00 for reward.</p>
+         <div class="task-progress">
+          <div class="progress-bar">
+           <div class="progress-fill" style="width: 0%"></div>
+          </div><span class="progress-text">Not started</span>
+         </div>
+        </div>
+        <div class="task-reward">
+         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
+           G
+          </text>
+         </svg><span>100</span>
+        </div>
+       </div>
+       <div class="task-footer"><button class="task-btn primary">Share Link</button> <button class="task-btn secondary">Progress: 0/3</button>
+       </div>
+      </article>
+     </div>
+    </section><!-- Watch & Earn -->
+    <section class="screen" id="watch">
+     <div class="watch-header">
+      <div class="daily-limit">
+       <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" /> <path d="M10 5V10L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg><span>Daily Ads: <strong id="ads-counter">8/15</strong></span>
+      </div><button class="cleanup-btn" onclick="cleanupWatchedAds()">
+       <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5 4.5 14 5 14H11C11.5 14 12 13.5 12 13L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+       </svg><span>Clean Up</span> </button>
+     </div>
+     <div class="watch-grid">
+      <article class="video-card" data-watched="false" onclick="openVideoModal('Tech Review 2024', '0:45', 25, this)">
+       <div class="video-thumbnail">
+        <svg class="play-icon" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+        </svg><span class="video-duration">0:45</span>
+       </div>
+       <div class="video-info">
+        <div class="video-advertiser">
+         <svg width="14" height="14" viewbox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="14" height="14" rx="3" fill="#4AA3FF" />
+         </svg><span>TechBrand Co.</span>
+        </div>
+        <h3 class="video-title">Tech Review 2024</h3>
+        <div class="video-meta"><span>Watch 0:45 · Earn</span> <span class="video-reward">+25 G-coins</span>
+        </div>
+       </div>
+      </article>
+      <article class="video-card" data-watched="false" onclick="openVideoModal('Crypto Market Update', '0:30', 30, this)">
+       <div class="video-thumbnail">
+        <svg class="play-icon" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+        </svg><span class="video-duration">0:30</span>
+       </div>
+       <div class="video-info">
+        <div class="video-advertiser">
+         <svg width="14" height="14" viewbox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="14" height="14" rx="3" fill="#E33D7A" />
+         </svg><span>CryptoExchange</span>
+        </div>
+        <h3 class="video-title">Crypto Market Update</h3>
+        <div class="video-meta"><span>Watch 0:30 · Earn</span> <span class="video-reward">+30 G-coins</span>
+        </div>
+       </div>
+      </article>
+      <article class="video-card watched" data-watched="true">
+       <div class="video-thumbnail">
+        <div class="watched-overlay">
+         <svg width="40" height="40" viewbox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)" /> <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+         </svg>
+        </div><span class="video-duration">0:25</span>
+       </div>
+       <div class="video-info">
+        <div class="video-advertiser">
+         <svg width="14" height="14" viewbox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="14" height="14" rx="3" fill="#5B2E8A" />
+         </svg><span>GameStore</span>
+        </div>
+        <h3 class="video-title">Gaming News Today</h3>
+        <div class="video-meta"><span class="collected-badge">✓ Collected</span> <span class="video-reward">+20 G-coins</span>
+        </div>
+       </div>
+      </article>
+      <article class="video-card" data-watched="false" onclick="openVideoModal('Product Launch Event', '0:55', 35, this)">
+       <div class="video-thumbnail">
+        <svg class="play-icon" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+        </svg><span class="video-duration">0:55</span>
+       </div>
+       <div class="video-info">
+        <div class="video-advertiser">
+         <svg width="14" height="14" viewbox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="14" height="14" rx="3" fill="#FF98BD" />
+         </svg><span>Fashion Brand</span>
+        </div>
+        <h3 class="video-title">Product Launch Event</h3>
+        <div class="video-meta"><span>Watch 0:55 · Earn</span> <span class="video-reward">+35 G-coins</span>
+        </div>
+       </div>
+      </article>
+     </div>
+    </section><!-- Profile -->
+    <section class="screen" id="profile">
+     <div class="profile-section">
+      <div class="profile-header">
+       <div class="profile-avatar">
+        JD
+       </div>
+       <h2 class="profile-name">John Doe</h2>
+       <p class="profile-username">@johndoe</p>
+       <div class="profile-actions"><button class="profile-action-btn primary">
+         <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 2H13C13.5 2 14 2.5 14 3V5M2 11V13C2 13.5 2.5 14 3 14H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /> <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5" />
+         </svg><span>Edit Profile</span> </button> <button class="profile-action-btn secondary" title="Withdraw (KYC Required)">
+         <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2V8M8 8L11 5M8 8L5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /> <path d="M2 10V12C2 13 2.5 14 4 14H12C13.5 14 14 13 14 12V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+         </svg></button>
+       </div>
+       <div class="profile-stats">
+        <div class="stat-item">
+         <div class="stat-value">
+          2,847
+         </div>
+         <div class="stat-label">
+          G-Coins
+         </div>
+        </div>
+        <div class="stat-item">
+         <div class="stat-value">
+          5,293
+         </div>
+         <div class="stat-label">
+          Total Earned
+         </div>
+        </div>
+        <div class="stat-item">
+         <div class="stat-value">
+          124
+         </div>
+         <div class="stat-label">
+          Tasks Done
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="profile-tabs"><button class="profile-tab active" onclick="switchProfileTab('activity', event)">Activity</button> <button class="profile-tab" onclick="switchProfileTab('posts', event)">Posts</button> <button class="profile-tab" onclick="switchProfileTab('wallet', event)">Wallet</button>
+      </div>
+      <div class="profile-tab-content">
+       <div class="tab-pane active" id="activity-tab">
+        <div class="activity-item">
+         <div class="activity-icon completed">
+          <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L6 11L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+         </div>
+         <div class="activity-details">
+          <div class="activity-title">
+           Completed YouTube Task
+          </div>
+          <div class="activity-time">
+           2 hours ago
+          </div>
+         </div>
+         <div class="activity-reward">
+          +50
+         </div>
+        </div>
+        <div class="activity-item">
+         <div class="activity-icon completed">
+          <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L6 11L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+         </div>
+         <div class="activity-details">
+          <div class="activity-title">
+           Watched Ad - TechBrand Co.
+          </div>
+          <div class="activity-time">
+           5 hours ago
+          </div>
+         </div>
+         <div class="activity-reward">
+          +25
+         </div>
+        </div>
+        <div class="activity-item">
+         <div class="activity-icon completed">
+          <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 8L6 11L13 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+         </div>
+         <div class="activity-details">
+          <div class="activity-title">
+           Joined Telegram Channel
+          </div>
+          <div class="activity-time">
+           1 day ago
+          </div>
+         </div>
+         <div class="activity-reward">
+          +35
+         </div>
+        </div>
+       </div>
+       <div class="tab-pane" id="posts-tab">
+        <p style="color: var(--text-secondary); text-align: center; padding: 32px 16px;">No posts yet. Create your first post!</p>
+       </div>
+       <div class="tab-pane" id="wallet-tab">
+        <div class="wallet-balance-card">
+         <div class="wallet-label">
+          Current Balance
+         </div>
+         <div class="wallet-amount">
+          2,847 G-coins
+         </div>
+         <div class="wallet-trend">
+          <svg width="80" height="30" viewbox="0 0 80 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 25L10 20L20 22L30 15L40 18L50 10L60 12L70 5L80 8" stroke="#4AA3FF" stroke-width="2" fill="none" />
+          </svg><span style="color: #4AA3FF; font-size: 12px; font-weight: 600;">↑ +12% this week</span>
+         </div>
+        </div>
+        <div class="transaction-item">
+         <div class="transaction-icon earn">
+          +
+         </div>
+         <div class="transaction-details">
+          <div class="transaction-title">
+           Task Reward
+          </div>
+          <div class="transaction-time">
+           2 hours ago
+          </div>
+         </div>
+         <div class="transaction-amount earn">
+          +50
+         </div>
+        </div>
+        <div class="transaction-item">
+         <div class="transaction-icon earn">
+          +
+         </div>
+         <div class="transaction-details">
+          <div class="transaction-title">
+           Ad Watch Reward
+          </div>
+          <div class="transaction-time">
+           5 hours ago
+          </div>
+         </div>
+         <div class="transaction-amount earn">
+          +25
+         </div>
+        </div>
+        <div class="transaction-item">
+         <div class="transaction-icon spend">
+          -
+         </div>
+         <div class="transaction-details">
+          <div class="transaction-title">
+           Withdrawal
+          </div>
+          <div class="transaction-time">
+           3 days ago
+          </div>
+         </div>
+         <div class="transaction-amount spend">
+          -500
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="profile-menu"><button class="menu-item"> <span>Edit Profile</span>
+        <svg class="menu-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg></button> <button class="menu-item"> <span>Transaction History</span>
+        <svg class="menu-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg></button> <button class="menu-item"> <span>Referrals</span>
+        <svg class="menu-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg></button> <button class="menu-item"> <span>Settings</span>
+        <svg class="menu-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg></button> <button class="menu-item"> <span>Help &amp; Support</span>
+        <svg class="menu-icon" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg></button>
+      </div>
+     </div>
+    </section>
+   </main><!-- Bottom Navigation -->
+   <nav class="bottom-nav"><a href="#gridhome" class="nav-item active" onclick="switchScreen('gridhome', event)">
+     <svg class="nav-icon" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /> <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+     </svg><span id="nav-feed-text">GridHome</span> </a> <a href="#tasks" class="nav-item" onclick="switchScreen('tasks', event)">
+     <svg class="nav-icon" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /> <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+     </svg><span id="nav-tasks-text">Tasks</span> </a> <a href="#watch" class="nav-item" onclick="switchScreen('watch', event)">
+     <svg class="nav-icon" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3L19 12L5 21V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+     </svg><span id="nav-watch-text">Watch</span> </a> <a href="#profile" class="nav-item" onclick="switchScreen('profile', event)">
+     <svg class="nav-icon" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /> <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+     </svg><span id="nav-profile-text">Profile</span> </a>
+   </nav><!-- FAB --> <button class="fab" onclick="openComposer()">
+    <svg class="fab-icon" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 20H21" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /> <path d="M16.5 3.49998C16.8978 3.10216 17.4374 2.87866 18 2.87866C18.2786 2.87866 18.5544 2.93353 18.8118 3.04014C19.0692 3.14674 19.303 3.303 19.5 3.49998C19.697 3.69697 19.8532 3.93082 19.9598 4.18819C20.0665 4.44556 20.1213 4.72141 20.1213 4.99998C20.1213 5.27856 20.0665 5.55441 19.9598 5.81178C19.8532 6.06915 19.697 6.303 19.5 6.49998L7 19L3 20L4 16L16.5 3.49998Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+    </svg></button> <!-- Composer Modal -->
+   <div class="modal-overlay" id="composer-modal">
+    <div class="modal-content">
+     <div class="modal-header">
+      <h2 class="modal-title">Create Post</h2><button class="close-btn" onclick="closeComposer()">
+       <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg></button>
+     </div>
+     <form class="composer-form" onsubmit="handlePostSubmit(event)">
+      <div class="form-group"><label class="form-label" for="post-content">Post Content</label> <textarea class="form-textarea" id="post-content" placeholder="What do you want to share? Use # for hashtags and @ for mentions" required oninput="handleComposerInput(event)"></textarea>
+       <div class="suggestions-popup" id="suggestions-popup" style="display: none;"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Attach Media (Optional)</label>
+       <div class="media-attach-area"><button type="button" class="attach-btn" onclick="handleMediaAttach('image')">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" /> <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.5" /> <path d="M2 14L7 9L12 14M10 12L13 9L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+         </svg><span>Image</span> </button> <button type="button" class="attach-btn" onclick="handleMediaAttach('video')">
+         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" /> <path d="M14 8L18 6V14L14 12V8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+         </svg><span>Video</span> </button>
+       </div>
+      </div>
+      <div class="form-group"><label class="form-label">Reward Type</label>
+       <div class="reward-type-selector"><label class="reward-option"> <input type="radio" name="reward-type" value="visit" checked onchange="updateRewardPreview()"> <span>Visit</span> </label> <label class="reward-option"> <input type="radio" name="reward-type" value="join" onchange="updateRewardPreview()"> <span>Join</span> </label> <label class="reward-option"> <input type="radio" name="reward-type" value="watch" onchange="updateRewardPreview()"> <span>Watch</span> </label>
+       </div>
+      </div>
+      <div class="form-group"><label class="form-label" for="post-reward">Reward Amount (G-coins)</label> <input type="number" class="form-input" id="post-reward" placeholder="Enter reward amount" min="1" max="100" value="25" required oninput="updateRewardPreview()">
+      </div>
+      <div class="reward-preview">
+       <div class="preview-label">
+        Preview:
+       </div>
+       <div class="preview-card">
+        <div class="earnings-bar"><span class="earnings-label" id="preview-reward">💰 Earn up to 25 G-coins</span>
+        </div>
+       </div>
+      </div><button type="submit" class="submit-btn">Publish Post</button>
+     </form>
+    </div>
+   </div><!-- Task Modal -->
+   <div class="modal-overlay" id="task-modal">
+    <div class="browser-frame">
+     <div class="browser-header">
+      <div class="browser-dots">
+       <div class="browser-dot"></div>
+       <div class="browser-dot"></div>
+       <div class="browser-dot"></div>
+      </div>
+      <div class="browser-url">
+       https://task.gaingrid.com
+      </div><button class="close-btn" onclick="closeTaskModal()">
+       <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg></button>
+     </div>
+     <div class="browser-content">
+      <h2 class="modal-title" id="task-modal-title">Task Loading...</h2>
+      <p style="color: var(--text-secondary); margin-top: 16px; line-height: 1.6;">This is a simulated task view. In the production version, this would load the actual task content in an iframe-style container. Complete the task steps to earn your G-coins reward!</p><button class="submit-btn" style="margin-top: 24px;" onclick="closeTaskModal()">Complete Task</button>
+     </div>
+    </div>
+   </div><!-- Video Modal -->
+   <div class="modal-overlay" id="video-modal">
+    <div class="browser-frame">
+     <div class="browser-header">
+      <div class="browser-dots">
+       <div class="browser-dot"></div>
+       <div class="browser-dot"></div>
+       <div class="browser-dot"></div>
+      </div>
+      <div class="browser-url">
+       https://watch.gaingrid.com
+      </div><button class="close-btn" onclick="closeVideoModal()">
+       <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+       </svg></button>
+     </div>
+     <div class="browser-content">
+      <h2 class="modal-title" id="video-modal-title">Video Loading...</h2>
+      <div style="width: 100%; height: 250px; background: linear-gradient(135deg, rgba(91, 46, 138, 0.2), rgba(74, 163, 255, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 24px 0;">
+       <svg width="64" height="64" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+       </svg>
+      </div>
+      <p style="color: var(--text-secondary); line-height: 1.6;">This is a simulated video player. In the production version, this would play the actual video content. Watch the full video to earn your G-coins reward!</p><button class="submit-btn" style="margin-top: 24px;" onclick="closeVideoModal()">Claim Reward</button>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      app_title: "GainGrid",
+      balance_label: "Your Balance",
+      feed_title: "GridHome",
+      tasks_title: "Task Board",
+      watch_title: "Watch & Earn",
+      profile_title: "Profile",
+      background_color: "#0F0F14",
+      panel_color: "#0B0B0D",
+      primary_color: "#5B2E8A",
+      accent_color: "#E33D7A",
+      text_color: "#FFFFFF"
+    };
+
+    async function onConfigChange(config) {
+      const appTitle = document.getElementById('app-title');
+      const navFeedText = document.getElementById('nav-feed-text');
+      const navTasksText = document.getElementById('nav-tasks-text');
+      const navWatchText = document.getElementById('nav-watch-text');
+      const navProfileText = document.getElementById('nav-profile-text');
+
+      if (appTitle) {
+        appTitle.textContent = config.app_title || defaultConfig.app_title;
+      }
+      if (navFeedText) {
+        navFeedText.textContent = config.feed_title || defaultConfig.feed_title;
+      }
+      if (navTasksText) {
+        navTasksText.textContent = config.tasks_title || defaultConfig.tasks_title;
+      }
+      if (navWatchText) {
+        navWatchText.textContent = config.watch_title || defaultConfig.watch_title;
+      }
+      if (navProfileText) {
+        navProfileText.textContent = config.profile_title || defaultConfig.profile_title;
+      }
+
+      const appContainer = document.querySelector('.app-container');
+      if (appContainer) {
+        appContainer.style.background = config.background_color || defaultConfig.background_color;
+      }
+
+      const panels = document.querySelectorAll('.app-header, .post-card, .task-card, .video-card, .profile-header, .profile-menu, .modal-content, .browser-frame');
+      panels.forEach(panel => {
+        panel.style.background = config.panel_color || defaultConfig.panel_color;
+      });
+
+      document.documentElement.style.setProperty('--deep-purple', config.primary_color || defaultConfig.primary_color);
+      document.documentElement.style.setProperty('--vivid-magenta', config.accent_color || defaultConfig.accent_color);
+      document.documentElement.style.setProperty('--white', config.text_color || defaultConfig.text_color);
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.background_color || defaultConfig.background_color,
+            set: (value) => {
+              config.background_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ background_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.panel_color || defaultConfig.panel_color,
+            set: (value) => {
+              config.panel_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ panel_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ text_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => {
+              config.primary_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ primary_color: value });
+              }
+            }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => {
+              config.accent_color = value;
+              if (window.elementSdk) {
+                window.elementSdk.setConfig({ accent_color: value });
+              }
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["app_title", config.app_title || defaultConfig.app_title],
+        ["balance_label", config.balance_label || defaultConfig.balance_label],
+        ["feed_title", config.feed_title || defaultConfig.feed_title],
+        ["tasks_title", config.tasks_title || defaultConfig.tasks_title],
+        ["watch_title", config.watch_title || defaultConfig.watch_title],
+        ["profile_title", config.profile_title || defaultConfig.profile_title]
+      ]);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+
+    function switchScreen(screenId, event) {
+      if (event) {
+        event.preventDefault();
+      }
+
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(screen => screen.classList.remove('active'));
+
+      const targetScreen = document.getElementById(screenId);
+      if (targetScreen) {
+        targetScreen.classList.add('active');
+      }
+
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => item.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      window.location.hash = screenId;
+    }
+
+    function handleLike(button) {
+      button.classList.toggle('liked');
+      const icon = button.querySelector('.action-icon path');
+      if (button.classList.contains('liked')) {
+        icon.setAttribute('fill', 'currentColor');
+      } else {
+        icon.setAttribute('fill', 'none');
+      }
+    }
+
+    function openComposer() {
+      const modal = document.getElementById('composer-modal');
+      if (modal) {
+        modal.classList.add('active');
+      }
+    }
+
+    function closeComposer() {
+      const modal = document.getElementById('composer-modal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    function handlePostSubmit(event) {
+      event.preventDefault();
+      const content = document.getElementById('post-content').value;
+      const reward = document.getElementById('post-reward').value;
+      
+      document.getElementById('post-content').value = '';
+      document.getElementById('post-reward').value = '';
+      
+      closeComposer();
+      
+      const feedContainer = document.querySelector('.feed-container');
+      const newPost = document.createElement('article');
+      newPost.className = 'post-card';
+      newPost.innerHTML = `
+        <div class="post-header">
+          <div class="avatar">ME</div>
+          <div class="post-meta">
+            <div class="poster-name">You</div>
+            <div class="post-time">Just now</div>
+          </div>
+        </div>
+        <p class="post-content">${content}</p>
+        <div class="earnings-bar">
+          <span class="earnings-label">💰 Earn up to ${reward} G-coins</span>
+        </div>
+        <div class="post-actions">
+          <button class="action-btn" onclick="handleLike(this)">
+            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Like</span>
+          </button>
+          <button class="action-btn">
+            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Visit</span>
+          </button>
+          <button class="action-btn">
+            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Comment</span>
+          </button>
+        </div>
+      `;
+      feedContainer.insertBefore(newPost, feedContainer.firstChild);
+    }
+
+    function openTaskModal(taskTitle) {
+      const modal = document.getElementById('task-modal');
+      const titleElement = document.getElementById('task-modal-title');
+      if (modal && titleElement) {
+        titleElement.textContent = taskTitle;
+        modal.classList.add('active');
+      }
+    }
+
+    function closeTaskModal() {
+      const modal = document.getElementById('task-modal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+    }
+
+    let timerInterval = null;
+    let currentVideoCard = null;
+
+    function openVideoModal(videoTitle, duration, reward, cardElement) {
+      const modal = document.getElementById('video-modal');
+      const titleElement = document.getElementById('video-modal-title');
+      const browserContent = modal.querySelector('.browser-content');
+      
+      currentVideoCard = cardElement;
+      
+      if (modal && titleElement && browserContent) {
+        titleElement.textContent = videoTitle;
+        
+        const seconds = parseInt(duration.split(':')[0]) * 60 + parseInt(duration.split(':')[1]);
+        
+        browserContent.innerHTML = `
+          <div class="timer-container">
+            <div class="timer-circle">
+              <svg class="timer-svg" width="150" height="150">
+                <defs>
+                  <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4AA3FF" />
+                    <stop offset="100%" stop-color="#E33D7A" />
+                  </linearGradient>
+                </defs>
+                <circle class="timer-circle-bg" cx="75" cy="75" r="68"></circle>
+                <circle class="timer-circle-progress" cx="75" cy="75" r="68" stroke-dasharray="427" stroke-dashoffset="0" id="timer-progress"></circle>
+              </svg>
+              <div class="timer-text" id="timer-display">${duration}</div>
+            </div>
+            <div class="timer-label">Watch the full video to earn your reward</div>
+            <p style="color: var(--text-secondary); text-align: center; max-width: 300px;">
+              This is a simulated ad player. In production, the actual ad content would play here.
+            </p>
+            <div style="font-size: 12px; color: var(--text-secondary); text-align: center; margin-top: 8px;">
+              Source: External Ad Network
+            </div>
+          </div>
+        `;
+        
+        modal.classList.add('active');
+        startTimer(seconds, reward);
+      }
+    }
+
+    function startTimer(totalSeconds, reward) {
+      let remainingSeconds = totalSeconds;
+      const progressCircle = document.getElementById('timer-progress');
+      const timerDisplay = document.getElementById('timer-display');
+      const circumference = 427;
+      
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      
+      timerInterval = setInterval(() => {
+        remainingSeconds--;
+        
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        const progress = (remainingSeconds / totalSeconds) * circumference;
+        progressCircle.style.strokeDashoffset = circumference - progress;
+        
+        if (remainingSeconds <= 0) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+          showClaimButton(reward);
+        }
+      }, 1000);
+    }
+
+    function showClaimButton(reward) {
+      const browserContent = document.querySelector('#video-modal .browser-content');
+      browserContent.innerHTML = `
+        <div class="timer-container">
+          <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="48" fill="rgba(74, 163, 255, 0.2)" stroke="#4AA3FF" stroke-width="3"/>
+            <path d="M30 50L43 63L70 36" stroke="#4AA3FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3 style="font-size: 20px; font-weight: 700; margin-top: 24px;">Great Job!</h3>
+          <p style="color: var(--text-secondary); text-align: center;">You've watched the complete video</p>
+          <button class="claim-reward-btn" onclick="claimVideoReward(${reward})">
+            Claim ${reward} G-coins
+          </button>
+        </div>
+      `;
+    }
+
+    function claimVideoReward(reward) {
+      if (currentVideoCard) {
+        currentVideoCard.classList.add('watched');
+        currentVideoCard.setAttribute('data-watched', 'true');
+        currentVideoCard.onclick = null;
+        
+        const thumbnail = currentVideoCard.querySelector('.video-thumbnail');
+        thumbnail.innerHTML = `
+          <div class="watched-overlay">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)"/>
+              <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          ${thumbnail.querySelector('.video-duration').outerHTML}
+        `;
+        
+        const meta = currentVideoCard.querySelector('.video-meta');
+        meta.innerHTML = `
+          <span class="collected-badge">✓ Collected</span>
+          <span class="video-reward">+${reward} G-coins</span>
+        `;
+        
+        animateCoinFly(currentVideoCard);
+        updateBalance(reward);
+      }
+      
+      closeVideoModal();
+    }
+
+    function closeVideoModal() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      const modal = document.getElementById('video-modal');
+      if (modal) {
+        modal.classList.remove('active');
+      }
+      currentVideoCard = null;
+    }
+
+    function cleanupWatchedAds() {
+      const watchedCards = document.querySelectorAll('.video-card.watched');
+      watchedCards.forEach(card => {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          card.remove();
+        }, 300);
+      });
+    }
+
+    function animateCoinFly(sourceElement) {
+      const rect = sourceElement.getBoundingClientRect();
+      const coin = document.createElement('div');
+      coin.className = 'coin-animation';
+      coin.style.left = rect.left + rect.width / 2 + 'px';
+      coin.style.top = rect.top + rect.height / 2 + 'px';
+      coin.innerHTML = `
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="16" cy="16" r="15" fill="#FFC857" stroke="#FFD87A" stroke-width="2"/>
+          <text x="16" y="22" text-anchor="middle" fill="#0B0B0D" font-size="18" font-weight="700">G</text>
+        </svg>
+      `;
+      document.body.appendChild(coin);
+      
+      setTimeout(() => {
+        coin.remove();
+      }, 600);
+    }
+
+    function updateBalance(amount) {
+      const balanceElement = document.getElementById('balance-text');
+      if (balanceElement) {
+        const currentBalance = parseInt(balanceElement.textContent.replace(/,/g, ''));
+        const newBalance = currentBalance + amount;
+        balanceElement.textContent = newBalance.toLocaleString();
+      }
+    }
+
+    function handleComposerInput(event) {
+      const textarea = event.target;
+      const value = textarea.value;
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = value.substring(0, cursorPosition);
+      
+      const hashMatch = textBeforeCursor.match(/#(\w*)$/);
+      const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
+      
+      const suggestionsPopup = document.getElementById('suggestions-popup');
+      
+      if (hashMatch) {
+        const suggestions = ['crypto', 'tech', 'finance', 'gaingrid', 'earning', 'blockchain'];
+        showSuggestions(suggestionsPopup, suggestions, '#');
+      } else if (mentionMatch) {
+        const suggestions = ['johndoe', 'sarahkim', 'mikepeters', 'alexjones'];
+        showSuggestions(suggestionsPopup, suggestions, '@');
+      } else {
+        suggestionsPopup.style.display = 'none';
+      }
+    }
+
+    function showSuggestions(popup, suggestions, prefix) {
+      popup.innerHTML = suggestions.map(s => 
+        `<div class="suggestion-item" onclick="insertSuggestion('${prefix}${s}')">${prefix}${s}</div>`
+      ).join('');
+      popup.style.display = 'block';
+    }
+
+    function insertSuggestion(text) {
+      const textarea = document.getElementById('post-content');
+      const value = textarea.value;
+      const cursorPosition = textarea.selectionStart;
+      const textBeforeCursor = value.substring(0, cursorPosition);
+      const textAfterCursor = value.substring(cursorPosition);
+      
+      const lastAtOrHash = Math.max(textBeforeCursor.lastIndexOf('@'), textBeforeCursor.lastIndexOf('#'));
+      const newText = textBeforeCursor.substring(0, lastAtOrHash) + text + ' ' + textAfterCursor;
+      
+      textarea.value = newText;
+      document.getElementById('suggestions-popup').style.display = 'none';
+      textarea.focus();
+    }
+
+    function handleMediaAttach(type) {
+      const message = type === 'image' ? 'Image attachment simulated' : 'Video attachment simulated';
+      const composerForm = document.querySelector('.composer-form');
+      
+      let attachmentPreview = document.querySelector('.attachment-preview');
+      if (!attachmentPreview) {
+        attachmentPreview = document.createElement('div');
+        attachmentPreview.className = 'attachment-preview';
+        attachmentPreview.style.cssText = 'margin-top: 8px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; color: var(--text-secondary);';
+        composerForm.insertBefore(attachmentPreview, composerForm.querySelector('.form-group'));
+      }
+      
+      attachmentPreview.textContent = `✓ ${message}`;
+    }
+
+    function updateRewardPreview() {
+      const rewardAmount = document.getElementById('post-reward').value;
+      const rewardType = document.querySelector('input[name="reward-type"]:checked').value;
+      const previewElement = document.getElementById('preview-reward');
+      
+      if (previewElement) {
+        previewElement.textContent = `💰 Earn up to ${rewardAmount} G-coins for ${rewardType}`;
+      }
+    }
+
+    function switchProfileTab(tabName, event) {
+      const tabs = document.querySelectorAll('.profile-tab');
+      const panes = document.querySelectorAll('.tab-pane');
+      
+      tabs.forEach(tab => tab.classList.remove('active'));
+      panes.forEach(pane => pane.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabName + '-tab').classList.add('active');
+    }
+
+    function openNewTaskModal() {
+      const taskCounter = document.getElementById('task-counter').textContent;
+      const [current, total] = taskCounter.split('/').map(n => parseInt(n));
+      
+      if (current >= total) {
+        showInlineMessage('Daily task limit reached! Come back tomorrow for more tasks.');
+        return;
+      }
+      
+      showInlineMessage('Task creation feature coming soon!');
+    }
+
+    function showInlineMessage(message) {
+      const messageDiv = document.createElement('div');
+      messageDiv.style.cssText = `
+        position: fixed;
+        top: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-panel);
+        color: var(--white);
+        padding: 16px 24px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+        max-width: 90%;
+        text-align: center;
+        font-size: 14px;
+      `;
+      messageDiv.textContent = message;
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        messageDiv.style.transform = 'translateX(-50%) translateY(-20px)';
+        messageDiv.style.transition = 'all 0.3s ease';
+        setTimeout(() => messageDiv.remove(), 300);
+      }, 3000);
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(screen => screen.classList.remove('active'));
+        
+        const targetScreen = document.getElementById(hash);
+        if (targetScreen) {
+          targetScreen.classList.add('active');
+        }
+
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+          if (item.getAttribute('href') === `#${hash}`) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+    });
+
+    if (window.location.hash) {
+      const hash = window.location.hash.replace('#', '');
+      const targetScreen = document.getElementById(hash);
+      if (targetScreen) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        targetScreen.classList.add('active');
+        
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+          if (item.getAttribute('href') === `#${hash}`) {
+            item.classList.add('active');
+          } else {
+            item.classList.remove('active');
+          }
+        });
+      }
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a81ca8da162654d',t:'MTc2NDc1MTU2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
