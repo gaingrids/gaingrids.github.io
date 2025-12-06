@@ -1,4 +1,4 @@
-<!doctype doctype>
+<!doctype html>
 <html lang="en">
  <head>
   <meta charset="UTF-8">
@@ -1422,7 +1422,7 @@
    </header><!-- Main Content -->
    <main class="main-content"><!-- GridHome / Feed -->
     <section class="screen active" id="gridhome">
-     <div class="feed-container">
+     <div class="feed-container" id="feed-container">
       <article class="post-card">
        <div class="post-header">
         <div class="avatar">
@@ -1446,7 +1446,7 @@
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
          </svg><span>Like</span> </button> <button class="action-btn">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-         </svg><span>Visit</span> </button> <button class="action-btn">
+         </svg><span>Visit</span> </button> <button class="action-btn" onclick="openCommentsForPost(this)">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
          </svg><span>Comment</span> </button>
        </div>
@@ -1472,7 +1472,7 @@
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
          </svg><span>Like</span> </button> <button class="action-btn">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-         </svg><span>Join</span> </button> <button class="action-btn">
+         </svg><span>Join</span> </button> <button class="action-btn" onclick="openCommentsForPost(this)">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
          </svg><span>Comment</span> </button>
        </div>
@@ -1498,9 +1498,9 @@
        </div>
        <div class="post-actions"><button class="action-btn" onclick="handleLike(this)">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-         </svg><span>Like</span> </button> <button class="action-btn">
+         </svg><span>Like</span> </button> <button class="action-btn" onclick="openVideoModal('Tech Review 2024','0:45',25,this)">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-         </svg><span>Watch</span> </button> <button class="action-btn">
+         </svg><span>Watch</span> </button> <button class="action-btn" onclick="openCommentsForPost(this)">
          <svg class="action-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
          </svg><span>Comment</span> </button>
        </div>
@@ -1514,7 +1514,10 @@
        <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
        </svg><span>New Task</span> </button>
      </div>
-     <div class="task-list">
+
+     <!-- Task categories row will be injected here by script (preserves original layout) -->
+
+     <div class="task-list" id="task-list">
       <article class="task-card">
        <div class="task-header">
         <div class="platform-icon youtube">
@@ -1626,7 +1629,7 @@
        <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5 4.5 14 5 14H11C11.5 14 12 13.5 12 13L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
        </svg><span>Clean Up</span> </button>
      </div>
-     <div class="watch-grid">
+     <div class="watch-grid" id="watch-grid">
       <article class="video-card" data-watched="false" onclick="openVideoModal('Tech Review 2024', '0:45', 25, this)">
        <div class="video-thumbnail">
         <svg class="play-icon" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
@@ -1707,7 +1710,7 @@
        </div>
        <div class="profile-stats">
         <div class="stat-item">
-         <div class="stat-value">
+         <div class="stat-value" id="stat-gcoins">
           2,847
          </div>
          <div class="stat-label">
@@ -1796,7 +1799,7 @@
          <div class="wallet-label">
           Current Balance
          </div>
-         <div class="wallet-amount">
+         <div class="wallet-amount" id="wallet-amount">
           2,847 G-coins
          </div>
          <div class="wallet-trend">
@@ -1888,23 +1891,23 @@
        <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
        </svg></button>
      </div>
-     <form class="composer-form" onsubmit="handlePostSubmit(event)">
+     <form class="composer-form" id="composer-form" onsubmit="handlePostSubmit(event)">
       <div class="form-group"><label class="form-label" for="post-content">Post Content</label> <textarea class="form-textarea" id="post-content" placeholder="What do you want to share? Use # for hashtags and @ for mentions" required oninput="handleComposerInput(event)"></textarea>
        <div class="suggestions-popup" id="suggestions-popup" style="display: none;"></div>
       </div>
       <div class="form-group"><label class="form-label">Attach Media (Optional)</label>
-       <div class="media-attach-area"><button type="button" class="attach-btn" onclick="handleMediaAttach('image')">
+       <div class="media-attach-area"><button type="button" class="attach-btn" onclick="document.getElementById('file-input').click();">
          <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" /> <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.5" /> <path d="M2 14L7 9L12 14M10 12L13 9L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-         </svg><span>Image</span> </button> <button type="button" class="attach-btn" onclick="handleMediaAttach('video')">
-         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5" /> <path d="M14 8L18 6V14L14 12V8Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-         </svg><span>Video</span> </button>
-       </div>
+         </svg><span>Image/Video</span> </button>
+         <input type="file" id="file-input" accept="image/*,video/*" style="display:none" />
+         </div>
+         <div id="attachment-preview" style="margin-top:8px;"></div>
       </div>
       <div class="form-group"><label class="form-label">Reward Type</label>
        <div class="reward-type-selector"><label class="reward-option"> <input type="radio" name="reward-type" value="visit" checked onchange="updateRewardPreview()"> <span>Visit</span> </label> <label class="reward-option"> <input type="radio" name="reward-type" value="join" onchange="updateRewardPreview()"> <span>Join</span> </label> <label class="reward-option"> <input type="radio" name="reward-type" value="watch" onchange="updateRewardPreview()"> <span>Watch</span> </label>
        </div>
       </div>
-      <div class="form-group"><label class="form-label" for="post-reward">Reward Amount (G-coins)</label> <input type="number" class="form-input" id="post-reward" placeholder="Enter reward amount" min="1" max="100" value="25" required oninput="updateRewardPreview()">
+      <div class="form-group"><label class="form-label" for="post-reward">Reward Amount (G-coins)</label> <input type="number" class="form-input" id="post-reward" placeholder="Enter reward amount" min="1" max="10000" value="25" required oninput="updateRewardPreview()">
       </div>
       <div class="reward-preview">
        <div class="preview-label">
@@ -1926,13 +1929,13 @@
        <div class="browser-dot"></div>
        <div class="browser-dot"></div>
       </div>
-      <div class="browser-url">
+      <div class="browser-url" id="browser-url">
        https://task.gaingrid.com
       </div><button class="close-btn" onclick="closeTaskModal()">
        <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
        </svg></button>
      </div>
-     <div class="browser-content">
+     <div class="browser-content" id="browser-content">
       <h2 class="modal-title" id="task-modal-title">Task Loading...</h2>
       <p style="color: var(--text-secondary); margin-top: 16px; line-height: 1.6;">This is a simulated task view. In the production version, this would load the actual task content in an iframe-style container. Complete the task steps to earn your G-coins reward!</p><button class="submit-btn" style="margin-top: 24px;" onclick="closeTaskModal()">Complete Task</button>
      </div>
@@ -1952,7 +1955,7 @@
        <svg class="close-icon" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
        </svg></button>
      </div>
-     <div class="browser-content">
+     <div class="browser-content" id="video-browser-content">
       <h2 class="modal-title" id="video-modal-title">Video Loading...</h2>
       <div style="width: 100%; height: 250px; background: linear-gradient(135deg, rgba(91, 46, 138, 0.2), rgba(74, 163, 255, 0.2)); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 24px 0;">
        <svg width="64" height="64" viewbox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" /> <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
@@ -1963,576 +1966,483 @@
     </div>
    </div>
   </div>
+
+  <!-- libtl ad SDK (as requested) -->
+  <script src='//libtl.com/sdk.js' data-zone='10274566' data-sdk='show_10274566'></script>
+
+  <!-- === Backend glue + UI script (integrated) === -->
   <script>
-    const defaultConfig = {
-      app_title: "GainGrid",
-      balance_label: "Your Balance",
-      feed_title: "GridHome",
-      tasks_title: "Task Board",
-      watch_title: "Watch & Earn",
-      profile_title: "Profile",
-      background_color: "#0F0F14",
-      panel_color: "#0B0B0D",
-      primary_color: "#5B2E8A",
-      accent_color: "#E33D7A",
-      text_color: "#FFFFFF"
-    };
+/* ========= GainGrid - Backend glue + UI helpers (replacement script) =========
+   This script wires bot payloads, Base64 mapping, tasks, watch flows, publish requests,
+   smartlink fallback, and calls bot callback_url with JSON payloads.
+=========================================================================== */
 
-    async function onConfigChange(config) {
-      const appTitle = document.getElementById('app-title');
-      const navFeedText = document.getElementById('nav-feed-text');
-      const navTasksText = document.getElementById('nav-tasks-text');
-      const navWatchText = document.getElementById('nav-watch-text');
-      const navProfileText = document.getElementById('nav-profile-text');
+/* ---------- Safe Base64 encode/decode (mirror bot) ---------- */
+function safeBase64Encode(str){
+  try {
+    if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(str))).replace(/=+$/,'');
+    if (typeof Buffer !== 'undefined') return Buffer.from(str,'utf8').toString('base64').replace(/=+$/,'');
+  } catch(e){}
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  var out="", i=0;
+  while(i<str.length){
+    var c1 = str.charCodeAt(i++) & 0xff;
+    if (i===str.length){ out += chars.charAt(c1>>2); out += chars.charAt((c1&3)<<4); out += "=="; break; }
+    var c2 = str.charCodeAt(i++);
+    if (i===str.length){ out += chars.charAt(c1>>2); out += chars.charAt(((c1&3)<<4)|((c2&240)>>4)); out += chars.charAt((c2&15)<<2); out += "="; break; }
+    var c3 = str.charCodeAt(i++);
+    out += chars.charAt(c1>>2);
+    out += chars.charAt(((c1&3)<<4)|((c2&240)>>4));
+    out += chars.charAt(((c2&15)<<2)|((c3&192)>>6));
+    out += chars.charAt(c3 & 63);
+  }
+  return out;
+}
+function safeBase64Decode(b64){
+  try{
+    var padLen = (4 - (b64.length % 4)) % 4;
+    for(var i=0;i<padLen;i++) b64 += '=';
+    if (typeof atob === 'function') return decodeURIComponent(escape(atob(b64)));
+    if (typeof Buffer !== 'undefined') return Buffer.from(b64,'base64').toString('utf8');
+  } catch(e){}
+  try { return decodeURIComponent(escape(window.atob(b64))); } catch(e){ console.warn('B64 decode failed', e); return null; }
+}
 
-      if (appTitle) {
-        appTitle.textContent = config.app_title || defaultConfig.app_title;
-      }
-      if (navFeedText) {
-        navFeedText.textContent = config.feed_title || defaultConfig.feed_title;
-      }
-      if (navTasksText) {
-        navTasksText.textContent = config.tasks_title || defaultConfig.tasks_title;
-      }
-      if (navWatchText) {
-        navWatchText.textContent = config.watch_title || defaultConfig.watch_title;
-      }
-      if (navProfileText) {
-        navProfileText.textContent = config.profile_title || defaultConfig.profile_title;
-      }
+/* ---------- Utilities ---------- */
+function qsa(sel){ return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function $(id){ return document.getElementById(id); }
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]);}); }
+function formatSeconds(sec){ var m=Math.floor(sec/60), s=sec%60; return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
+function todayKey(name){ var d=new Date(); return name+'_'+d.getFullYear()+'_'+(d.getMonth()+1)+'_'+d.getDate(); }
+function getLs(k){ try { return JSON.parse(localStorage.getItem(k)||'null'); } catch(e){ return null; } }
+function setLs(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-      const appContainer = document.querySelector('.app-container');
-      if (appContainer) {
-        appContainer.style.background = config.background_color || defaultConfig.background_color;
-      }
+/* ---------- PAGE CONTEXT ---------- */
+var PAGE_CONTEXT = { callback_url: null, uid: null, last_bot_payload: null, api_key: null, allow_web_publish:false };
+function generateApiKey(){ if(!PAGE_CONTEXT.api_key) { PAGE_CONTEXT.api_key = 'GG_'+Date.now()+'_'+Math.random().toString(36).slice(2,10); localStorage.setItem('ga_api_key', PAGE_CONTEXT.api_key); } return PAGE_CONTEXT.api_key || localStorage.getItem('ga_api_key'); }
 
-      const panels = document.querySelectorAll('.app-header, .post-card, .task-card, .video-card, .profile-header, .profile-menu, .modal-content, .browser-frame');
-      panels.forEach(panel => {
-        panel.style.background = config.panel_color || defaultConfig.panel_color;
-      });
+/* ---------- Social SVG icons (3D-ish gradients) ---------- */
+function svgYouTube(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gyt" x1="0" x2="1"><stop offset="0" stop-color="#FF4C4C"/><stop offset="1" stop-color="#C90000"/></linearGradient></defs><rect x="1" y="4" width="22" height="16" rx="4" fill="url(#gyt)"></rect><path d="M10 8v8l6-4-6-4z" fill="#fff"></path></svg>'; }
+function svgTelegram(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gtg" x1="0" x2="1"><stop offset="0" stop-color="#4AA3FF"/><stop offset="1" stop-color="#2A73D9"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="5" fill="url(#gtg)"></rect><path d="M6 12l10-4-6 10 1-6-5-2z" fill="#fff"></path></svg>'; }
+function svgWhatsApp(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gw" x1="0" x2="1"><stop offset="0" stop-color="#25D366"/><stop offset="1" stop-color="#10A37F"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="5" fill="url(#gw)"></rect><path d="M7 14l1.5 4L16 12l-.8-1.3L9.5 14 7 8l1 6z" fill="#fff" opacity="0.95"/></svg>'; }
+function svgInstagram(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gi" x1="0" x2="1"><stop offset="0" stop-color="#FF9A66"/><stop offset="0.5" stop-color="#FF3D7C"/><stop offset="1" stop-color="#6A5AFF"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="6" fill="url(#gi)"></rect><circle cx="12" cy="12" r="3.5" fill="#fff"></circle><circle cx="17.5" cy="6.5" r="1" fill="#fff"></circle></svg>'; }
+function svgTikTok(){ return '<svg width="28" height="28" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gtk" x1="0" x2="1"><stop offset="0" stop-color="#00F2EA"/><stop offset="1" stop-color="#FF004F"/></linearGradient></defs><rect x="1" y="1" width="22" height="22" rx="6" fill="transparent"></rect><path d="M15 8v6a3 3 0 1 1-3-3V6h2c0 0 0 2 4 2v3s-1 .5-0 .5z" fill="url(#gtk)"></path></svg>'; }
+function svgX(){ return '<svg width="28" height="28" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="rgba(20,20,20,0.6)"></rect><path d="M7 7l10 10M17 7L7 17" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>'; }
+function svgWebsite(){ return '<svg width="28" height="28" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#4AA3FF" opacity="0.12"/><path d="M3 12h18M12 3v18" stroke="#4AA3FF" stroke-width="1.4" stroke-linecap="round"/></svg>'; }
+function svgDiscord(){ return '<svg width="28" height="28" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#5865F2"></rect><path d="M8 14s1-1 3-1 3 1 3 1" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/><circle cx="9" cy="11" r="1.1" fill="#fff"/><circle cx="15" cy="11" r="1.1" fill="#fff"/></svg>'; }
 
-      document.documentElement.style.setProperty('--deep-purple', config.primary_color || defaultConfig.primary_color);
-      document.documentElement.style.setProperty('--vivid-magenta', config.accent_color || defaultConfig.accent_color);
-      document.documentElement.style.setProperty('--white', config.text_color || defaultConfig.text_color);
+/* ---------- Task categories (keep in same order) ---------- */
+var TASK_CATEGORIES = [
+  { id:'youtube', label:'YouTube', icon: svgYouTube },
+  { id:'telegram', label:'Telegram', icon: svgTelegram },
+  { id:'whatsapp', label:'WhatsApp', icon: svgWhatsApp },
+  { id:'instagram', label:'Instagram', icon: svgInstagram },
+  { id:'tiktok', label:'TikTok', icon: svgTikTok },
+  { id:'x', label:'X', icon: svgX },
+  { id:'website', label:'Website', icon: svgWebsite },
+  { id:'discord', label:'Discord', icon: svgDiscord }
+];
+
+/* ---------- Smart links & limits ---------- */
+var SMART_LINKS = [
+  'https://otieu.com/4/10176113',
+  'https://otieu.com/4/10176184',
+  'https://otieu.com/4/10176114',
+  'https://otieu.com/4/10176185'
+];
+var TASK_DAILY_LIMIT = 20;
+var WATCH_DAILY_LIMIT = 20;
+
+/* ---------- Callback sender (web -> bot) ---------- */
+async function sendCallback(callbackUrl, bodyObj){
+  if(!callbackUrl){ console.warn('no-callback-url'); return {ok:false,err:'no-callback-url'}; }
+  try {
+    const res = await fetch(callbackUrl, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bodyObj) });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, text };
+  } catch(e){ console.error('sendCallback err', e); return { ok:false, err: e.message }; }
+}
+
+/* ---------- Map # keys to plain ---------- */
+function mapHashKeys(obj){
+  if(!obj || typeof obj !== 'object') return obj;
+  var out={};
+  for(var k in obj) if(obj.hasOwnProperty(k)){ var nk = k && k[0] === '#' ? k.slice(1) : k; out[nk]=obj[k]; }
+  return out;
+}
+
+/* ---------- Render category row + bind handlers ---------- */
+function renderTaskCategoryRow(){
+  var container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.gap = '8px';
+  container.style.marginBottom = '12px';
+  container.id = 'task-category-row';
+  TASK_CATEGORIES.forEach(function(cat){
+    var b = document.createElement('button');
+    b.className = 'task-category-btn';
+    b.dataset.cat = cat.id;
+    b.style.display = 'flex';
+    b.style.alignItems = 'center';
+    b.style.gap = '8px';
+    b.style.padding = '8px 12px';
+    b.style.borderRadius = '12px';
+    b.style.background = 'rgba(255,255,255,0.03)';
+    b.style.border = '1px solid rgba(255,255,255,0.04)';
+    b.style.cursor = 'pointer';
+    b.innerHTML = '<span style="width:28px;height:28px;display:inline-block;">'+cat.icon()+'</span><span style="font-weight:700;font-size:13px;color:var(--text-secondary)">'+cat.label+'</span>';
+    b.onclick = function(e){ renderTasksForCategory(cat.id); qsa('.task-category-btn').forEach(x=>x.style.boxShadow=''); b.style.boxShadow='0 6px 18px rgba(0,0,0,0.3)'; };
+    container.appendChild(b);
+  });
+  var tasksScreen = document.getElementById('tasks');
+  if(tasksScreen){
+    var header = tasksScreen.querySelector('.task-board-header');
+    if(header && !document.getElementById('task-category-row')) {
+      header.parentNode.insertBefore(container, header.nextSibling);
+    } else {
+      var existing = document.getElementById('task-category-row'); if(existing) existing.parentNode.replaceChild(container, existing);
     }
+  }
+}
 
-    function mapToCapabilities(config) {
-      return {
-        recolorables: [
-          {
-            get: () => config.background_color || defaultConfig.background_color,
-            set: (value) => {
-              config.background_color = value;
-              if (window.elementSdk) {
-                window.elementSdk.setConfig({ background_color: value });
-              }
-            }
-          },
-          {
-            get: () => config.panel_color || defaultConfig.panel_color,
-            set: (value) => {
-              config.panel_color = value;
-              if (window.elementSdk) {
-                window.elementSdk.setConfig({ panel_color: value });
-              }
-            }
-          },
-          {
-            get: () => config.text_color || defaultConfig.text_color,
-            set: (value) => {
-              config.text_color = value;
-              if (window.elementSdk) {
-                window.elementSdk.setConfig({ text_color: value });
-              }
-            }
-          },
-          {
-            get: () => config.primary_color || defaultConfig.primary_color,
-            set: (value) => {
-              config.primary_color = value;
-              if (window.elementSdk) {
-                window.elementSdk.setConfig({ primary_color: value });
-              }
-            }
-          },
-          {
-            get: () => config.accent_color || defaultConfig.accent_color,
-            set: (value) => {
-              config.accent_color = value;
-              if (window.elementSdk) {
-                window.elementSdk.setConfig({ accent_color: value });
-              }
-            }
-          }
-        ],
-        borderables: [],
-        fontEditable: undefined,
-        fontSizeable: undefined
-      };
+/* ---------- Generate tasks storage (random + bot-provided) ---------- */
+function initTasksStorage(){
+  var tasks = getLs(todayKey('ga_tasks')) || [];
+  var used = getLs(todayKey('ga_used')) || [];
+  while(tasks.length < TASK_DAILY_LIMIT){
+    var sl = SMART_LINKS[Math.floor(Math.random()*SMART_LINKS.length)];
+    if(used.indexOf(sl) !== -1) {
+      if(used.length >= SMART_LINKS.length) break;
+      continue;
     }
+    var seconds = 30 + Math.floor(Math.random()*120);
+    var reward = 100 + Math.floor(Math.random()*200);
+    var t = { id:'task_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), title:'Visit Partner', link: sl, smartlink: sl, seconds: seconds, reward: reward, network: 'website', created_by: 'auto', used:false };
+    tasks.push(t); used.push(sl);
+  }
+  setLs(todayKey('ga_used'), used);
+  setLs(todayKey('ga_tasks'), tasks);
+}
 
-    function mapToEditPanelValues(config) {
-      return new Map([
-        ["app_title", config.app_title || defaultConfig.app_title],
-        ["balance_label", config.balance_label || defaultConfig.balance_label],
-        ["feed_title", config.feed_title || defaultConfig.feed_title],
-        ["tasks_title", config.tasks_title || defaultConfig.tasks_title],
-        ["watch_title", config.watch_title || defaultConfig.watch_title],
-        ["profile_title", config.profile_title || defaultConfig.profile_title]
-      ]);
+/* ---------- Render tasks for a given category ---------- */
+function renderTasksForCategory(category){
+  var tasks = getLs(todayKey('ga_tasks')) || [];
+  var filtered = tasks.filter(function(t){ return t.network === category || (category==='website' && (!t.network || t.network==='website')); });
+  var list = document.getElementById('task-list');
+  list.innerHTML = '';
+  if(filtered.length === 0){
+    var div = document.createElement('div'); div.style.padding='20px'; div.style.textAlign='center'; div.style.color='var(--text-secondary)';
+    div.innerHTML = 'No tasks in ' + category + ' today. Showing other tasks.';
+    list.appendChild(div);
+    filtered = tasks.slice(0,6);
+  }
+  filtered.forEach(function(t){
+    var el = document.createElement('article'); el.className = 'task-card';
+    el.innerHTML = '<div class="task-header" style="display:flex;align-items:center;gap:12px;"><div class="platform-icon">'+(iconForNetwork(t.network)||svgWebsite())+'</div><div class="task-info"><h3 class="task-title">'+escapeHtml(t.title)+'</h3><p class="task-description">Stay '+formatSeconds(t.seconds)+' for reward.</p><div class="task-progress"><div class="progress-bar" style="height:8px;background:rgba(255,255,255,0.03);border-radius:999px;"><div class="progress-fill" style="width:0%;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--electric-blue),var(--vivid-magenta));"></div></div><span class="progress-text">Not started</span></div></div><div class="task-reward" style="display:flex;align-items:center;gap:8px;"><svg width="16" height="16"><circle cx="8" cy="8" r="7" fill="#FFC857"/></svg><span>'+t.reward+'</span></div></div><div class="task-footer" style="margin-top:12px;display:flex;gap:8px;"><button class="task-btn primary" onclick="startTaskById(\''+t.id+'\')">Start Task</button><button class="task-btn secondary" onclick="taskDetailsModal(\''+t.id+'\')">Details</button></div>';
+    list.appendChild(el);
+  });
+  var total = (getLs(todayKey('ga_tasks'))||[]).length;
+  $('task-counter').textContent = (total) + '/' + TASK_DAILY_LIMIT;
+}
+
+/* ---------- helper: return icon html for network ---------- */
+function iconForNetwork(network){
+  if(!network) return svgWebsite();
+  var c = TASK_CATEGORIES.find(x=>x.id === network);
+  return c ? c.icon() : svgWebsite();
+}
+
+/* ---------- Add/update tasks pushed by bot ---------- */
+function addOrUpdateTaskFromBot(t){
+  var tasks = getLs(todayKey('ga_tasks')) || [];
+  var idx = tasks.findIndex(x => x.id === t.id);
+  if(idx >= 0) tasks[idx] = t; else tasks.unshift(t);
+  setLs(todayKey('ga_tasks'), tasks);
+  renderTasksForCategory(t.network || 'website');
+}
+
+/* ---------- Start a task (by ID) ---------- */
+var activeTaskTimer = null;
+async function startTaskById(taskId){
+  var tasks = getLs(todayKey('ga_tasks')) || [];
+  var t = tasks.find(x=>x.id===taskId);
+  if(!t) return;
+  var modal = $('task-modal'); modal.classList.add('active');
+  var browserUrl = $('browser-url'); browserUrl.textContent = t.smartlink || t.link || t.url || 'about:blank';
+  var content = $('browser-content');
+  content.innerHTML = '<h2 class="modal-title" id="task-modal-title">'+escapeHtml(t.title)+'</h2><div id="iframe-wrap" style="width:100%;height:60vh;border-radius:12px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center">Preparing...</div><div style="text-align:center;margin-top:12px"><div id="task-countdown">00:00</div></div>';
+  var wrap = $('iframe-wrap');
+  var pre = document.createElement('iframe'); pre.style.width='100%'; pre.style.height='100%'; pre.style.border='none'; pre.src = t.smartlink || (t.link || t.url);
+  wrap.innerHTML=''; wrap.appendChild(pre);
+  setTimeout(function(){
+    if(/youtube\.com|youtu\.be/.test(t.link||'')){
+      window.open(t.link,'_blank');
+    } else {
+      var main = document.createElement('iframe'); main.style.width='100%'; main.style.height='100%'; main.style.border='none'; main.src = t.link;
+      wrap.innerHTML=''; wrap.appendChild(main);
     }
-
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities,
-        mapToEditPanelValues
-      });
-    }
-
-    function switchScreen(screenId, event) {
-      if (event) {
-        event.preventDefault();
-      }
-
-      const screens = document.querySelectorAll('.screen');
-      screens.forEach(screen => screen.classList.remove('active'));
-
-      const targetScreen = document.getElementById(screenId);
-      if (targetScreen) {
-        targetScreen.classList.add('active');
-      }
-
-      const navItems = document.querySelectorAll('.nav-item');
-      navItems.forEach(item => item.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-
-      window.location.hash = screenId;
-    }
-
-    function handleLike(button) {
-      button.classList.toggle('liked');
-      const icon = button.querySelector('.action-icon path');
-      if (button.classList.contains('liked')) {
-        icon.setAttribute('fill', 'currentColor');
-      } else {
-        icon.setAttribute('fill', 'none');
-      }
-    }
-
-    function openComposer() {
-      const modal = document.getElementById('composer-modal');
-      if (modal) {
-        modal.classList.add('active');
-      }
-    }
-
-    function closeComposer() {
-      const modal = document.getElementById('composer-modal');
-      if (modal) {
-        modal.classList.remove('active');
-      }
-    }
-
-    function handlePostSubmit(event) {
-      event.preventDefault();
-      const content = document.getElementById('post-content').value;
-      const reward = document.getElementById('post-reward').value;
-      
-      document.getElementById('post-content').value = '';
-      document.getElementById('post-reward').value = '';
-      
-      closeComposer();
-      
-      const feedContainer = document.querySelector('.feed-container');
-      const newPost = document.createElement('article');
-      newPost.className = 'post-card';
-      newPost.innerHTML = `
-        <div class="post-header">
-          <div class="avatar">ME</div>
-          <div class="post-meta">
-            <div class="poster-name">You</div>
-            <div class="post-time">Just now</div>
-          </div>
-        </div>
-        <p class="post-content">${content}</p>
-        <div class="earnings-bar">
-          <span class="earnings-label">💰 Earn up to ${reward} G-coins</span>
-        </div>
-        <div class="post-actions">
-          <button class="action-btn" onclick="handleLike(this)">
-            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Like</span>
-          </button>
-          <button class="action-btn">
-            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Visit</span>
-          </button>
-          <button class="action-btn">
-            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>Comment</span>
-          </button>
-        </div>
-      `;
-      feedContainer.insertBefore(newPost, feedContainer.firstChild);
-    }
-
-    function openTaskModal(taskTitle) {
-      const modal = document.getElementById('task-modal');
-      const titleElement = document.getElementById('task-modal-title');
-      if (modal && titleElement) {
-        titleElement.textContent = taskTitle;
-        modal.classList.add('active');
-      }
-    }
-
-    function closeTaskModal() {
-      const modal = document.getElementById('task-modal');
-      if (modal) {
-        modal.classList.remove('active');
-      }
-    }
-
-    let timerInterval = null;
-    let currentVideoCard = null;
-
-    function openVideoModal(videoTitle, duration, reward, cardElement) {
-      const modal = document.getElementById('video-modal');
-      const titleElement = document.getElementById('video-modal-title');
-      const browserContent = modal.querySelector('.browser-content');
-      
-      currentVideoCard = cardElement;
-      
-      if (modal && titleElement && browserContent) {
-        titleElement.textContent = videoTitle;
-        
-        const seconds = parseInt(duration.split(':')[0]) * 60 + parseInt(duration.split(':')[1]);
-        
-        browserContent.innerHTML = `
-          <div class="timer-container">
-            <div class="timer-circle">
-              <svg class="timer-svg" width="150" height="150">
-                <defs>
-                  <linearGradient id="timer-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#4AA3FF" />
-                    <stop offset="100%" stop-color="#E33D7A" />
-                  </linearGradient>
-                </defs>
-                <circle class="timer-circle-bg" cx="75" cy="75" r="68"></circle>
-                <circle class="timer-circle-progress" cx="75" cy="75" r="68" stroke-dasharray="427" stroke-dashoffset="0" id="timer-progress"></circle>
-              </svg>
-              <div class="timer-text" id="timer-display">${duration}</div>
-            </div>
-            <div class="timer-label">Watch the full video to earn your reward</div>
-            <p style="color: var(--text-secondary); text-align: center; max-width: 300px;">
-              This is a simulated ad player. In production, the actual ad content would play here.
-            </p>
-            <div style="font-size: 12px; color: var(--text-secondary); text-align: center; margin-top: 8px;">
-              Source: External Ad Network
-            </div>
-          </div>
-        `;
-        
-        modal.classList.add('active');
-        startTimer(seconds, reward);
-      }
-    }
-
-    function startTimer(totalSeconds, reward) {
-      let remainingSeconds = totalSeconds;
-      const progressCircle = document.getElementById('timer-progress');
-      const timerDisplay = document.getElementById('timer-display');
-      const circumference = 427;
-      
-      if (timerInterval) {
-        clearInterval(timerInterval);
-      }
-      
-      timerInterval = setInterval(() => {
-        remainingSeconds--;
-        
-        const minutes = Math.floor(remainingSeconds / 60);
-        const seconds = remainingSeconds % 60;
-        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        
-        const progress = (remainingSeconds / totalSeconds) * circumference;
-        progressCircle.style.strokeDashoffset = circumference - progress;
-        
-        if (remainingSeconds <= 0) {
-          clearInterval(timerInterval);
-          timerInterval = null;
-          showClaimButton(reward);
+    var remaining = Number(t.seconds||30);
+    var cd = $('task-countdown'); if(cd) cd.textContent = formatSeconds(remaining);
+    activeTaskTimer = setInterval(async function(){
+      remaining--;
+      if(cd) cd.textContent = formatSeconds(remaining);
+      if(remaining <= 0){
+        clearInterval(activeTaskTimer); activeTaskTimer = null;
+        var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+        if(cb){
+          await sendCallback(cb, { api: generateApiKey(), action: 'task_complete', taskId: t.id, reward: t.reward, user_id: PAGE_CONTEXT.uid });
         }
-      }, 1000);
-    }
-
-    function showClaimButton(reward) {
-      const browserContent = document.querySelector('#video-modal .browser-content');
-      browserContent.innerHTML = `
-        <div class="timer-container">
-          <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="50" cy="50" r="48" fill="rgba(74, 163, 255, 0.2)" stroke="#4AA3FF" stroke-width="3"/>
-            <path d="M30 50L43 63L70 36" stroke="#4AA3FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <h3 style="font-size: 20px; font-weight: 700; margin-top: 24px;">Great Job!</h3>
-          <p style="color: var(--text-secondary); text-align: center;">You've watched the complete video</p>
-          <button class="claim-reward-btn" onclick="claimVideoReward(${reward})">
-            Claim ${reward} G-coins
-          </button>
-        </div>
-      `;
-    }
-
-    function claimVideoReward(reward) {
-      if (currentVideoCard) {
-        currentVideoCard.classList.add('watched');
-        currentVideoCard.setAttribute('data-watched', 'true');
-        currentVideoCard.onclick = null;
-        
-        const thumbnail = currentVideoCard.querySelector('.video-thumbnail');
-        thumbnail.innerHTML = `
-          <div class="watched-overlay">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)"/>
-              <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          ${thumbnail.querySelector('.video-duration').outerHTML}
-        `;
-        
-        const meta = currentVideoCard.querySelector('.video-meta');
-        meta.innerHTML = `
-          <span class="collected-badge">✓ Collected</span>
-          <span class="video-reward">+${reward} G-coins</span>
-        `;
-        
-        animateCoinFly(currentVideoCard);
-        updateBalance(reward);
+        var newTasks = (getLs(todayKey('ga_tasks'))||[]).filter(x=>x.id !== t.id);
+        setLs(todayKey('ga_tasks'), newTasks);
+        renderTasksForCategory(t.network || 'website');
+        closeTaskModal();
+        animateBalanceDelta(t.reward);
       }
-      
+    },1000);
+  }, 2000 + Math.floor(Math.random()*1000));
+}
+
+function closeTaskModal(){ var modal = $('task-modal'); if(modal) modal.classList.remove('active'); if(activeTaskTimer){ clearInterval(activeTaskTimer); activeTaskTimer=null; } $('browser-content').innerHTML = '<h2 class=\"modal-title\">Task Loading...</h2>'; }
+
+/* ---------- Watch ads flow ---------- */
+function renderWatchGrid(){
+  var grid = $('watch-grid'); if(!grid) return;
+  grid.innerHTML='';
+  var count = Number(getLs(todayKey('ga_ads_count'))||0);
+  for(var i=0;i<8;i++){
+    var card = document.createElement('article'); card.className='video-card'; card.dataset.watched = 'false';
+    card.innerHTML = '<div class="video-thumbnail"><svg class="play-icon" viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)"></circle><path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" /></svg><span class="video-duration">0:40</span></div><div class="video-info"><div class="video-advertiser"><svg width="14" height="14"></svg><span>Sponsored</span></div><h3 class="video-title">Sponsored</h3><div class="video-meta"><span>Watch 0:40 · Earn</span><span class="video-reward">+60 G-coins</span></div></div>';
+    (function(cardLocal, idx){
+      cardLocal.onclick = function(){ openWatchAd(idx, cardLocal); };
+    })(card,i);
+    grid.appendChild(card);
+  }
+  $('ads-counter').textContent = (count) + '/' + WATCH_DAILY_LIMIT;
+}
+
+async function openWatchAd(index, card){
+  var count = Number(getLs(todayKey('ga_ads_count'))||0);
+  if(count >= WATCH_DAILY_LIMIT){ showInlineMessage('Daily ads limit reached'); return; }
+  if(typeof window.show_10274566 === 'function'){
+    try{
+      await window.show_10274566('pop');
+      var reward = 60;
+      var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+      if(cb) await sendCallback(cb, { api: generateApiKey(), action:'ad_complete', reward: reward, user_id: PAGE_CONTEXT.uid });
+      animateBalanceDelta(reward); markCardWatched(card, reward);
+      setLs(todayKey('ga_ads_count'), count+1); $('ads-counter').textContent = (count+1)+'/'+WATCH_DAILY_LIMIT;
+    } catch(e){ console.warn('ad sdk err', e); fallbackAdFlow(card); }
+  } else {
+    fallbackAdFlow(card);
+  }
+}
+
+function fallbackAdFlow(card){
+  var sl = SMART_LINKS[Math.floor(Math.random()*SMART_LINKS.length)];
+  var modal = $('video-modal'); modal.classList.add('active');
+  var content = $('video-browser-content');
+  content.innerHTML = '<h2 class="modal-title">Ad Loading...</h2><div id="ad-iframe-wrap" style="width:100%;height:250px;background:rgba(255,255,255,0.02);border-radius:12px;display:flex;align-items:center;justify-content:center">Loading...</div><div style="text-align:center;margin-top:12px"><div id="ad-countdown">00:40</div></div>';
+  var wrap = $('ad-iframe-wrap');
+  var iframe = document.createElement('iframe'); iframe.style.width='100%'; iframe.style.height='100%'; iframe.style.border='none'; iframe.src = sl;
+  wrap.appendChild(iframe);
+  var remaining = 40; var cd = $('ad-countdown'); if(cd) cd.textContent = formatSeconds(remaining);
+  var intv = setInterval(async function(){
+    remaining--; if(cd) cd.textContent = formatSeconds(remaining);
+    if(remaining <= 0){ clearInterval(intv);
+      var reward = 60;
+      var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+      if(cb) await sendCallback(cb, { api: generateApiKey(), action:'ad_complete', reward: reward, user_id: PAGE_CONTEXT.uid });
+      animateBalanceDelta(reward); markCardWatched(card, reward);
+      var count = Number(getLs(todayKey('ga_ads_count'))||0); setLs(todayKey('ga_ads_count'), count+1); $('ads-counter').textContent = (count+1)+'/'+WATCH_DAILY_LIMIT;
       closeVideoModal();
     }
+  },1000);
+}
 
-    function closeVideoModal() {
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-      }
-      const modal = document.getElementById('video-modal');
-      if (modal) {
-        modal.classList.remove('active');
-      }
-      currentVideoCard = null;
-    }
+function closeVideoModal(){ $('video-modal').classList.remove('active'); $('video-browser-content').innerHTML = '<h2 class=\"modal-title\">Video Loading...</h2>'; }
+function markCardWatched(card, reward){ if(!card) return; card.classList.add('watched'); card.dataset.watched='true'; var meta = card.querySelector('.video-meta'); if(meta) meta.innerHTML = '<span class=\"collected-badge\">✓ Collected</span><span class=\"video-reward\">+'+reward+' G-coins</span>'; animateCoinFly(card); }
 
-    function cleanupWatchedAds() {
-      const watchedCards = document.querySelectorAll('.video-card.watched');
-      watchedCards.forEach(card => {
-        card.style.transition = 'all 0.3s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.9)';
-        setTimeout(() => {
-          card.remove();
-        }, 300);
-      });
-    }
+/* ---------- Posting (publish) flow ---------- */
+var composerAttachment = null;
+function handleFileSelected(e){
+  var f = e.target.files[0]; if(!f) return;
+  var reader = new FileReader();
+  reader.onload = function(){ composerAttachment = { name: f.name, type: f.type, data: reader.result }; var preview = $('attachment-preview'); preview.innerHTML=''; if(f.type.startsWith('image/')){ var img=document.createElement('img'); img.src=reader.result; img.style.maxWidth='100%'; img.style.borderRadius='8px'; preview.appendChild(img); } else if(f.type.startsWith('video/')){ var v=document.createElement('video'); v.src=reader.result; v.controls=true; v.style.maxWidth='100%'; preview.appendChild(v);} else preview.textContent = f.name; };
+  reader.readAsDataURL(f);
+}
+async function handlePostSubmit(e){
+  e.preventDefault();
+  var content = $('post-content').value.trim();
+  var reward = Number($('post-reward').value || 0);
+  var rewardType = document.querySelector('input[name="reward-type"]:checked').value;
+  var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+  var vip = localStorage.getItem('ga_vip_level') || (PAGE_CONTEXT.last_bot_payload && PAGE_CONTEXT.last_bot_payload.vip_level) || 'free';
+  var vipFlag = (localStorage.getItem('ga_vip_flag') === '1') || false;
+  var vipOkForPublishing = ((vipFlag) && (vip === 'gold' || vip === 'premium'));
+  var allowWebPublish = PAGE_CONTEXT.allow_web_publish || false;
+  if(!allowWebPublish && !(vipOkForPublishing)) { showInlineMessage('Posting from web requires Gold or Premium VIP.'); return; }
+  var payload = { api: generateApiKey(), action:'request_publish_post', post: { content: content, reward: reward, rewardType: rewardType, attachments: composerAttachment ? [composerAttachment] : [] }, user_id: PAGE_CONTEXT.uid || null };
+  if(cb){ await sendCallback(cb, payload); showInlineMessage('Publish request sent to bot for approval.'); } else showInlineMessage('Callback URL missing; cannot publish.');
+  $('post-content').value=''; $('post-reward').value=''; composerAttachment=null; $('attachment-preview').innerHTML=''; closeComposer();
+}
 
-    function animateCoinFly(sourceElement) {
-      const rect = sourceElement.getBoundingClientRect();
-      const coin = document.createElement('div');
-      coin.className = 'coin-animation';
-      coin.style.left = rect.left + rect.width / 2 + 'px';
-      coin.style.top = rect.top + rect.height / 2 + 'px';
-      coin.innerHTML = `
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="16" cy="16" r="15" fill="#FFC857" stroke="#FFD87A" stroke-width="2"/>
-          <text x="16" y="22" text-anchor="middle" fill="#0B0B0D" font-size="18" font-weight="700">G</text>
-        </svg>
-      `;
-      document.body.appendChild(coin);
-      
-      setTimeout(() => {
-        coin.remove();
-      }, 600);
-    }
+/* ---------- Comments/like helpers (calls to bot) ---------- */
+async function handleLike(btn){
+  btn.classList.toggle('liked');
+  var post = btn.closest('.post-card');
+  var postId = post ? post.dataset.postId || post.getAttribute('data-post-id') : null;
+  var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+  if(cb) await sendCallback(cb, { api: generateApiKey(), action:'like', postId: postId, user_id: PAGE_CONTEXT.uid });
+}
+function openCommentsForPost(triggerBtn){
+  var post = triggerBtn.closest('.post-card'); if(!post) return;
+  var existing = post.querySelector('.comments-container'); if(existing){ existing.remove(); return; }
+  var c = document.createElement('div'); c.className='comments-container'; c.style.padding='12px'; c.style.background='rgba(255,255,255,0.03)'; c.style.borderRadius='8px';
+  c.innerHTML = '<div class="comments-list" style="max-height:150px;overflow:auto;margin-bottom:8px;"></div><div style="display:flex;gap:8px;"><input class="form-input comment-input" placeholder="Write a comment..." style="flex:1"/><button class="submit-btn">Send</button></div>';
+  post.appendChild(c);
+  var sendBtn = c.querySelector('button'); var input = c.querySelector('input');
+  sendBtn.onclick = async function(){ var text = input.value.trim(); if(!text) return; var list = c.querySelector('.comments-list'); var it = document.createElement('div'); it.style.padding='8px 0'; it.textContent = (localStorage.getItem('ga_name')||'You') + ': ' + text; list.appendChild(it); input.value=''; var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url; if(cb) await sendCallback(cb, { api: generateApiKey(), action:'comment', comment:text, postId: post.dataset.postId || post.getAttribute('data-post-id'), user_id: PAGE_CONTEXT.uid }); };
+}
 
-    function updateBalance(amount) {
-      const balanceElement = document.getElementById('balance-text');
-      if (balanceElement) {
-        const currentBalance = parseInt(balanceElement.textContent.replace(/,/g, ''));
-        const newBalance = currentBalance + amount;
-        balanceElement.textContent = newBalance.toLocaleString();
-      }
-    }
+/* ---------- Process payloads from bot ---------- */
+async function processBotPayloadFromBase64(b64){
+  if(!b64) return null;
+  var s = safeBase64Decode(b64);
+  if(!s) return null;
+  var obj;
+  try { obj = JSON.parse(s); } catch(e){ console.warn('payload parse fail', e); return null; }
+  return processBotPayload(obj);
+}
+async function processBotPayload(obj){
+  if(!obj) return null;
+  var mapped = mapHashKeys(obj);
+  PAGE_CONTEXT.last_bot_payload = mapped;
+  if(mapped.callback_url) PAGE_CONTEXT.callback_url = mapped.callback_url;
+  if(mapped.hook) PAGE_CONTEXT.callback_url = mapped.hook;
+  if(mapped.user_id) PAGE_CONTEXT.uid = mapped.user_id;
+  if(mapped.uid) PAGE_CONTEXT.uid = mapped.uid;
+  if(typeof mapped.gcoin !== 'undefined'){ var g = Number(mapped.gcoin||0); if($('balance-text')) $('balance-text').textContent = g.toLocaleString(); if($('stat-gcoins')) $('stat-gcoins').textContent = g.toLocaleString(); if($('wallet-amount')) $('wallet-amount').textContent = g.toLocaleString() + ' G-coins'; localStorage.setItem('ga_gcoins', g); }
+  if(mapped.vip_level){ localStorage.setItem('ga_vip_level', mapped.vip_level); localStorage.setItem('ga_vip_flag', (mapped.vip || mapped.vip_flag) ? '1' : '0'); }
+  if(PAGE_CONTEXT.callback_url) localStorage.setItem('ga_callback_url', PAGE_CONTEXT.callback_url);
+  if(Array.isArray(mapped.tasks)){
+    mapped.tasks.forEach(function(t){ addOrUpdateTaskFromBot(t); });
+  }
+  if(Array.isArray(mapped.posts)){
+    mapped.posts.forEach(function(p){ insertPostIntoFeed(renderPostFromBot(p)); });
+  }
+  if(mapped.action === 'open_section' && mapped.section) switchScreen(mapped.section);
+  if(mapped.callback_action === 'open_iframe' && mapped.link){
+    var fakeTask = { id: 'iframe_'+Date.now(), title: mapped.title || 'Bot iframe', link: mapped.link, smartlink: mapped.smartlink || mapped.link, seconds: mapped.secs || 30, reward: mapped.reward || 0, network: mapped.network || 'website' };
+    addOrUpdateTaskFromBot(fakeTask);
+    startTaskById(fakeTask.id);
+  }
+  return mapped;
+}
+window.onWebhookBase64 = processBotPayloadFromBase64; // expose for debug
 
-    function handleComposerInput(event) {
-      const textarea = event.target;
-      const value = textarea.value;
-      const cursorPosition = textarea.selectionStart;
-      const textBeforeCursor = value.substring(0, cursorPosition);
-      
-      const hashMatch = textBeforeCursor.match(/#(\w*)$/);
-      const mentionMatch = textBeforeCursor.match(/@(\w*)$/);
-      
-      const suggestionsPopup = document.getElementById('suggestions-popup');
-      
-      if (hashMatch) {
-        const suggestions = ['crypto', 'tech', 'finance', 'gaingrid', 'earning', 'blockchain'];
-        showSuggestions(suggestionsPopup, suggestions, '#');
-      } else if (mentionMatch) {
-        const suggestions = ['johndoe', 'sarahkim', 'mikepeters', 'alexjones'];
-        showSuggestions(suggestionsPopup, suggestions, '@');
-      } else {
-        suggestionsPopup.style.display = 'none';
-      }
-    }
-
-    function showSuggestions(popup, suggestions, prefix) {
-      popup.innerHTML = suggestions.map(s => 
-        `<div class="suggestion-item" onclick="insertSuggestion('${prefix}${s}')">${prefix}${s}</div>`
-      ).join('');
-      popup.style.display = 'block';
-    }
-
-    function insertSuggestion(text) {
-      const textarea = document.getElementById('post-content');
-      const value = textarea.value;
-      const cursorPosition = textarea.selectionStart;
-      const textBeforeCursor = value.substring(0, cursorPosition);
-      const textAfterCursor = value.substring(cursorPosition);
-      
-      const lastAtOrHash = Math.max(textBeforeCursor.lastIndexOf('@'), textBeforeCursor.lastIndexOf('#'));
-      const newText = textBeforeCursor.substring(0, lastAtOrHash) + text + ' ' + textAfterCursor;
-      
-      textarea.value = newText;
-      document.getElementById('suggestions-popup').style.display = 'none';
-      textarea.focus();
-    }
-
-    function handleMediaAttach(type) {
-      const message = type === 'image' ? 'Image attachment simulated' : 'Video attachment simulated';
-      const composerForm = document.querySelector('.composer-form');
-      
-      let attachmentPreview = document.querySelector('.attachment-preview');
-      if (!attachmentPreview) {
-        attachmentPreview = document.createElement('div');
-        attachmentPreview.className = 'attachment-preview';
-        attachmentPreview.style.cssText = 'margin-top: 8px; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; color: var(--text-secondary);';
-        composerForm.insertBefore(attachmentPreview, composerForm.querySelector('.form-group'));
-      }
-      
-      attachmentPreview.textContent = `✓ ${message}`;
-    }
-
-    function updateRewardPreview() {
-      const rewardAmount = document.getElementById('post-reward').value;
-      const rewardType = document.querySelector('input[name="reward-type"]:checked').value;
-      const previewElement = document.getElementById('preview-reward');
-      
-      if (previewElement) {
-        previewElement.textContent = `💰 Earn up to ${rewardAmount} G-coins for ${rewardType}`;
-      }
-    }
-
-    function switchProfileTab(tabName, event) {
-      const tabs = document.querySelectorAll('.profile-tab');
-      const panes = document.querySelectorAll('.tab-pane');
-      
-      tabs.forEach(tab => tab.classList.remove('active'));
-      panes.forEach(pane => pane.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(tabName + '-tab').classList.add('active');
-    }
-
-    function openNewTaskModal() {
-      const taskCounter = document.getElementById('task-counter').textContent;
-      const [current, total] = taskCounter.split('/').map(n => parseInt(n));
-      
-      if (current >= total) {
-        showInlineMessage('Daily task limit reached! Come back tomorrow for more tasks.');
-        return;
-      }
-      
-      showInlineMessage('Task creation feature coming soon!');
-    }
-
-    function showInlineMessage(message) {
-      const messageDiv = document.createElement('div');
-      messageDiv.style.cssText = `
-        position: fixed;
-        top: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: var(--bg-panel);
-        color: var(--white);
-        padding: 16px 24px;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-        z-index: 1000;
-        animation: fadeIn 0.3s ease;
-        max-width: 90%;
-        text-align: center;
-        font-size: 14px;
-      `;
-      messageDiv.textContent = message;
-      document.body.appendChild(messageDiv);
-      
-      setTimeout(() => {
-        messageDiv.style.opacity = '0';
-        messageDiv.style.transform = 'translateX(-50%) translateY(-20px)';
-        messageDiv.style.transition = 'all 0.3s ease';
-        setTimeout(() => messageDiv.remove(), 300);
-      }, 3000);
-    }
-
-    window.addEventListener('hashchange', () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash) {
-        const screens = document.querySelectorAll('.screen');
-        screens.forEach(screen => screen.classList.remove('active'));
-        
-        const targetScreen = document.getElementById(hash);
-        if (targetScreen) {
-          targetScreen.classList.add('active');
-        }
-
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-          if (item.getAttribute('href') === `#${hash}`) {
-            item.classList.add('active');
-          } else {
-            item.classList.remove('active');
-          }
-        });
-      }
+/* ---------- Feed helpers ---------- */
+function insertPostIntoFeed(nodeOrHtml){
+  var feed = $('feed-container');
+  if(!feed) return;
+  if(typeof nodeOrHtml === 'string'){ var d = document.createElement('div'); d.innerHTML = nodeOrHtml; feed.insertBefore(d.firstChild, feed.firstChild); } else feed.insertBefore(nodeOrHtml, feed.firstChild);
+}
+function renderPostFromBot(post){
+  var card = document.createElement('article'); card.className='post-card'; card.dataset.postId = post.id || ('post_'+Date.now());
+  var attachmentsHtml = '';
+  if(Array.isArray(post.attachments) && post.attachments.length){
+    attachmentsHtml = '<div class="post-media">';
+    post.attachments.forEach(function(a){
+      if(a.type && a.type.startsWith('image')) attachmentsHtml += '<img src="'+(a.data||'')+'" style="max-width:100%;border-radius:8px;"/>';
+      if(a.type && a.type.startsWith('video')) attachmentsHtml += '<video src="'+(a.data||'')+'" controls style="max-width:100%;border-radius:8px;"></video>';
     });
+    attachmentsHtml += '</div>';
+  }
+  var html = '<div class="post-header"><div class="avatar">'+(post.authorInitials || (post.author ? post.author.slice(0,2): 'ME'))+'</div><div class="post-meta"><div class="poster-name">'+escapeHtml(post.author || 'Bot')+'</div><div class="post-time">Just now</div></div></div>'
+    + '<p class="post-content">'+escapeHtml(post.content||'')+'</p>' + attachmentsHtml
+    + '<div class="earnings-bar"><span class="earnings-label">💰 Earn up to '+Number(post.reward||0)+' G-coins</span></div>'
+    + '<div class="post-actions"><button class="action-btn" onclick="handleLike(this)"><span>Like</span></button><button class="action-btn" onclick="visitLink(\''+(post.link||'')+'\')"><span>'+(post.rewardType === 'join' ? 'Join' : (post.rewardType==='watch'?'Watch':'Visit'))+'</span></button><button class="action-btn" onclick="openCommentsForPost(this)"><span>Comment</span></button></div>';
+  card.innerHTML = html;
+  return card;
+}
 
-    if (window.location.hash) {
-      const hash = window.location.hash.replace('#', '');
-      const targetScreen = document.getElementById(hash);
-      if (targetScreen) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        targetScreen.classList.add('active');
-        
-        const navItems = document.querySelectorAll('.nav-item');
-        navItems.forEach(item => {
-          if (item.getAttribute('href') === `#${hash}`) {
-            item.classList.add('active');
-          } else {
-            item.classList.remove('active');
+/* ---------- Visit helper ---------- */
+function visitLink(url){
+  if(!url) return;
+  var cb = localStorage.getItem('ga_callback_url') || PAGE_CONTEXT.callback_url;
+  if(cb) sendCallback(cb, { api: generateApiKey(), action:'visit', url: url, user_id: PAGE_CONTEXT.uid });
+  window.open(url, '_blank');
+}
+
+/* ---------- UI small helpers ---------- */
+function showInlineMessage(msg, tm){
+  tm = tm || 3000;
+  var d = document.createElement('div'); d.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--bg-panel);color:var(--white);padding:12px 20px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:3000;';
+  d.textContent = msg; document.body.appendChild(d);
+  setTimeout(function(){ d.style.transition='all 0.25s ease'; d.style.opacity='0'; d.style.transform='translateX(-50%) translateY(-20px)'; setTimeout(()=>d.remove(),250); }, tm);
+}
+function animateBalanceDelta(delta){
+  var el = $('balance-text'); if(!el) return;
+  var cur = Number(el.textContent.replace(/,/g,'')) || 0; var next = cur + Number(delta||0);
+  el.textContent = Number(next).toLocaleString();
+  el.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:450});
+  var stat = $('stat-gcoins'); if(stat) stat.textContent = Number(next).toLocaleString();
+  var wallet = $('wallet-amount'); if(wallet) wallet.textContent = Number(next).toLocaleString() + ' G-coins';
+}
+
+/* ---------- animate coin fly ---------- */
+function animateCoinFly(sourceElement){
+  var rect = sourceElement.getBoundingClientRect();
+  var coin = document.createElement('div'); coin.className='coin-animation';
+  coin.style.left = (rect.left + rect.width/2) + 'px'; coin.style.top = (rect.top + rect.height/2) + 'px';
+  coin.innerHTML = '<svg width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#FFC857" stroke="#FFD87A" stroke-width="2"/><text x="16" y="22" text-anchor="middle" fill="#0B0B0D" font-size="18" font-weight="700">G</text></svg>';
+  document.body.appendChild(coin); setTimeout(()=>coin.remove(),800);
+}
+
+/* ---------- Init & wiring ---------- */
+(function init(){
+  renderTaskCategoryRow();
+  initTasksStorage();
+  renderTasksForCategory('website');
+  renderWatchGrid();
+  var fileInput = document.getElementById('file-input');
+  if(fileInput) fileInput.addEventListener('change', handleFileSelected);
+  var form = document.getElementById('composer-form');
+  if(form) form.addEventListener('submit', handlePostSubmit);
+  (async function parseQuery(){ var params={}; var s=location.search.substring(1); if(s) s.split('&').forEach(function(pair){ var p=pair.split('='); if(!p[0]) return; params[decodeURIComponent(p[0])] = decodeURIComponent(p[1]||''); }); if(location.hash && location.hash.indexOf('payload=') !== -1){ var m = location.hash.match(/payload=([^&]+)/); if(m) params.payload = decodeURIComponent(m[1]); }
+    if(params.payload){ await processBotPayloadFromBase64(params.payload); showInlineMessage('Bot payload applied'); }
+    if(params.hook){ PAGE_CONTEXT.callback_url = params.hook; localStorage.setItem('ga_callback_url', params.hook); showInlineMessage('Callback URL received'); }
+    if(params.callback_url){ PAGE_CONTEXT.callback_url = params.callback_url; localStorage.setItem('ga_callback_url', params.callback_url); showInlineMessage('Callback URL received'); }
+    if(params.uid) PAGE_CONTEXT.uid = params.uid;
+  })();
+  PAGE_CONTEXT.api_key = localStorage.getItem('ga_api_key') || null;
+
+  // Initialize libtl ad sdk preferences if available
+  try{
+    if(typeof window.show_10274566 === 'function'){
+      // call with inApp config as you provided
+      try{
+        show_10274566({
+          type: 'inApp',
+          inAppSettings: {
+            frequency: 2,
+            capping: 0.1,
+            interval: 30,
+            timeout: 5,
+            everyPage: false
           }
         });
-      }
+      }catch(e){}
     }
+  }catch(e){}
+})();
+
+/* ---------- Expose for debug ---------- */
+window.processBotPayloadFromBase64 = processBotPayloadFromBase64;
+window.sendCallback = sendCallback;
+window.generateApiKey = generateApiKey;
+window.startTaskById = startTaskById;
+window.openTaskModal = function(title){ showInlineMessage('task modal open: '+title); };
+
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a81ca8da162654d',t:'MTc2NDc1MTU2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ </body>
 </html>
