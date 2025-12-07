@@ -1394,8 +1394,141 @@
       .watch-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-    }
-  </style>
+      }
+    /* ---- Composer modal / large image / scroll fixes ---- */
+.modal-content {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth native scrolling on mobile */
+  -ms-overflow-style: -ms-autohiding-scrollbar;
+}
+
+/* make composer contents scroll safely and keep header visible */
+#composer-modal .modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* attachment preview styling (keeps large image contained) */
+.attachment-preview img,
+.attachment-preview video {
+  max-width: 100%;
+  height: auto;
+  max-height: 50vh;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
+}
+
+/* small cancel button alignment */
+.modal-header .close-btn { z-index: 3; }
+
+/* make task board social icons responsive and prevent horizontal overflow */
+.task-board-header,
+.task-list {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ensure task-header wraps on small screens */
+.task-header {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* limit platform icon size and make them flexible so they form rows on mobile */
+.platform-icon {
+  min-width: 72px;
+  max-width: 120px;
+  width: calc(33.333% - 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* ensure platform icons do not cause horizontal scroll in small screens */
+@media (max-width: 768px) {
+  .platform-icon { width: calc(50% - 12px); } /* 2 columns on narrow phones */
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  .platform-icon { width: calc(33.333% - 12px); } /* 3 columns on tablets */
+}
+@media (min-width: 1025px) {
+  .platform-icon { width: 120px; } /* fix size on desktop */
+}
+
+/* a responsive grid for explicit lists (if present) */
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* comment area inside post card */
+.post-card .comment-area { margin-top: 12px; display: none; gap: 8px; align-items:center; }
+.post-card .comment-area .form-input { flex: 1; }
+
+/* small polish to avoid body scrolling when modal visible (optional) */
+.modal-overlay.active {
+  touch-action: none;
+  }
+/* Task scroller chips (keeps mobile behavior smooth) */
+.social-scroll {
+  display:flex;
+  gap:12px;
+  padding:8px 6px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scroll-snap-type:x proximity;
+  overscroll-behavior-x: contain;
+  box-sizing:border-box;
+}
+.social-scroll .platform-chip{
+  scroll-snap-align:start;
+  flex:0 0 auto;
+  min-width:92px;
+  max-width:140px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,0.02);
+  color:var(--text-secondary);
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+}
+.platform-chip[aria-pressed="true"],
+.platform-chip.active{
+  background:linear-gradient(135deg,var(--deep-purple),var(--vivid-magenta));
+  color:var(--white);
+}
+
+/* ensure platform-icon (inside .task-header) wraps nicely */
+.task-header { flex-wrap:wrap; align-items:flex-start; gap:12px; }
+
+/* make platform-icon used in scroller not influence layout */
+.social-scroll .chip-icon{ width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; }
+
+/* keep main content vertical scrolling stable */
+.main-content { overscroll-behavior: contain; }
+
+/* small scrollbar polish */
+.social-scroll::-webkit-scrollbar{ height:8px; }
+.social-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.06); border-radius:8px; }
+
+
+     </style>
   <style>@view-transition { navigation: auto; }</style>
   <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
   <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
@@ -1505,121 +1638,115 @@
          </svg><span>Comment</span> </button>
        </div>
       </article>
-     </div>
-    </section><!-- Task Board -->
-    <section class="screen" id="tasks">
-     <div class="task-board-header">
-      <div class="task-counter"><span class="counter-label">Tasks today:</span> <span class="counter-value" id="task-counter">6/20</span>
-      </div><button class="new-task-btn" onclick="openNewTaskModal()">
-       <svg width="16" height="16" viewbox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-       </svg><span>New Task</span> </button>
-     </div>
+     </div> 
 
-     <!-- Task categories row will be injected here by script (preserves original layout) -->
+<section class="screen" id="tasks">
+  <div class="task-board-header">
+    <div class="task-counter">
+      <span class="counter-label">Tasks today:</span>
+      <span class="counter-value" id="task-counter">6/20</span>
+    </div>
+    <button class="new-task-btn" onclick="openNewTaskModal()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>New Task</span>
+    </button>
+  </div>
 
-     <div class="task-list" id="task-list">
-      <article class="task-card">
-       <div class="task-header">
-        <div class="platform-icon youtube">
-         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M8 6L14 10L8 14V6Z" fill="white" />
-         </svg>
-        </div>
+  <!-- Horizontal platforms scroller (fixed row) -->
+  <div id="task-platforms" class="social-scroll" role="toolbar" aria-label="Task platforms">
+    <button class="platform-chip" data-platform="" aria-pressed="true"><span class="chip-label">All</span></button>
+    <button class="platform-chip" data-platform="telegram"><span class="chip-icon telegram" aria-hidden="true">TG</span><span class="chip-label">Telegram</span></button>
+    <button class="platform-chip" data-platform="instagram"><span class="chip-icon instagram" aria-hidden="true">IG</span><span class="chip-label">Instagram</span></button>
+    <button class="platform-chip" data-platform="youtube"><span class="chip-icon youtube" aria-hidden="true">YT</span><span class="chip-label">YouTube</span></button>
+    <button class="platform-chip" data-platform="facebook"><span class="chip-icon facebook" aria-hidden="true">FB</span><span class="chip-label">Facebook</span></button>
+    <button class="platform-chip" data-platform="tiktok"><span class="chip-icon tiktok" aria-hidden="true">TT</span><span class="chip-label">TikTok</span></button>
+    <button class="platform-chip" data-platform="discord"><span class="chip-icon discord" aria-hidden="true">DC</span><span class="chip-label">Discord</span></button>
+    <button class="platform-chip" data-platform="website"><span class="chip-icon website" aria-hidden="true">WEB</span><span class="chip-label">Website</span></button>
+    <button class="platform-chip" data-platform="whatsapp"><span class="chip-icon whatsapp" aria-hidden="true">WA</span><span class="chip-label">WhatsApp</span></button>
+    <button class="platform-chip" data-platform="x"><span class="chip-icon x" aria-hidden="true">X</span><span class="chip-label">X</span></button>
+  </div>
+
+  <!-- Task cards (keep structure; data-platform attribute used for filtering) -->
+  <div class="task-list" id="task-list">
+    <article class="task-card" data-platform="youtube" data-task-url="https://otieu.com/4/10176113">
+      <div class="task-header">
+        <div class="platform-icon youtube"></div>
         <div class="task-info">
-         <h3 class="task-title">Watch YouTube Video</h3>
-         <p class="task-description">Watch full video and like. Stay 02:30 for reward.</p>
-         <div class="task-progress">
-          <div class="progress-bar">
-           <div class="progress-fill" style="width: 0%"></div>
-          </div><span class="progress-text">Not started</span>
-         </div>
+          <h3 class="task-title">Watch YouTube Video</h3>
+          <p class="task-description">Watch full video and like. Stay 02:30 for reward.</p>
+          <div class="task-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+            <span class="progress-text">Not started</span>
+          </div>
         </div>
-        <div class="task-reward">
-         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
-           G
-          </text>
-         </svg><span>50</span>
-        </div>
-       </div>
-       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Survey Task')">Start Task</button> <button class="task-btn secondary">Details</button>
-       </div>
-      </article>
-      <article class="task-card">
-       <div class="task-header">
-        <div class="platform-icon telegram">
-         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M5 10L8 13L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-         </svg>
-        </div>
+        <div class="task-reward"><svg width="16" height="16" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#FFC857"/><text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text></svg><span>50</span></div>
+      </div>
+      <div class="task-footer">
+        <button class="task-btn primary" onclick="openTaskModal('Watch YouTube Video', this)">Start Task</button>
+        <button class="task-btn secondary">Details</button>
+      </div>
+    </article>
+
+    <article class="task-card" data-platform="telegram" data-task-url="https://otieu.com/4/10176184">
+      <div class="task-header">
+        <div class="platform-icon telegram"></div>
         <div class="task-info">
-         <h3 class="task-title">Join Telegram Channel</h3>
-         <p class="task-description">Join channel and stay active. Stay 00:45 for reward.</p>
-         <div class="task-progress">
-          <div class="progress-bar">
-           <div class="progress-fill" style="width: 0%"></div>
-          </div><span class="progress-text">Not started</span>
-         </div>
+          <h3 class="task-title">Join Telegram Channel</h3>
+          <p class="task-description">Join channel and stay active. Stay 00:45 for reward.</p>
+          <div class="task-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+            <span class="progress-text">Not started</span>
+          </div>
         </div>
-        <div class="task-reward">
-         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
-           G
-          </text>
-         </svg><span>35</span>
-        </div>
-       </div>
-       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Join Telegram')">Start Task</button> <button class="task-btn secondary">Details</button>
-       </div>
-      </article>
-      <article class="task-card">
-       <div class="task-header">
-        <div class="platform-icon website">
-         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <circle cx="10" cy="10" r="6" stroke="white" stroke-width="1.5" /> <path d="M10 4V16M4 10H16" stroke="white" stroke-width="1.5" />
-         </svg>
-        </div>
+        <div class="task-reward"><svg width="16" height="16" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#FFC857"/><text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text></svg><span>35</span></div>
+      </div>
+      <div class="task-footer">
+        <button class="task-btn primary" onclick="openTaskModal('Join Telegram Channel', this)">Start Task</button>
+        <button class="task-btn secondary">Details</button>
+      </div>
+    </article>
+
+    <article class="task-card" data-platform="website" data-task-url="https://otieu.com/4/10176114">
+      <div class="task-header">
+        <div class="platform-icon website"></div>
         <div class="task-info">
-         <h3 class="task-title">Visit Website &amp; Sign Up</h3>
-         <p class="task-description">Visit partner site and complete registration. Stay 01:15 for reward.</p>
-         <div class="task-progress">
-          <div class="progress-bar">
-           <div class="progress-fill" style="width: 0%"></div>
-          </div><span class="progress-text">Not started</span>
-         </div>
+          <h3 class="task-title">Visit Website &amp; Sign Up</h3>
+          <p class="task-description">Visit partner site and complete registration. Stay 01:15 for reward.</p>
+          <div class="task-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+            <span class="progress-text">Not started</span>
+          </div>
         </div>
-        <div class="task-reward">
-         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
-           G
-          </text>
-         </svg><span>30</span>
-        </div>
-       </div>
-       <div class="task-footer"><button class="task-btn primary" onclick="openTaskModal('Twitter Task')">Start Task</button> <button class="task-btn secondary">Details</button>
-       </div>
-      </article>
-      <article class="task-card">
-       <div class="task-header">
-        <div class="platform-icon whatsapp">
-         <svg width="20" height="20" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="20" rx="4" fill="currentColor" /> <path d="M14 11C14 11.5 13.5 12 13 12H7L5 14V7C5 6.5 5.5 6 6 6H13C13.5 6 14 6.5 14 7V11Z" fill="white" />
-         </svg>
-        </div>
+        <div class="task-reward"><svg width="16" height="16" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#FFC857"/><text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text></svg><span>30</span></div>
+      </div>
+      <div class="task-footer">
+        <button class="task-btn primary" onclick="openTaskModal('Visit Website & Sign Up', this)">Start Task</button>
+        <button class="task-btn secondary">Details</button>
+      </div>
+    </article>
+
+    <article class="task-card" data-platform="whatsapp" data-task-url="https://otieu.com/4/10176185">
+      <div class="task-header">
+        <div class="platform-icon whatsapp"></div>
         <div class="task-info">
-         <h3 class="task-title">Join WhatsApp Group</h3>
-         <p class="task-description">Join community group and interact. Stay 01:00 for reward.</p>
-         <div class="task-progress">
-          <div class="progress-bar">
-           <div class="progress-fill" style="width: 0%"></div>
-          </div><span class="progress-text">Not started</span>
-         </div>
+          <h3 class="task-title">Join WhatsApp Group</h3>
+          <p class="task-description">Join community group and interact. Stay 01:00 for reward.</p>
+          <div class="task-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+            <span class="progress-text">Not started</span>
+          </div>
         </div>
-        <div class="task-reward">
-         <svg width="16" height="16" viewbox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" fill="#FFC857" /> <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">
-           G
-          </text>
-         </svg><span>100</span>
-        </div>
-       </div>
-       <div class="task-footer"><button class="task-btn primary">Share Link</button> <button class="task-btn secondary">Progress: 0/3</button>
-       </div>
-      </article>
-     </div>
-    </section><!-- Watch & Earn -->
+        <div class="task-reward"><svg width="16" height="16" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#FFC857"/><text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text></svg><span>100</span></div>
+      </div>
+      <div class="task-footer">
+        <button class="task-btn primary" onclick="openTaskModal('Join WhatsApp Group', this)">Start Task</button>
+        <button class="task-btn secondary">Progress: 0/3</button>
+      </div>
+    </article>
+  </div>
+</section>
+<!-- ===== end Task Board ===== -->
+  </section><!-- Watch & Earn -->
     <section class="screen" id="watch">
      <div class="watch-header">
       <div class="daily-limit">
@@ -1969,6 +2096,78 @@
 
   <!-- libtl ad SDK (as requested) -->
   <script src='//libtl.com/sdk.js' data-zone='10274566' data-sdk='show_10274566'></script>
+<script>
+/* --- Screen switching + hash handling (paste into your page script) --- */
+function switchScreen(screenId, event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  // remove active class from all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+  // show target screen
+  var target = document.getElementById(screenId);
+  if (target) target.classList.add('active');
+
+  // nav items: if called from an element, mark it active; otherwise match by href
+  try {
+    // if called from an onclick on an <a> or .nav-item
+    var src = event && (event.currentTarget || event.target);
+    if (src) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      // if the clicked element is inside anchor, find closest nav-item
+      var navAncestor = src.closest ? src.closest('.nav-item') : null;
+      if (navAncestor) navAncestor.classList.add('active');
+      else {
+        // fallback: find nav-item with matching href
+        var byHref = document.querySelector('.nav-item[href="#' + screenId + '"]');
+        if (byHref) byHref.classList.add('active');
+      }
+    }
+  } catch (e) { /* non-blocking */ }
+
+  // update URL hash without scrolling jump
+  if (history && history.replaceState) {
+    history.replaceState(null, '', '#' + screenId);
+  } else {
+    window.location.hash = screenId;
+  }
+}
+
+/* restore screen when user navigates by hash (back/forward or direct link) */
+window.addEventListener('hashchange', function () {
+  var hash = window.location.hash.replace('#', '');
+  if (!hash) return;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  var tgt = document.getElementById(hash);
+  if (tgt) tgt.classList.add('active');
+
+  // update bottom nav active item
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.getAttribute('href') === '#' + hash) item.classList.add('active');
+    else item.classList.remove('active');
+  });
+});
+
+/* ensure initial hash on load is applied if present */
+document.addEventListener('DOMContentLoaded', function () {
+  var initial = window.location.hash.replace('#', '');
+  if (initial) {
+    var tgt = document.getElementById(initial);
+    if (tgt) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      tgt.classList.add('active');
+      // set nav active
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.getAttribute('href') === '#' + initial) item.classList.add('active');
+        else item.classList.remove('active');
+      });
+    }
+  }
+});
+</script>
+
+
+
 
   <!-- === Backend glue + UI script (integrated) === -->
   <script>
@@ -2442,6 +2641,1586 @@ window.sendCallback = sendCallback;
 window.generateApiKey = generateApiKey;
 window.startTaskById = startTaskById;
 window.openTaskModal = function(title){ showInlineMessage('task modal open: '+title); };
+/* --- Robust nav binding + debug helpers (paste at the END of your main script) --- */
+(function () {
+  function debug(...args) { try { console.log('[GG NAV]', ...args); } catch(e){} }
+
+  // Make switchScreen tolerant if event.currentTarget isn't provided
+  if (typeof switchScreen !== 'function') {
+    window.switchScreen = function(screenId, event) {
+      try {
+        if (event && event.preventDefault) event.preventDefault();
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        var target = document.getElementById(screenId);
+        if (target) target.classList.add('active');
+
+        // mark nav active by href or data-target
+        document.querySelectorAll('.nav-item').forEach(item => {
+          var href = item.getAttribute('href') || '';
+          var dt = item.getAttribute('data-target') || '';
+          if (href === '#' + screenId || dt === screenId) item.classList.add('active');
+          else item.classList.remove('active');
+        });
+
+        // update hash without jumping
+        if (history && history.replaceState) history.replaceState(null, '', '#' + screenId);
+        else window.location.hash = screenId;
+        debug('switched to', screenId);
+      } catch (err) {
+        console.error('switchScreen error', err);
+      }
+    };
+  }
+
+  // Attach safe listeners to all nav items (covers anchors and buttons)
+  function bindNavItems() {
+    var navItems = document.querySelectorAll('.nav-item');
+    if (!navItems || navItems.length === 0) {
+      debug('no .nav-item found (check HTML)');
+      return;
+    }
+    navItems.forEach(item => {
+      // avoid double-binding
+      if (item.__gg_nav_bound) return;
+      item.__gg_nav_bound = true;
+
+      item.addEventListener('click', function (ev) {
+        try {
+          ev.preventDefault && ev.preventDefault();
+
+          // priority: data-target attribute, href="#id", fallback to inline onclick call (if present)
+          var dataTarget = this.getAttribute('data-target');
+          var href = this.getAttribute('href') || '';
+          var screenId = null;
+
+          if (dataTarget && dataTarget.trim()) screenId = dataTarget.trim();
+          else if (href && href.startsWith('#')) screenId = href.slice(1);
+          else {
+            // try to parse inline onclick="switchScreen('tasks', event)"
+            var onclick = this.getAttribute('onclick') || '';
+            var m = onclick.match(/switchScreen\(['"]([^'"]+)['"]/);
+            if (m) screenId = m[1];
+          }
+
+          if (!screenId) {
+            debug('could not determine screenId for nav item', this);
+            return;
+          }
+
+          debug('nav click ->', screenId);
+          // call the global switchScreen
+          try { window.switchScreen(screenId, ev); } catch (e) { console.error('call switchScreen failed', e); }
+        } catch (e) {
+          console.error('nav click handler error', e);
+        }
+      });
+    });
+    debug('nav binding complete, items:', navItems.length);
+  }
+
+  // Defensive: run on DOMContentLoaded and also schedule a late retry
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      bindNavItems();
+
+      // apply initial hash
+      var initial = window.location.hash.replace('#', '');
+      if (initial) {
+        window.switchScreen(initial, null);
+      } else {
+        // ensure default feed shows
+        if (!document.querySelector('.screen.active')) {
+          var home = document.getElementById('gridhome');
+          if (home) home.classList.add('active');
+        }
+      }
+    } catch (e) { console.error('DOMContentLoaded nav init error', e); }
+  });
+
+  // Fallback retry if scripts load order weirdly
+  setTimeout(function () {
+    try { bindNavItems(); } catch (e) { console.error('delayed bindNavItems error', e); }
+  }, 600);
+
+  // Quick runtime error watcher (useful during dev)
+  window.addEventListener('error', function (ev) {
+    console.error('[GG RUNTIME ERROR]', ev && ev.error ? ev.error : ev);
+  });
+
+})();
+
+<!-- Paste this at the END of your main <script> block, before the closing </script> -->
+(function(){
+  'use strict';
+  function dbg(){ try{ console.log('[GG DELEGATE]', ...arguments); }catch(e){} }
+
+  // Safe exec helper for inline onclick strings (re-usable)
+  function execInlineOnclick(el){
+    try {
+      var onclick = el.getAttribute && el.getAttribute('onclick');
+      if (!onclick) return false;
+      var m = onclick.match(/^([a-zA-Z0-9_$]+)\s*\(([\s\S]*)\)\s*;?$/);
+      if (!m) return false;
+      var fnName = m[1];
+      var argText = m[2] || '';
+      // Replace "this" with null marker then substitute later
+      var wrapper = 'return [' + argText.replace(/\bthis\b/g,'null') + '];';
+      var args = (new Function(wrapper))();
+      args = args.map(a => a === null ? el : a);
+      if (typeof window[fnName] === 'function') {
+        window[fnName].apply(null, args);
+        dbg('ran inline', fnName, args);
+        return true;
+      } else {
+        dbg('inline function not found', fnName);
+      }
+    } catch (err) {
+      console.warn('execInlineOnclick error', err, el);
+    }
+    return false;
+  }
+
+  // Helper: find closest parent with selector (polyfill friendly)
+  function closest(el, selector){
+    while (el && el !== document) {
+      if (el.matches && el.matches(selector)) return el;
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  // Compose / attach drag-drop to composer area (if present)
+  function ensureComposerDragDrop(){
+    try {
+      var composer = document.querySelector('.composer-form');
+      if (!composer || composer.__drop_bound) return;
+      composer.__drop_bound = true;
+
+      // create an attachment drop area if not present
+      var attachArea = composer.querySelector('.media-attach-area') || null;
+      if (!attachArea) return;
+      attachArea.addEventListener('dragover', function(e){ e.preventDefault(); attachArea.classList.add('dragover'); });
+      attachArea.addEventListener('dragleave', function(){ attachArea.classList.remove('dragover'); });
+      attachArea.addEventListener('drop', function(e){
+        e.preventDefault(); attachArea.classList.remove('dragover');
+        var file = (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) ? e.dataTransfer.files[0] : null;
+        if (!file) {
+          showInlineMessage && showInlineMessage('No file detected in drop.');
+          return;
+        }
+        var preview = composer.querySelector('.attachment-preview') || document.createElement('div');
+        preview.className = 'attachment-preview';
+        preview.style.cssText = 'margin-top:8px;padding:12px;background:rgba(255,255,255,0.05);border-radius:8px;font-size:12px;color:var(--text-secondary);';
+        preview.textContent = `✓ Attached: ${file.name}`;
+        composer.insertBefore(preview, composer.firstChild);
+        dbg('file attached', file.name);
+      });
+      dbg('composer drag/drop bound');
+    } catch (e) { console.warn(e); }
+  }
+
+  // Ensure profile tab logic works (Activity / Posts / Wallet)
+  function ensureProfileTabs(){
+    try {
+      var tabs = document.querySelectorAll('.profile-tab');
+      tabs.forEach(function(tab){
+        if (tab.__profile_bound) return;
+        tab.__profile_bound = true;
+        tab.addEventListener('click', function(e){
+          e.preventDefault();
+          var idx = Array.prototype.indexOf.call(document.querySelectorAll('.profile-tab'), tab);
+          // call existing switchProfileTab if present
+          var target = tab.textContent && tab.textContent.trim().toLowerCase();
+          if (typeof switchProfileTab === 'function') {
+            // your switchProfileTab expects (tabName, event), original code uses id names 'activity', 'posts', 'wallet'
+            var map = { 'activity':'activity', 'posts':'posts', 'wallet':'wallet' };
+            var name = map[target] || (tab.getAttribute('data-target') || target);
+            switchProfileTab(name, { target: tab });
+            dbg('switchProfileTab called', name);
+            return;
+          }
+          // fallback: simple class toggle
+          document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          var panes = document.querySelectorAll('.tab-pane');
+          panes.forEach(p => p.classList.remove('active'));
+          var pane = document.getElementById((tab.getAttribute('data-target') || target) + '-tab');
+          if (pane) pane.classList.add('active');
+          dbg('profile tab toggled (fallback)', tab);
+        });
+      });
+    } catch(e){ console.warn(e); }
+  }
+
+  // Handle wallet card expand / view details (button inside profile)
+  function handleWalletButton(el){
+    try {
+      // try inline first
+      if (execInlineOnclick(el)) return;
+      // Find wallet tab content
+      var walletPane = document.getElementById('wallet-tab');
+      if (!walletPane) {
+        showInlineMessage && showInlineMessage('Wallet section not found');
+        return;
+      }
+      // If wallet tab not active, switch to it
+      var tabBtn = Array.from(document.querySelectorAll('.profile-tab')).find(t => (t.textContent||'').toLowerCase().indexOf('wallet') !== -1);
+      if (tabBtn) {
+        tabBtn.click();
+      }
+      // Optionally show a quick inline modal
+      showInlineMessage && showInlineMessage('Opened wallet preview');
+    } catch(e){ console.warn(e); }
+  }
+
+  // Unified delegated click listener
+  document.addEventListener('click', function(e){
+    try {
+      var el = e.target;
+
+      // walk up for button elements
+      var btn = closest(el, 'button, a, .action-btn, .nav-item, .profile-action-btn, .menu-item, .fab, .task-btn, .post-actions .action-btn, .video-card, .composer-form .submit-btn, .menu-item, .profile-tab');
+      if (!btn) return;
+
+      // If it's an a.nav-item handled by switchScreen, let it be handled by existing handlers
+      if (btn.classList.contains('nav-item')) return;
+
+      // Specific: FAB / create task (class .fab)
+      if (closest(btn, '.fab')) {
+        e.preventDefault();
+        if (execInlineOnclick(btn)) return;
+        // call openComposer or openNewTaskModal based on presence
+        if (typeof openComposer === 'function') return openComposer();
+        if (typeof openNewTaskModal === 'function') return openNewTaskModal();
+        showInlineMessage && showInlineMessage('Open composer / create task');
+        return;
+      }
+
+      // Profile action buttons
+      if (btn.classList.contains('profile-action-btn')) {
+        e.preventDefault();
+        // Some have specific text like "Edit Profile" or icon-only
+        var txt = (btn.textContent || '').toLowerCase();
+        if (txt.indexOf('edit') !== -1) {
+          if (execInlineOnclick(btn)) return;
+          if (typeof openEditProfile === 'function') return openEditProfile();
+          if (typeof openComposer === 'function') return openComposer();
+        } else if (txt.indexOf('withdraw') !== -1) {
+          if (execInlineOnclick(btn)) return;
+          // fallback action
+          showInlineMessage && showInlineMessage('Withdraw clicked');
+        } else {
+          // default fallback
+          if (execInlineOnclick(btn)) return;
+          showInlineMessage && showInlineMessage('Profile action: ' + (btn.textContent||''));
+        }
+        return;
+      }
+
+      // Profile small menu items (Edit Profile, Transaction History, Referrals, Settings, Help & Support)
+      if (btn.classList.contains('menu-item')) {
+        e.preventDefault();
+        var txt = (btn.textContent || '').toLowerCase();
+        if (txt.indexOf('help') !== -1) {
+          window.open('https://t.me/GridGain_Bot', '_blank', 'noopener');
+          return;
+        }
+        if (txt.indexOf('transaction') !== -1 || txt.indexOf('history') !== -1) {
+          // open wallet tab
+          var walletBtn = Array.from(document.querySelectorAll('.profile-tab')).find(t => (t.textContent||'').toLowerCase().includes('wallet'));
+          if (walletBtn) { walletBtn.click(); }
+          showInlineMessage && showInlineMessage('Opened Transaction History');
+          return;
+        }
+        if (txt.indexOf('referral') !== -1) {
+          showInlineMessage && showInlineMessage('Referral link copied to clipboard (placeholder)');
+          return;
+        }
+        // fallback: attempt inline onclick
+        if (execInlineOnclick(btn)) return;
+        showInlineMessage && showInlineMessage(btn.textContent || 'Menu click');
+        return;
+      }
+
+      // Profile tabs buttons (Activity / Posts / Wallet)
+      if (btn.classList.contains('profile-tab')) {
+        // let ensureProfileTabs handlers do the job (they are attached), but also fallback here
+        e.preventDefault();
+        if (execInlineOnclick(btn)) return;
+        ensureProfileTabs();
+        // call click to invoke earlier bound listener if any
+        try { tabClick = new Event('click'); btn.dispatchEvent(tabClick); } catch(e){ dbg('dispatch click failed', e); }
+        return;
+      }
+
+      // Post action buttons (Like, Visit, Comment, Join, Watch)
+      if (closest(btn, '.post-actions') || btn.classList.contains('action-btn')) {
+        e.preventDefault();
+        // try inline onclick first
+        if (execInlineOnclick(btn)) return;
+        // determine label
+        var label = (btn.textContent || '').trim().toLowerCase();
+        if (label.indexOf('like') !== -1) {
+          // toggle like visually
+          try { handleLike && handleLike(btn); } catch(e){ btn.classList.toggle('liked'); }
+          return;
+        }
+        if (label.indexOf('visit') !== -1) {
+          var post = closest(btn, '.post-card');
+          var url = post && (post.dataset.url || post.getAttribute('data-url'));
+          if (url) { window.open(url, '_blank', 'noopener'); return; }
+          // fallback: show message
+          showInlineMessage && showInlineMessage('No visit URL');
+          return;
+        }
+        if (label.indexOf('comment') !== -1) {
+          var post = closest(btn, '.post-card');
+          if (!post) return;
+          // reuse logic from previous handler: open small comment area
+          var existing = post.querySelector('.comment-area');
+          if (existing) { existing.style.display = existing.style.display === 'none' ? 'block' : 'none'; return; }
+          var ca = document.createElement('div');
+          ca.className = 'comment-area';
+          ca.style.cssText = 'margin-top:12px;display:flex;gap:8px;';
+          ca.innerHTML = '<input class="form-input" placeholder="Write a comment..." style="flex:1"/><button class="submit-btn">Send</button>';
+          post.appendChild(ca);
+          ca.querySelector('button').addEventListener('click', function(){
+            var txt = ca.querySelector('input').value.trim();
+            if (!txt) { showInlineMessage && showInlineMessage('Enter a comment'); return; }
+            var p = document.createElement('div'); p.style.cssText='margin-top:8px;font-size:13px;color:var(--text-secondary)'; p.textContent = 'You: '+txt;
+            post.appendChild(p);
+            ca.remove();
+          });
+          return;
+        }
+        // other action labels (join/watch) — attempt inline otherwise open task modal
+        if (label.indexOf('join') !== -1 || label.indexOf('watch') !== -1) {
+          var card = closest(btn, '.post-card');
+          var title = card && (card.querySelector('.poster-name') && card.querySelector('.poster-name').textContent) || 'Task';
+          if (typeof openTaskModal === 'function') return openTaskModal(title);
+          showInlineMessage && showInlineMessage('Action: ' + label);
+        }
+        return;
+      }
+
+      // Task buttons (Start Task / Details) - also handle plus / new task
+      if (btn.classList.contains('task-btn') || btn.closest && btn.closest('.task-footer')) {
+        e.preventDefault();
+        if (execInlineOnclick(btn)) return;
+        if (btn.classList.contains('primary')) {
+          var card = closest(btn, '.task-card');
+          var title = card && card.querySelector('.task-title') && card.querySelector('.task-title').textContent;
+          if (typeof openTaskModal === 'function') return openTaskModal(title || 'Task');
+          showInlineMessage && showInlineMessage('Start task: ' + (title || 'task'));
+          return;
+        }
+        if (btn.classList.contains('secondary')) {
+          var card = closest(btn, '.task-card');
+          var title = card && card.querySelector('.task-title') && card.querySelector('.task-title').textContent;
+          return openTaskModal && openTaskModal(title || 'Details');
+        }
+      }
+
+      // Wallet button(s) inside profile (small buttons)
+      if ((btn.getAttribute && btn.getAttribute('data-wallet')) || (btn.classList && btn.classList.contains('wallet-btn'))) {
+        e.preventDefault();
+        handleWalletButton(btn);
+        return;
+      }
+
+      // Video cards (click play)
+      if (closest(btn, '.video-card')) {
+        e.preventDefault();
+        var card = closest(btn, '.video-card');
+        // try inline onclick first
+        if (execInlineOnclick(card) || execInlineOnclick(btn)) return;
+        var title = (card.querySelector('.video-title') && card.querySelector('.video-title').textContent) || card.dataset.title || 'Video';
+        var duration = card.querySelector('.video-duration') ? card.querySelector('.video-duration').textContent : '0:30';
+        var rewardText = (card.querySelector('.video-reward') && card.querySelector('.video-reward').textContent) || '25';
+        var reward = parseInt(rewardText.replace(/[^0-9]/g,'')) || 25;
+        if (typeof openVideoModal === 'function') return openVideoModal(title, duration, reward, card);
+        showInlineMessage && showInlineMessage('Play Video: ' + title);
+        return;
+      }
+
+      // Post publish (SVG post button) - look for element with .submit-btn inside composer-form
+      if (closest(btn, '.composer-form')) {
+        e.preventDefault();
+        var composer = closest(btn, '.composer-form');
+        // try the existing handler
+        if (typeof handlePostSubmit === 'function') {
+          // craft synthetic event
+          try { handlePostSubmit(new Event('submit')); return; } catch(e){ dbg('handlePostSubmit failed', e); }
+        }
+        // fallback: attempt inline onclick attribute on the submit button
+        if (execInlineOnclick(btn)) return;
+        showInlineMessage && showInlineMessage('Publish (fallback)');
+        return;
+      }
+
+      // fallback: try executing inline onclick for clicked element
+      if (execInlineOnclick(btn)) { e.preventDefault(); return; }
+
+    } catch (err) {
+      console.error('[GG DELEGATE] error', err);
+    }
+  }, true);
+
+  // run safety ensures after DOM is ready
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      ensureComposerDragDrop();
+      ensureProfileTabs();
+      dbg('delegate initialised');
+    } catch(e){ console.warn(e); }
+  });
+
+  // Also run after a short delay in case some elements are loaded late
+  setTimeout(function(){ ensureComposerDragDrop(); ensureProfileTabs(); }, 600);
+
+})();
+<!-- Paste THIS at the very end of your main <script> block, before </script> -->
+(function () {
+  'use strict';
+
+  function dbg() { try { console.log('[GG HANDLERS]', ...arguments); } catch (e) {} }
+
+  // Helper: closest parent
+  function closest(el, sel) { while (el && el !== document) { if (el.matches && el.matches(sel)) return el; el = el.parentNode; } return null; }
+
+  // Safe call wrapper
+  function tryCall(fn, args) { try { if (typeof fn === 'function') return fn.apply(null, args || []); } catch (e) { console.error(e); } return null; }
+
+  // --- Action implementations (use existing functions if present) ---
+  function doOpenComposer(e) {
+    e && e.preventDefault && e.preventDefault();
+    if (typeof openComposer === 'function') { return tryCall(openComposer); }
+    // fallback: open modal if exists
+    var m = document.getElementById('composer-modal');
+    if (m) m.classList.add('active');
+    dbg('openComposer fallback');
+  }
+
+  function doOpenNewTask(e) {
+    e && e.preventDefault && e.preventDefault();
+    if (typeof openNewTaskModal === 'function') return tryCall(openNewTaskModal);
+    // fallback message
+    showInlineMessage && showInlineMessage('Create Task (fallback) — feature coming soon');
+    dbg('openNewTask fallback');
+  }
+
+  function doLike(btn) {
+    try {
+      if (!btn) return;
+      // prefer existing handler
+      if (typeof handleLike === 'function') return handleLike(btn);
+      // fallback toggle
+      btn.classList.toggle('liked');
+      dbg('like toggled', btn);
+    } catch (e) { console.error(e); }
+  }
+
+  function doComment(btn) {
+    var post = closest(btn, '.post-card');
+    if (!post) return;
+    var existing = post.querySelector('.comment-area');
+    if (existing) { existing.style.display = existing.style.display === 'none' ? 'flex' : 'none'; return; }
+    var ca = document.createElement('div');
+    ca.className = 'comment-area';
+    ca.style.cssText = 'margin-top:12px;display:flex;gap:8px;';
+    ca.innerHTML = '<input class="form-input gg-comment-input" placeholder="Write a comment..." style="flex:1"/><button class="submit-btn gg-comment-send">Send</button>';
+    post.appendChild(ca);
+    ca.querySelector('.gg-comment-send').addEventListener('click', function () {
+      var txt = ca.querySelector('.gg-comment-input').value.trim();
+      if (!txt) { showInlineMessage && showInlineMessage('Enter a comment'); return; }
+      var p = document.createElement('div');
+      p.style.cssText = 'margin-top:8px;font-size:13px;color:var(--text-secondary)';
+      p.textContent = 'You: ' + txt;
+      post.appendChild(p);
+      ca.remove();
+      // optionally notify backend / bot here
+    });
+  }
+
+  function doVisit(btn) {
+    var post = closest(btn, '.post-card');
+    if (!post) { showInlineMessage && showInlineMessage('No target link'); return; }
+    // prefer data-url attribute
+    var url = post.getAttribute('data-url') || post.dataset.url || null;
+    // try finding anchor inside
+    if (!url) {
+      var a = post.querySelector('a[href]');
+      if (a) url = a.href;
+    }
+    if (url) {
+      window.open(url, '_blank', 'noopener');
+      return;
+    }
+    showInlineMessage && showInlineMessage('No visit link found');
+  }
+
+  function doJoinOrWatch(btn) {
+    // Join -> openTaskModal with title; Watch -> openVideoModal if available
+    var post = closest(btn, '.post-card');
+    var title = post && (post.querySelector('.poster-name') && post.querySelector('.poster-name').textContent) || 'Task';
+    var label = (btn.textContent || '').trim().toLowerCase();
+    if (label.indexOf('watch') !== -1) {
+      // try openVideoModal with defaults
+      if (typeof openVideoModal === 'function') return openVideoModal(title, '0:30', 25, post);
+      return showInlineMessage && showInlineMessage('Watch: openVideoModal missing');
+    } else {
+      if (typeof openTaskModal === 'function') return openTaskModal(title || 'Task');
+      return showInlineMessage && showInlineMessage('Join: openTaskModal missing');
+    }
+  }
+
+  // --- Bind a single button (idempotent) ---
+  function bindActionButton(btn) {
+    if (!btn || btn.__gg_bound) return;
+    btn.__gg_bound = true;
+    btn.addEventListener('click', function (ev) {
+      try {
+        // If element has data-action attribute, prefer that
+        var act = btn.getAttribute && btn.getAttribute('data-action');
+        if (act) {
+          act = act.toLowerCase();
+          if (act === 'open-composer' || act === 'post') return doOpenComposer(ev);
+          if (act === 'create-task' || act === 'new-task') return doOpenNewTask(ev);
+          if (act === 'like') return doLike(btn);
+          if (act === 'comment') return doComment(btn);
+          if (act === 'visit') return doVisit(btn);
+          if (act === 'join' || act === 'watch') return doJoinOrWatch(btn);
+        }
+
+        // otherwise determine by visible text
+        var txt = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+        if (!txt && btn.querySelector && btn.querySelector('svg')) {
+          // svg-only buttons: examine aria-label or title
+          txt = (btn.getAttribute('title') || btn.getAttribute('aria-label') || '').toLowerCase();
+        }
+
+        if (txt.indexOf('like') !== -1 || txt === '❤' || txt.indexOf('♥') !== -1) {
+          return doLike(btn);
+        }
+        if (txt.indexOf('comment') !== -1 || txt.indexOf('reply') !== -1) {
+          return doComment(btn);
+        }
+        if (txt.indexOf('visit') !== -1 || txt.indexOf('open') !== -1) {
+          return doVisit(btn);
+        }
+        if (txt.indexOf('join') !== -1 || txt.indexOf('watch') !== -1) {
+          return doJoinOrWatch(btn);
+        }
+        if (btn.classList.contains('fab') || btn.classList.contains('compose') || txt.indexOf('post') !== -1 || txt.indexOf('publish') !== -1) {
+          return doOpenComposer(ev);
+        }
+        if (btn.classList.contains('new-task-btn') || txt.indexOf('new task') !== -1 || txt.indexOf('create task') !== -1) {
+          return doOpenNewTask(ev);
+        }
+
+        // fallback: try running inline onclick if present
+        var inline = btn.getAttribute && btn.getAttribute('onclick');
+        if (inline) {
+          try { (new Function(inline)).call(btn); return; } catch (e) { dbg('inline exec error', e); }
+        }
+
+        dbg('unhandled action button click', btn, txt);
+      } catch (err) { console.error(err); }
+    }, false);
+  }
+
+  // --- Bulk bind existing elements ---
+  function bindAllExisting() {
+    // Pen / post SVG likely inside .fab or .fab-icon - bind both
+    document.querySelectorAll('.fab, .fab-icon, .post-icon, .compose-btn, .post-pen, .post-svg').forEach(bindActionButton);
+
+    // New task buttons
+    document.querySelectorAll('.new-task-btn, .create-task, .task-btn.primary, .fab, .create-task-btn').forEach(bindActionButton);
+
+    // All action buttons in posts
+    document.querySelectorAll('.post-actions .action-btn, .action-btn, .post-card .action-btn').forEach(bindActionButton);
+
+    // Task footer buttons
+    document.querySelectorAll('.task-footer .task-btn, .task-btn').forEach(bindActionButton);
+
+    // Any menu items that look like wallet/view etc
+    document.querySelectorAll('.menu-item, .profile-action-btn, .profile-tab').forEach(bindActionButton);
+
+    dbg('bindAllExisting finished');
+  }
+
+  // --- MutationObserver to auto-bind new nodes (dynamic posts/tasks) ---
+  function watchForNewNodes() {
+    var root = document.querySelector('.app-container') || document.body;
+    if (!root) return;
+    var obs = new MutationObserver(function (mutations) {
+      mutations.forEach(function (m) {
+        if (!m.addedNodes || m.addedNodes.length === 0) return;
+        m.addedNodes.forEach(function (n) {
+          if (!(n instanceof HTMLElement)) return;
+          // bind if node is button-like
+          if (n.matches && (n.matches('button') || n.matches('.action-btn') || n.matches('.task-btn') || n.querySelector && n.querySelector('.action-btn'))) {
+            // bind node and any child buttons
+            bindActionButton(n);
+            n.querySelectorAll && n.querySelectorAll('button, .action-btn, .task-btn, .profile-tab').forEach(bindActionButton);
+          } else {
+            // search for button children
+            n.querySelectorAll && n.querySelectorAll('button, .action-btn, .task-btn, .new-task-btn, .fab, .menu-item').forEach(bindActionButton);
+          }
+        });
+      });
+    });
+    obs.observe(root, { childList: true, subtree: true });
+    dbg('MutationObserver bound');
+  }
+
+  // --- Init ---
+  function initHandlers() {
+    bindAllExisting();
+    watchForNewNodes();
+    // ensure composer drag/drop binding if previously added
+    try { if (typeof ensureComposerDragDrop === 'function') ensureComposerDragDrop(); } catch (e) {}
+    dbg('handlers initialized');
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHandlers);
+  } else {
+    initHandlers();
+  }
+
+  // quick dev hint: expose doX functions for console debugging
+  window.__gg = {
+    doOpenComposer: doOpenComposer,
+    doOpenNewTask: doOpenNewTask,
+    doLike: doLike,
+    doComment: doComment,
+    doVisit: doVisit,
+    doJoinOrWatch: doJoinOrWatch,
+    bindActionButton: bindActionButton
+  };
+
+})();
+/* ---- Composer cancel, drag-drop preview and responsive task layout helpers ---- */
+(function () {
+  'use strict';
+
+  // helpers
+  function $(sel, root=document) { return root.querySelector(sel); }
+  function $all(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+  function showInline(msg) { window.showInlineMessage ? window.showInlineMessage(msg) : alert(msg); }
+
+  // Close composer: binds existing/ future close buttons in composer
+  function bindComposerCancelButtons() {
+    // close buttons inside composer modal (including '✖' icons)
+    $all('#composer-modal .close-btn, #composer-modal .cancel-btn, #composer-modal [data-action="cancel-post"]').forEach(btn=>{
+      if (btn.__composerCloseBound) return;
+      btn.__composerCloseBound = true;
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const modal = document.getElementById('composer-modal');
+        if (modal) modal.classList.remove('active');
+        // cleanup any temporary preview
+        const ap = modal && modal.querySelector('.attachment-preview');
+        if (ap) ap.remove();
+      });
+    });
+  }
+
+  // Ensure modal content scrolls to show preview (useful for large images)
+  function scrollComposerToTop() {
+    const modalContent = $('#composer-modal .modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+  }
+
+  // Setup drag & drop + file input preview in composer
+  function setupComposerAttachment() {
+    const composer = document.getElementById('composer-modal');
+    if (!composer) return;
+    const form = composer.querySelector('.composer-form');
+    if (!form) return;
+
+    // create hidden file input (if not present)
+    let fileInput = form.querySelector('input.gg-attach-input[type=file]');
+    if (!fileInput) {
+      fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*,video/*';
+      fileInput.className = 'gg-attach-input';
+      fileInput.style.display = 'none';
+      form.appendChild(fileInput);
+    }
+
+    // ensure there is an attachment-preview container
+    function ensureAttachmentPreview() {
+      let ap = form.querySelector('.attachment-preview');
+      if (!ap) {
+        ap = document.createElement('div');
+        ap.className = 'attachment-preview';
+        ap.style.cssText = 'margin-top:8px;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;';
+        form.insertBefore(ap, form.firstChild);
+      }
+      return ap;
+    }
+
+    // render file
+    async function handleFile(file) {
+      const ap = ensureAttachmentPreview();
+      ap.innerHTML = ''; // reset
+      const type = file.type || '';
+      if (type.indexOf('image') !== -1) {
+        const img = document.createElement('img');
+        img.alt = file.name || 'image';
+        img.src = URL.createObjectURL(file);
+        ap.appendChild(img);
+      } else if (type.indexOf('video') !== -1) {
+        const vid = document.createElement('video');
+        vid.controls = true;
+        vid.src = URL.createObjectURL(file);
+        vid.style.maxWidth = '100%';
+        vid.style.maxHeight = '50vh';
+        ap.appendChild(vid);
+      } else {
+        ap.textContent = 'Attachment type not supported';
+      }
+      scrollComposerToTop();
+    }
+
+    // wire the attach buttons (existing ones)
+    $all('.attach-btn').forEach(btn=>{
+      if (btn.__attachBound) return;
+      btn.__attachBound = true;
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        fileInput.click();
+      });
+    });
+
+    // file input onchange
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if (f) handleFile(f);
+      fileInput.value = '';
+    });
+
+    // drag/drop area: allow dropping into composer modal
+    composer.addEventListener('dragover', (e)=>{ e.preventDefault(); composer.classList.add('gg-drag-over'); });
+    composer.addEventListener('dragleave', (e)=>{ composer.classList.remove('gg-drag-over'); });
+    composer.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      composer.classList.remove('gg-drag-over');
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+  }
+
+  // Normalize platform-icon widths to avoid horizontal scroll (run on load and after DOM changes)
+  function normalizePlatformIcons() {
+    $all('.platform-icon').forEach(icon=>{
+      // add wrapper class for responsive grid if not already
+      const parent = icon.parentElement;
+      if (parent && !parent.classList.contains('social-grid') && parent.querySelectorAll && parent.querySelectorAll('.platform-icon').length > 1) {
+        parent.classList.add('social-grid');
+      }
+    });
+  }
+
+  // bind composer events & close buttons and attach handlers for dynamic content
+  function initComposerAndLayout() {
+    bindComposerCancelButtons();
+    setupComposerAttachment();
+    normalizePlatformIcons();
+    // also re-bind when new nodes are added
+    const observer = new MutationObserver((mutations)=>{
+      mutations.forEach(m=>{
+        m.addedNodes && m.addedNodes.forEach(n=>{
+          if (!(n instanceof HTMLElement)) return;
+          if (n.closest && n.closest('#composer-modal')) {
+            bindComposerCancelButtons();
+            setupComposerAttachment();
+          }
+          if (n.querySelector && n.querySelector('.platform-icon')) {
+            normalizePlatformIcons();
+          }
+        });
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // run on ready
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initComposerAndLayout);
+  else initComposerAndLayout();
+
+})();
+
+(function(){
+  'use strict';
+
+  /* ---------- 1) Improve horizontal swipe: stop page from moving when user intends horizontal swipe ---------- */
+  function enableHorizontalSwipeLock() {
+    const scrollers = Array.from(document.querySelectorAll('.social-scroll'));
+    scrollers.forEach(sc => {
+      let startX = 0, startY = 0, isDragging = false, locked = null;
+
+      sc.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        locked = null;
+      }, { passive: true });
+
+      sc.addEventListener('touchmove', (e) => {
+        if (!isDragging || !e.touches || e.touches.length === 0) return;
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+
+        // detect if horizontal or vertical intent (threshold avoids accidental)
+        if (locked === null) {
+          if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) locked = 'x';
+          else if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) locked = 'y';
+        }
+
+        // if horizontal intent, prevent outer scrolling
+        if (locked === 'x') {
+          e.stopPropagation();
+          // prevent parent touchmove (page) from happening
+          // keep passive false for this listener in some browsers,
+          // but we used passive:true for touchstart; for touchmove we need to be able to call preventDefault if necessary
+          e.preventDefault && e.preventDefault();
+          // let the element scroll horizontally naturally
+        }
+        // if locked to vertical, do nothing (allow page scroll)
+      }, { passive: false });
+
+      sc.addEventListener('touchend', (e) => { isDragging = false; locked = null; });
+      sc.addEventListener('touchcancel', (e) => { isDragging = false; locked = null; });
+    });
+  }
+
+  /* ---------- 2) Ensure watch/task links open inside the popup browser iframe ---------- */
+  // Reusable function to open the "browser-frame" popup and load a url with countdown behavior.
+  function openBrowserPopupWithCountdown(url, options = {}) {
+    // options: { actionId, reward, secs, fromBotPayload }
+    const modal = document.getElementById('task-modal') || document.getElementById('video-modal') || document.querySelector('.modal-overlay.browser-frame-parent');
+    // Use dedicated browser modal if exists (task-modal uses .browser-frame)
+    const browserModal = document.getElementById('task-modal') || document.getElementById('video-modal');
+    const frameWrapper = (browserModal && browserModal.querySelector('.browser-content')) ? browserModal.querySelector('.browser-content') : null;
+
+    // create iframe container
+    const iframeWrapperId = 'gg-iframe-wrapper';
+    let iframeWrapper = document.getElementById(iframeWrapperId);
+    if (!iframeWrapper) {
+      iframeWrapper = document.createElement('div');
+      iframeWrapper.id = iframeWrapperId;
+      iframeWrapper.style.width = '100%';
+      iframeWrapper.style.height = '100%';
+      iframeWrapper.style.display = 'flex';
+      iframeWrapper.style.flexDirection = 'column';
+      iframeWrapper.style.gap = '12px';
+    }
+
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '60vh';
+    iframe.style.border = 'none';
+    iframe.setAttribute('sandbox', 'allow-forms allow-scripts allow-same-origin allow-popups');
+    // keep target inside iframe when clicking links
+    iframe.setAttribute('allow', 'fullscreen');
+
+    // Add a top mini header with countdown display
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.gap = '8px';
+    header.style.padding = '8px 0';
+
+    const titleSpan = document.createElement('div');
+    titleSpan.textContent = options.title || 'Loading...';
+    titleSpan.style.fontWeight = '700';
+
+    const countdownSpan = document.createElement('div');
+    countdownSpan.id = 'gg-iframe-countdown';
+    countdownSpan.textContent = options.secs ? `00:${String(options.secs).padStart(2,'0')}` : '00:00';
+    countdownSpan.style.fontWeight = '700';
+
+    header.appendChild(titleSpan);
+    header.appendChild(countdownSpan);
+
+    iframeWrapper.innerHTML = ''; // clear
+    iframeWrapper.appendChild(header);
+    iframeWrapper.appendChild(iframe);
+
+    // Add the iframe wrapper into the modal's browser-content (if exists)
+    if (frameWrapper) {
+      frameWrapper.innerHTML = ''; // clear existing content
+      frameWrapper.appendChild(iframeWrapper);
+    } else {
+      // fallback: open task-modal and inject into its browser-content
+      const fallbackModal = document.getElementById('task-modal') || document.getElementById('video-modal');
+      if (fallbackModal) {
+        const fallbackContent = fallbackModal.querySelector('.browser-content');
+        if (fallbackContent) {
+          fallbackContent.innerHTML = '';
+          fallbackContent.appendChild(iframeWrapper);
+        }
+      }
+    }
+
+    // show the modal (either tasks or video)
+    const usedModal = document.getElementById('task-modal') || document.getElementById('video-modal');
+    if (usedModal) usedModal.classList.add('active');
+
+    // load the url inside the iframe (if url is external and blocks embedding, fallback to open in new tab after a short smartlink delay)
+    const SMARTLINK_DELAY = 2000; // 2s fallback behavior you requested
+    let fallbackOpened = false;
+
+    // First load SMARTLINK fallback if provided in options (simulate push ad)
+    if (options.smartlink) {
+      iframe.src = options.smartlink;
+      // after smartlink short delay, load actual url
+      setTimeout(() => {
+        try {
+          iframe.src = url;
+        } catch(e) {
+          // if embedding blocked, fallback to open in new tab but keep modal countdown
+          fallbackOpened = true;
+          window.open(url, '_blank');
+        }
+      }, SMARTLINK_DELAY);
+    } else {
+      // directly load url in iframe
+      iframe.src = url;
+    }
+
+    // start countdown timer shown to user
+    let secs = Number(options.secs || 10);
+    if (!isFinite(secs) || secs < 1) secs = 10;
+    let remaining = secs;
+    const circumference = 100; // not used visually here, we simply update text
+    const countdownElem = document.getElementById('gg-iframe-countdown');
+    const tick = () => {
+      if (!countdownElem) return;
+      const mm = Math.floor(remaining/60);
+      const ss = remaining % 60;
+      countdownElem.textContent = `${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    };
+    tick();
+    const timerId = setInterval(() => {
+      remaining--;
+      tick();
+      if (remaining <= 0) {
+        clearInterval(timerId);
+        // signal completion back to the bot via webhook (use the same pattern you used in IP code)
+        try {
+          const payload = Object.assign({}, options.payload || {});
+          payload.status = 'completed';
+          payload.url = url;
+          // If options.callbackUrl is provided, POST to it
+          if (options.callbackUrl) {
+            // Use fetch but don't break if url missing or blocked
+            fetch(options.callbackUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch((e)=>{ console.warn('callback post failed', e); });
+          } else {
+            // store to localStorage as fallback for bot to query or debug
+            console.debug('iframe-complete-payload', payload);
+          }
+        } catch (e) {
+          console.warn('Error sending completion payload', e);
+        }
+
+        // small UI celebration then close the modal
+        setTimeout(() => {
+          if (usedModal) usedModal.classList.remove('active');
+          // optional: run coin fly animation if reward included
+          if (options.reward && typeof window.animateCoinFly === 'function') {
+            try { window.animateCoinFly(document.body); } catch(e){}
+          }
+        }, 400);
+      }
+    }, 1000);
+
+    // ensure clicks in iframe won't navigate top-level (sandbox helps)
+    iframe.addEventListener('load', () => {
+      try {
+        // try to inject base target into iframe so links open inside iframe
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        if (doc) {
+          // add base tag so <a target> respects iframe
+          const base = doc.createElement('base');
+          base.target = '_self';
+          if (!doc.head.querySelector('base')) doc.head.appendChild(base);
+        }
+      } catch (e) {
+        // cross-origin will throw; ignore
+      }
+    });
+  }
+
+  /* ---------- 3) Intercept watch/task click handlers to open in iframe instead of top-level ---------- */
+  function wireWatchAndTaskLinks() {
+    // For watch cards: add onclick hooks (if they already have onclick attr, this will augment)
+    document.querySelectorAll('.video-card[data-watch-url], .task-card[data-task-url]').forEach(card=>{
+      if (card.__gaingridIntercept) return;
+      card.__gaingridIntercept = true;
+      card.addEventListener('click', (e)=>{
+        // if click directly on buttons inside card, let them handle
+        const btn = e.target.closest('button, a');
+        if (btn && btn.tagName.toLowerCase() !== 'article') return;
+
+        const isVideo = card.classList.contains('video-card');
+        const url = card.getAttribute('data-watch-url') || card.getAttribute('data-task-url') || card.getAttribute('data-url');
+        const secsAttr = card.getAttribute('data-secs') || card.getAttribute('data-watch-secs') || '10';
+        const reward = Number(card.getAttribute('data-reward') || card.getAttribute('data-watch-reward') || 0);
+        const smartlink = card.getAttribute('data-smartlink') || null;
+
+        if (!url) {
+          // fallback: show the built in video modal if no url
+          if (isVideo && typeof openVideoModal === 'function') {
+            return openVideoModal(card.getAttribute('data-title') || 'Video', card.getAttribute('data-duration') || '0:10', reward, card);
+          }
+          return;
+        }
+
+        // open inside browser iframe with countdown
+        openBrowserPopupWithCountdown(url, {
+          title: card.getAttribute('data-title') || (isVideo ? 'Watch Ad' : 'Task'),
+          secs: Number(secsAttr),
+          reward: reward,
+          smartlink: smartlink,
+          callbackUrl: card.getAttribute('data-callback') || null,
+          payload: { userId: window.__gg_user_id || null, source: 'web', item: card.dataset }
+        });
+
+        // stop propagation to avoid top-level navigation
+        e.stopPropagation();
+        e.preventDefault();
+      });
+    });
+  }
+
+  /* ---------- 4) Handle bot deeplink hash -> allow: #iframe?payload=BASE64 or #task:... ---------- */
+  function handleBotHashOpen() {
+    try {
+      const hash = (window.location.hash || '').slice(1);
+      if (!hash) return;
+      // formats allowed:
+      // #iframe?payload=BASE64
+      // #task?payload=BASE64
+      const [path, query] = hash.split('?');
+      if (!query) return;
+      const params = new URLSearchParams(query);
+      const payloadB64 = params.get('payload') || params.get('data') || '';
+      if (!payloadB64) return;
+      const jsonStr = (function decodeBase64Safe(s){
+        try {
+          // safe base64 decode (browser)
+          return decodeURIComponent(escape(atob(s)));
+        } catch(e) { try { return atob(s); } catch(e2){ return null; } }
+      })(payloadB64);
+      if (!jsonStr) return;
+      let payload = null;
+      try { payload = JSON.parse(jsonStr); } catch(e) { console.warn('payload json parse failed', e); return; }
+
+      // map action
+      if (path.toLowerCase().startsWith('iframe') || path.toLowerCase().startsWith('task')) {
+        // open iframe with payload.target or payload.url
+        const url = payload.url || payload.target || payload.link || payload.task_url || null;
+        const secs = payload.secs || payload.duration || 10;
+        const reward = payload.reward || 0;
+        const smartlink = payload.smartlink || null;
+        if (url) {
+          openBrowserPopupWithCountdown(url, {
+            title: payload.title || 'Task',
+            secs: Number(secs),
+            reward: Number(reward),
+            smartlink: smartlink,
+            callbackUrl: payload.callback_url || payload.callback || null,
+            payload: payload
+          });
+        }
+      } else if (path.toLowerCase().startsWith('watch')) {
+        // similar for watch
+        const url = payload.url || payload.watch_url;
+        if (url) {
+          openBrowserPopupWithCountdown(url, {
+            title: payload.title || 'Watch Ad',
+            secs: payload.secs || 10,
+            reward: payload.reward || 0,
+            callbackUrl: payload.callback_url || null,
+            payload: payload
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('handleBotHashOpen failed', e);
+    }
+  }
+
+  /* ---------- 5) initialization ---------- */
+  function initPatches() {
+    enableHorizontalSwipeLock();
+    wireWatchAndTaskLinks();
+    handleBotHashOpen();
+
+    // also run wire periodically for dynamic cards
+    setInterval(wireWatchAndTaskLinks, 1500);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPatches);
+  else initPatches();
+
+})();
+
+<script>
+(function(){
+  // pointer/touch horizontal scroller: prevents scroller from stealing vertical scroll
+  const scroller = document.getElementById('task-platforms');
+  const taskList = document.getElementById('task-list');
+
+  if (scroller) {
+    (function attachDrag(el){
+      let active=false, startX=0, startY=0, startScroll=0, lock=null;
+      el.addEventListener('pointerdown', e=>{
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        active=true; startX=e.clientX; startY=e.clientY; startScroll=el.scrollLeft; lock=null;
+        try{ el.setPointerCapture(e.pointerId); }catch(e){}
+      }, {passive:true});
+      el.addEventListener('pointermove', e=>{
+        if(!active) return;
+        const dx=e.clientX-startX, dy=e.clientY-startY;
+        if(!lock){
+          if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) lock='x';
+          else if(Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) lock='y';
+        }
+        if(lock==='x'){
+          if(e.cancelable) e.preventDefault();
+          el.scrollLeft = startScroll - dx;
+        }
+      }, {passive:false});
+      el.addEventListener('pointerup', e=>{ active=false; try{ el.releasePointerCapture(e.pointerId); }catch(e){} }, {passive:true});
+      el.addEventListener('pointercancel', ()=> active=false, {passive:true});
+      // touch fallback
+      el.addEventListener('touchstart', ev=>{
+        const t=ev.touches[0]; active=true; startX=t.clientX; startY=t.clientY; startScroll=el.scrollLeft; lock=null;
+      }, {passive:true});
+      el.addEventListener('touchmove', ev=>{
+        if(!active) return;
+        const t=ev.touches[0]; const dx=t.clientX-startX, dy=t.clientY-startY;
+        if(!lock){
+          if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) lock='x';
+          else if(Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) lock='y';
+        }
+        if(lock==='x'){
+          if(ev.cancelable) ev.preventDefault();
+          el.scrollLeft = startScroll - dx;
+        }
+      }, {passive:false});
+      el.addEventListener('touchend', ()=> active=false, {passive:true});
+    })(scroller);
+  }
+
+  // chip filtering
+  function filterTasks(platform){
+    if(!taskList) return;
+    const cards = taskList.querySelectorAll('.task-card');
+    cards.forEach(c=>{
+      if(!platform) { c.style.display=''; return; }
+      const p = c.getAttribute('data-platform') || '';
+      c.style.display = (p === platform) ? '' : 'none';
+    });
+  }
+
+  // attach chip clicks
+  if(scroller){
+    scroller.addEventListener('click', e=>{
+      const btn = e.target.closest('.platform-chip');
+      if(!btn) return;
+      const platform = btn.getAttribute('data-platform') || '';
+      // reset all chips
+      scroller.querySelectorAll('.platform-chip').forEach(c=>{
+        c.classList.remove('active'); c.setAttribute('aria-pressed','false');
+      });
+      if(platform){
+        btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+        filterTasks(platform);
+      } else {
+        // "All" selected
+        btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+        filterTasks('');
+      }
+    });
+  }
+
+  // openTaskModal: loads smartlink pre-roll then main url inside existing #task-modal .browser-content
+  window.openTaskModal = function(title, caller){
+    try {
+      const modal = document.getElementById('task-modal');
+      const titleEl = document.getElementById('task-modal-title');
+      const browserContent = modal.querySelector('.browser-content');
+
+      // find card
+      let card = null;
+      if(!caller) card = document.querySelector('.task-card');
+      else card = caller.closest ? caller.closest('.task-card') : null;
+      if(!card) card = document.querySelector('.task-card');
+      const url = card.getAttribute('data-task-url') || '';
+      const reward = parseInt((card.querySelector('.task-reward span')||{textContent:'0'}).textContent) || 0;
+      const platform = card.getAttribute('data-platform') || '';
+
+      if(titleEl) titleEl.textContent = title || 'Task Loading...';
+
+      // smartlink fallback (choose first that is different)
+      const smartLinks = ['https://otieu.com/4/10176113','https://otieu.com/4/10176184','https://otieu.com/4/10176114','https://otieu.com/4/10176185'];
+      let fallback = smartLinks.find(s=>s !== url) || smartLinks[0];
+
+      // render pre-roll iframe
+      browserContent.innerHTML = `
+        <div style="text-align:center;padding:8px 6px;">
+          <div style="margin-bottom:10px;color:var(--text-secondary)">Pre-roll ad — loading</div>
+          <div style="width:100%;height:360px;border-radius:12px;overflow:hidden;background:var(--bg-panel);">
+            <iframe id="task-iframe" src="${fallback}" style="width:100%;height:100%;border:0;" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
+          </div>
+          <div style="margin-top:12px;color:var(--text-secondary)">Opening task in <strong id="preroll-count">3</strong>s</div>
+        </div>
+      `;
+      modal.classList.add('active');
+
+      // preroll countdown then load main url
+      let pre=3;
+      const prEl = document.getElementById('preroll-count');
+      const iframe = document.getElementById('task-iframe');
+      const preTimer = setInterval(()=>{
+        pre--; prEl.textContent = pre;
+        if(pre<=0){
+          clearInterval(preTimer);
+          // if platform is 'youtube' or 'website' you may want to open new tab -- but we will load in iframe for consistent UX
+          if(url) iframe.src = url;
+          // start main timer based on reward
+          const duration = Math.max(8, Math.min(600, Math.floor((reward/10)*6))); // mapping reward->seconds
+          startTaskMainTimer(duration, modal, card, url, reward);
+        }
+      },1000);
+
+    } catch(e){
+      console.error('openTaskModal error', e);
+    }
+  };
+
+  // start main task timer and show abort/complete UI
+  function startTaskMainTimer(totalSeconds, modal, card, url, reward){
+    const browserContent = modal.querySelector('.browser-content');
+    // append UI below iframe for countdown + abort
+    const uiWrap = document.createElement('div');
+    uiWrap.style.cssText = 'text-align:center;padding:12px;color:var(--text-secondary)';
+    uiWrap.innerHTML = `<div>Task runs for <span id="main-count">${totalSeconds}</span>s</div>
+                        <div style="margin-top:10px;"><button class="submit-btn" id="abort-task">Abort</button></div>`;
+    browserContent.appendChild(uiWrap);
+
+    let remaining = totalSeconds;
+    const mainCountEl = uiWrap.querySelector('#main-count');
+
+    const tick = setInterval(()=>{
+      remaining--;
+      if(mainCountEl) mainCountEl.textContent = remaining;
+      if(remaining <= 0){
+        clearInterval(tick);
+        // mark completed: update card, animate coin, update balance, close modal etc
+        try { card.classList.add('watched'); card.setAttribute('data-watched','true'); } catch(e){}
+        animateCoinFly(card);
+        updateBalance(reward);
+        // show completion UI
+        browserContent.innerHTML = `<div style="text-align:center;padding:24px;">
+          <svg width="80" height="80" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="rgba(74,163,255,0.12)" stroke="#4AA3FF" stroke-width="3"/><path d="M30 50L43 63L70 36" stroke="#4AA3FF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3 style="color:var(--white)">Task complete</h3>
+          <p style="color:var(--text-secondary)">You've earned +${reward} G-coins</p>
+          <div style="margin-top:12px;"><button class="submit-btn" onclick="closeTaskModal()">Close</button></div>
+        </div>`;
+        // send payload to bot webhook if incomingPayload exists
+        try {
+          if(window.incomingPayload && window.incomingPayload.callback_url){
+            const payload = {
+              action:'task_complete',
+              user_id: window.incomingPayload.user_id || null,
+              reward: reward,
+              task_url: url || null,
+              timestamp: Date.now()
+            };
+            fetch(window.incomingPayload.callback_url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).catch(()=>{});
+          }
+        } catch(e){}
+      }
+    },1000);
+
+    // abort button handler
+    const abortBtn = document.getElementById('abort-task');
+    if(abortBtn) abortBtn.onclick = function(){
+      clearInterval(tick);
+      closeTaskModal();
+      showInlineMessage('Task aborted.');
+    };
+  }
+
+  // helpers used by the rest of your UI
+  function animateCoinFly(source){
+    try {
+      const rect = source.getBoundingClientRect();
+      const coin = document.createElement('div');
+      coin.className = 'coin-animation';
+      coin.style.left = (rect.left + rect.width/2) + 'px';
+      coin.style.top = (rect.top + rect.height/2) + 'px';
+      coin.innerHTML = '<svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" fill="#FFC857" stroke="#FFD87A"/><text x="16" y="22" text-anchor="middle" fill="#0B0B0D" font-size="18" font-weight="700">G</text></svg>';
+      document.body.appendChild(coin);
+      setTimeout(()=> coin.remove(), 700);
+    } catch(e){}
+  }
+
+  function updateBalance(amount){
+    const el = document.getElementById('balance-text');
+    if(!el) return;
+    const cur = parseInt(el.textContent.replace(/,/g,'')) || 0;
+    el.textContent = (cur + Number(amount || 0)).toLocaleString();
+  }
+
+  // decode Base64 payload from hash/query (bot should pass: https://.../#payload=BASE64 or ?payload=BASE64)
+  window.applyIncomingBase64Payload = function(b64){
+    try {
+      const s = b64.replace(/-/g,'+').replace(/_/g,'/');
+      const json = decodeURIComponent(escape(atob(s)));
+      window.incomingPayload = JSON.parse(json);
+    } catch(e){ console.warn('payload decode failed', e); }
+  };
+  window.addEventListener('load', ()=>{
+    try {
+      const h = location.hash || '';
+      if(h.includes('payload=')){
+        const m = /payload=([^&]+)/.exec(h);
+        if(m && m[1]) window.applyIncomingBase64Payload(decodeURIComponent(m[1]));
+      } else {
+        const q = new URLSearchParams(location.search);
+        if(q.has('payload')) window.applyIncomingBase64Payload(q.get('payload'));
+      }
+    } catch(e){}
+  });
+
+})();
+
+<!-- Paste this just before </body> -->
+<script>
+(function(){
+  // run when DOM ready
+  function ready(fn){ if(document.readyState !== 'loading') fn(); else document.addEventListener('DOMContentLoaded', fn); }
+
+  ready(function(){
+    // helpers
+    function showConsoleWarn(msg){ try{ console.warn(msg); }catch(e){} }
+    function showInlineNotice(text){
+      try {
+        const id = 'task-scroller-notice';
+        let n = document.getElementById(id);
+        if(!n){
+          n = document.createElement('div');
+          n.id = id;
+          n.style.cssText = 'position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:1200;padding:10px 16px;border-radius:10px;background:rgba(11,11,13,0.94);color:var(--text-secondary);font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,0.4)';
+          document.body.appendChild(n);
+        }
+        n.textContent = text;
+        setTimeout(()=>{ n.style.opacity = '0'; n.style.transition = 'all .35s ease'; setTimeout(()=>{ try{ n.remove(); }catch(e){} },350); }, 3000);
+      } catch(e){}
+    }
+
+    // find/create scroller and task list
+    let taskList = document.getElementById('task-list') || document.querySelector('.task-list');
+    if(!taskList){
+      showConsoleWarn('#task-list not found. Make sure your task HTML exists.');
+      showInlineNotice('Task UI: task-list missing. Check page markup.');
+      return;
+    }
+
+    // ensure scroller container exists above taskList
+    let scroller = document.getElementById('task-platforms');
+    if(!scroller){
+      scroller = document.createElement('div');
+      scroller.id = 'task-platforms';
+      scroller.className = 'social-scroll';
+      taskList.parentNode.insertBefore(scroller, taskList);
+    }
+
+    // inject minimal scroller CSS if not present (safe fallback)
+    (function ensureCSS(){
+      const id = 'task-scroller-fallback-css';
+      if(document.getElementById(id)) return;
+      const css = `
+        .social-scroll{ display:flex; gap:12px; padding:8px 6px; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity; overscroll-behavior-x: contain; box-sizing:border-box;}
+        .social-scroll .platform-chip{ scroll-snap-align:start; flex:0 0 auto; min-width:92px; max-width:140px; padding:8px 12px; border-radius:999px; background:rgba(255,255,255,0.02); color:var(--text-secondary); display:inline-flex; gap:8px; align-items:center; justify-content:center; font-weight:600; cursor:pointer; border:none; }
+        .social-scroll .platform-chip.active, .social-scroll .platform-chip[aria-pressed="true"]{ background:linear-gradient(135deg,var(--deep-purple),var(--vivid-magenta)); color:var(--white); }
+        .social-scroll .chip-icon{ width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; }
+      `;
+      const s = document.createElement('style'); s.id = id; s.appendChild(document.createTextNode(css)); document.head.appendChild(s);
+    })();
+
+    // build platform list from task cards
+    function detectPlatformFromCard(card){
+      // 1) explicit data-platform
+      const dp = (card.getAttribute && card.getAttribute('data-platform')) ? card.getAttribute('data-platform').trim().toLowerCase() : '';
+      if(dp) return dp;
+
+      // 2) look for platform-icon class inside
+      const icon = card.querySelector && (card.querySelector('.platform-icon') || card.querySelector('[class*="platform-icon"]'));
+      if(icon){
+        const cls = Array.from(icon.classList || []).join(' ');
+        const names = ['youtube','telegram','whatsapp','website','twitter','tiktok','instagram','facebook','discord','x'];
+        for(const n of names){
+          if(cls.indexOf(n) !== -1) return n;
+        }
+      }
+
+      // 3) try to infer from title text inside card
+      const title = (card.querySelector && (card.querySelector('.task-title') || card.querySelector('h3') || card.querySelector('.post-content'))) ?
+                    (card.querySelector('.task-title')||card.querySelector('h3')||card.querySelector('.post-content')).textContent.toLowerCase() : '';
+      if(title){
+        if(title.includes('youtube')) return 'youtube';
+        if(title.includes('telegram')) return 'telegram';
+        if(title.includes('whatsapp')) return 'whatsapp';
+        if(title.includes('instagram')) return 'instagram';
+        if(title.includes('tiktok')) return 'tiktok';
+        if(title.includes('twitter') || title.includes('x ')) return 'twitter';
+        if(title.includes('facebook')) return 'facebook';
+        if(title.includes('discord')) return 'discord';
+        if(title.includes('visit') || title.includes('website') || title.includes('sign up')) return 'website';
+      }
+
+      // 4) fallback
+      return 'other';
+    }
+
+    // collect cards (allow dynamic changes — re-read)
+    const cards = Array.from(taskList.querySelectorAll('.task-card'));
+    if(cards.length === 0){
+      // try global search for task-card class (in case structure differs)
+      const alt = Array.from(document.querySelectorAll('.task-card'));
+      if(alt.length) alt.forEach(c => taskList.appendChild(c)); // move into list
+    }
+
+    const finalCards = Array.from(taskList.querySelectorAll('.task-card'));
+    if(finalCards.length === 0){
+      showConsoleWarn('No .task-card elements found inside #task-list. Nothing to populate.');
+      // show friendly placeholder inside scroller
+      scroller.innerHTML = '<div style="color:var(--text-secondary);padding:10px;">No tasks available</div>';
+      return;
+    }
+
+    // build unique platforms preserving order
+    const platformOrder = [];
+    const platformMap = new Map();
+    finalCards.forEach(card=>{
+      const p = detectPlatformFromCard(card) || 'other';
+      if(!platformMap.has(p)){
+        platformMap.set(p, {key:p, label: p === 'other' ? 'Other' : p.replace(/-/g,' ').replace(/\b\w/g, c=>c.toUpperCase())});
+        platformOrder.push(p);
+      }
+      // ensure card has attribute for easier filtering later
+      card.setAttribute('data-platform', card.getAttribute('data-platform') || detectPlatformFromCard(card));
+    });
+
+    // build chips: All + platforms
+    scroller.innerHTML = '';
+    const createChip = (key, label, active) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'platform-chip' + (active ? ' active' : '');
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      if(key) btn.setAttribute('data-platform', key);
+      btn.innerHTML = `<span class="chip-icon">${String(label).split(' ')[0].slice(0,2).toUpperCase()}</span><span style="margin-left:8px">${label}</span>`;
+      return btn;
+    };
+
+    scroller.appendChild(createChip('', 'All', true));
+    platformOrder.forEach((p, idx) => {
+      const meta = platformMap.get(p);
+      scroller.appendChild(createChip(p, meta.label, false));
+    });
+
+    // attach chip click handler (delegated)
+    scroller.addEventListener('click', function(e){
+      const btn = e.target.closest('.platform-chip');
+      if(!btn) return;
+      const platform = btn.getAttribute('data-platform') || '';
+      // toggle active state
+      Array.from(scroller.querySelectorAll('.platform-chip')).forEach(c => { c.classList.remove('active'); c.setAttribute('aria-pressed','false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-pressed','true');
+      // filter cards
+      Array.from(taskList.querySelectorAll('.task-card')).forEach(card=>{
+        const cp = (card.getAttribute('data-platform')||'').toLowerCase();
+        card.style.display = (!platform || cp === platform.toLowerCase()) ? '' : 'none';
+      });
+    }, {passive:true});
+
+    // pointer/touch scroller attachment (prevents vertical scroll stealing)
+    (function attachDrag(el){
+      if(!el) return;
+      let active=false, startX=0, startY=0, startScroll=0, lock=null;
+      el.addEventListener('pointerdown', e=>{
+        if(e.pointerType === 'mouse' && e.button !== 0) return;
+        active=true; startX=e.clientX; startY=e.clientY; startScroll=el.scrollLeft; lock=null;
+        try{ el.setPointerCapture(e.pointerId); }catch(e){}
+      }, {passive:true});
+      el.addEventListener('pointermove', e=>{
+        if(!active) return;
+        const dx=e.clientX-startX, dy=e.clientY-startY;
+        if(!lock){
+          if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) lock='x';
+          else if(Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) lock='y';
+        }
+        if(lock==='x'){
+          if(e.cancelable) e.preventDefault();
+          el.scrollLeft = startScroll - dx;
+        }
+      }, {passive:false});
+      el.addEventListener('pointerup', e=>{ active=false; try{ el.releasePointerCapture(e.pointerId); }catch(e){} }, {passive:true});
+      el.addEventListener('pointercancel', ()=> active=false, {passive:true});
+      // touch fallback
+      el.addEventListener('touchstart', ev=>{
+        const t=ev.touches[0]; active=true; startX=t.clientX; startY=t.clientY; startScroll=el.scrollLeft; lock=null;
+      }, {passive:true});
+      el.addEventListener('touchmove', ev=>{
+        if(!active) return;
+        const t=ev.touches[0]; const dx=t.clientX-startX, dy=t.clientY-startY;
+        if(!lock){
+          if(Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) lock='x';
+          else if(Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) lock='y';
+        }
+        if(lock==='x'){
+          if(ev.cancelable) ev.preventDefault();
+          el.scrollLeft = startScroll - dx;
+        }
+      }, {passive:false});
+      el.addEventListener('touchend', ()=> active=false, {passive:true});
+    })(scroller);
+
+    // expose filter function globally (optional)
+    window.filterTasks = function(platform){
+      Array.from(taskList.querySelectorAll('.task-card')).forEach(card=>{
+        const cp = (card.getAttribute('data-platform')||'').toLowerCase();
+        card.style.display = (!platform || cp === platform.toLowerCase()) ? '' : 'none';
+      });
+    };
+
+    // ensure visible
+    scroller.style.display = 'flex';
+    taskList.style.display = '';
+
+    // final debug log
+    console.log('Task scroller ready — platforms:', platformOrder);
+  });
+})();
+
+
 
   </script>
  </body>
