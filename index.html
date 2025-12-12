@@ -1633,123 +1633,38 @@
       }
     }
 
-// ==================== BOT COMMUNICATION ====================
-async function sendToBot(event, data) {
-  try {
-    // build payload (keep same fields as your original)
-    const payload = {
-      event: event,
-      userId: (window.AppState && AppState.user) ? AppState.user.id : (window.AppState && AppState.userId) ? AppState.userId : null,
-      timestamp: new Date().toISOString(),
-      ...data
-    };
-
-    // safe base64 encode (browser)
-    let encodedPayload;
-    try {
-      encodedPayload = btoa(JSON.stringify(payload));
-    } catch (e) {
-      // fallback: try to encode in chunks (rare)
+    // ==================== BOT COMMUNICATION ====================
+    async function sendToBot(event, data) {
       try {
-        encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      } catch (err) {
-        console.warn('btoa failed; sending unencoded payload as fallback', err);
-        encodedPayload = JSON.stringify(payload);
+        const payload = {
+          event: event,
+          userId: AppState.user?.id,
+          timestamp: new Date().toISOString(),
+          ...data
+        };
+        
+        const encodedPayload = btoa(JSON.stringify(payload));
+        
+        // This is how Bots.Business expects data
+        // The bot will have an onWebhook command that receives this
+        console.log('Sending to bot:', payload);
+        
+        // For Bots.Business, we use their specific format
+        const botPayload = {
+          type: 'webhook',
+          data: encodedPayload,
+          botId: AppState.botId
+        };
+        
+        // This will trigger the bot's onWebhook command
+        // Bots.Business will handle the rest
+        return botPayload;
+        
+      } catch (error) {
+        console.error('Error sending to bot:', error);
+        throw error;
       }
     }
-
-    // This is how Bots.Business expects data
-    // The bot will have an onWebhook command that receives this
-    console.log('Sending to bot (local payload):', payload);
-
-    // For Bots.Business, we use their specific format
-    const botPayload = {
-      type: 'webhook',
-      data: encodedPayload,
-      botId: (window.AppState && AppState.botId) ? AppState.botId : undefined
-    };
-
-    // Try to discover callback URL (bot should provide it via AppState.callbackUrl or query param)
-    function getCallbackUrl() {
-      // 1) AppState.callbackUrl
-      if (window.AppState && AppState.callbackUrl) return AppState.callbackUrl;
-
-      // 2) AppState.webhook or botApiUrl
-      if (window.AppState && (AppState.webhook || AppState.botApiUrl)) return AppState.webhook || AppState.botApiUrl;
-
-      // 3) query param ?callback=...
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const cb = params.get('callback') || params.get('callbackUrl') || params.get('cb');
-        if (cb) {
-          try { return decodeURIComponent(cb); } catch (e) { return cb; }
-        }
-      } catch (e) { /* ignore */ }
-
-      // 4) fallback to origin + /webhook (useful for local testing)
-      try {
-        return window.location.origin + '/webhook';
-      } catch (e) {
-        return null;
-      }
-    }
-
-    const callbackUrl = getCallbackUrl();
-    if (callbackUrl) {
-      // Attempt to POST in a few reasonable formats (wrapper, raw JSON, minimal {data})
-      const headers = { 'Content-Type': 'application/json' };
-
-      // Attempt A: bot wrapper (preferred)
-      try {
-        const resp = await fetch(callbackUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(botPayload),
-          credentials: 'omit'
-        });
-        console.log(`sendToBot: POST wrapper -> ${callbackUrl} status: ${resp.status}`);
-        // Don't throw on non-OK — some webhook endpoints respond differently; log and continue
-      } catch (err) {
-        console.warn('sendToBot: wrapper POST failed', err);
-      }
-
-      // Attempt B: raw decoded JSON (some webhooks expect the raw payload)
-      try {
-        const resp2 = await fetch(callbackUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload),
-          credentials: 'omit'
-        });
-        console.log(`sendToBot: POST raw payload -> ${callbackUrl} status: ${resp2.status}`);
-      } catch (err) {
-        console.warn('sendToBot: raw payload POST failed', err);
-      }
-
-      // Attempt C: minimal wrapper { data: base64 } (another common format)
-      try {
-        const resp3 = await fetch(callbackUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ data: encodedPayload }),
-          credentials: 'omit'
-        });
-        console.log(`sendToBot: POST {data} -> ${callbackUrl} status: ${resp3.status}`);
-      } catch (err) {
-        console.warn('sendToBot: {data} POST failed', err);
-      }
-    } else {
-      console.warn('sendToBot: no callbackUrl discovered (AppState.callbackUrl or ?callback). Returning botPayload only.');
-    }
-
-    // Return the botPayload (keeps existing contract unchanged)
-    return botPayload;
-
-  } catch (error) {
-    console.error('Error sending to bot:', error);
-    throw error;
-  }
-}
 
     // ==================== APP INITIALIZATION ====================
     async function initializeApp() {
