@@ -1745,1918 +1745,1949 @@
             </div>
         </div>
     </div>
+<!-- Replace the entire <script> section in your HTML with this -->
+<script>
+    // ==================== GLOBAL STATE ====================
+    const appState = {
+        user: null,
+        balance: 0,
+        vipLevel: 'none',
+        vipBadge: '♨️ No VIP',
+        vipExpiry: 'N/A',
+        dailyCounters: {
+            tasks: 0,
+            ads: 0
+        },
+        posts: [],
+        tasks: [],
+        ads: [],
+        randomTasks: [],
+        platforms: [],
+        currentTask: null,
+        currentAd: null,
+        currentPostId: null,
+        timerInterval: null,
+        isTelegramWebApp: false,
+        WebApp: null,
+        lastScrollPosition: 0,
+        // Bot communication state
+        incomingPayload: null,
+        botWebhook: null,
+        telegramUserId: null,
+        sessionStorage: null
+    };
 
-    <script>
-        // ==================== GLOBAL STATE ====================
-        const appState = {
-            user: null,
-            balance: 0,
-            vipLevel: 'none',
-            dailyCounters: { tasks: 0, ads: 0 },
-            posts: [],
-            tasks: [],
-            ads: [],
-            randomTasks: [],
-            platforms: [],
-            currentTask: null,
-            currentAd: null,
-            currentPostId: null,
-            timerInterval: null,
-            isTelegramWebApp: false,
-            WebApp: null,
-            lastScrollPosition: 0,
-            // BOT COMMUNICATION STATE
-            botWebhook: null,
-            botCallbackUrl: null,
-            botUserId: null,
-            sessionId: Date.now().toString(),
-            lastPayloadHash: null,
-            pendingEvents: [],
-            // SMARTLINKS
-            SMART_LINKS: [
-                'https://otieu.com/4/10176113',
-                'https://otieu.com/4/10176184',
-                'https://otieu.com/4/10176114',
-                'https://otieu.com/4/10176185'
-            ]
-        };
+    // ==================== BOT PROPERTIES MAPPING ====================
+    // These match exactly your bot's properties
+    const botProperties = {
+        gcoin: 0,
+        password: "Not Generated",
+        phone: "Not set",
+        country: "Nigeria",
+        referral_code: "Not set",
+        ads_viewed: 0,
+        games_played: 0,
+        tasks_done: 0,
+        vip_badge: "♨️ No VIP",
+        vip_level: "No VIP",
+        vip_expiry: "N/A",
+        username: "@username",
+        user_id: "Unknown",
+        join_date: new Date().toLocaleDateString("en-GB")
+    };
 
-        // ==================== PLATFORM CONFIG ====================
-        const PLATFORMS = [
-            { id: 'youtube', name: 'YouTube', color: '#FF0000' },
-            { id: 'telegram', name: 'Telegram', color: '#0088CC' },
-            { id: 'instagram', name: 'Instagram', color: '#E1306C' },
-            { id: 'twitter', name: 'Twitter', color: '#1DA1F2' },
-            { id: 'tiktok', name: 'TikTok', color: '#000000' },
-            { id: 'facebook', name: 'Facebook', color: '#1877F2' },
-            { id: 'whatsapp', name: 'WhatsApp', color: '#25D366' },
-            { id: 'discord', name: 'Discord', color: '#5865F2' },
-            { id: 'website', name: 'Website', color: '#4AA3FF' }
-        ];
+    // ==================== SMART LINKS ====================
+    const SMART_LINKS = [
+        'https://otieu.com/4/10176113',
+        'https://otieu.com/4/10176184',
+        'https://otieu.com/4/10176114',
+        'https://otieu.com/4/10176185'
+    ];
 
-        // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // STEP 1: Parse incoming payload from Telegram bot
-                await parseIncomingPayload();
-                
-                // STEP 2: Initialize Telegram WebApp
-                initializeTelegramWebApp();
-                
-                // STEP 3: Load initial data (platforms, demo posts, tasks, ads)
-                await loadInitialData();
-                
-                // STEP 4: Setup all event listeners
-                setupAllEventListeners();
-                
-                // STEP 5: Initialize platform auto-scroll
-                initPlatformAutoScroll();
-                
-                // STEP 6: Hide loading overlay
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 500);
-                
-                // STEP 7: Send "app_loaded" event to bot
-                await sendToBot('app_loaded', {
-                    screen: getCurrentScreen(),
-                    session_id: appState.sessionId,
-                    platform: navigator.platform,
-                    user_agent: navigator.userAgent.substring(0, 100)
-                });
-                
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showToast('Failed to initialize application', 'error');
-                document.getElementById('loadingOverlay').classList.add('hidden');
-            }
-        });
+    // ==================== PLATFORM CONFIG ====================
+    const PLATFORMS = [
+        { id: 'youtube', name: 'YouTube', color: '#FF0000' },
+        { id: 'telegram', name: 'Telegram', color: '#0088CC' },
+        { id: 'instagram', name: 'Instagram', color: '#E1306C' },
+        { id: 'twitter', name: 'Twitter', color: '#1DA1F2' },
+        { id: 'tiktok', name: 'TikTok', color: '#000000' },
+        { id: 'facebook', name: 'Facebook', color: '#1877F2' },
+        { id: 'whatsapp', name: 'WhatsApp', color: '#25D366' },
+        { id: 'discord', name: 'Discord', color: '#5865F2' },
+        { id: 'website', name: 'Website', color: '#4AA3FF' }
+    ];
 
-        // ==================== PAYLOAD PARSING & BOT COMMUNICATION ====================
-        async function parseIncomingPayload() {
-            try {
-                console.log('🔍 Parsing incoming payload...');
-                
-                // Method 1: Check URL parameters (Telegram WebApp style)
-                const urlParams = new URLSearchParams(window.location.search);
-                const payloadParam = urlParams.get('payload') || urlParams.get('data') || urlParams.get('start');
-                
-                // Method 2: Check hash parameters
-                const hashParams = window.location.hash ? new URLSearchParams(window.location.hash.replace('#', '')) : null;
-                const hashPayload = hashParams ? hashParams.get('payload') : null;
-                
-                // Method 3: Check localStorage for previous session
-                const savedSession = localStorage.getItem('gaingrid_session');
-                
-                let payload = null;
-                
-                // Try to parse payload from URL
-                if (payloadParam) {
-                    payload = await decodePayload(payloadParam);
-                } else if (hashPayload) {
-                    payload = await decodePayload(hashPayload);
-                }
-                
-                // If no URL payload, check saved session
-                if (!payload && savedSession) {
-                    try {
-                        const saved = JSON.parse(savedSession);
-                        payload = saved.lastPayload;
-                        console.log('📂 Using saved session:', saved.userId);
-                    } catch (e) {
-                        console.warn('Failed to parse saved session:', e);
-                    }
-                }
-                
-                // If we have payload, process it
-                if (payload) {
-                    await handleBotPayload(payload);
-                } else {
-                    console.log('⚠️ No payload found, using demo mode');
-                    setupDemoUser();
-                }
-                
-            } catch (error) {
-                console.error('Payload parsing error:', error);
-                setupDemoUser();
-            }
+    // ==================== UTILITY FUNCTIONS (from Spin & Win) ====================
+    function safeText(resp) { 
+        try { 
+            return resp ? resp.text() : null; 
+        } catch(e){ 
+            return null; 
+        } 
+    }
+
+    function tryParseJSONorB64(input) {
+        if (input === undefined || input === null) return null;
+        if (typeof input === 'object') return input;
+        let s = String(input).trim();
+
+        // Direct JSON
+        if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) {
+            try { return JSON.parse(s); } catch(e){}
         }
 
-        async function decodePayload(payloadString) {
-            try {
-                // Try Base64 decode
-                try {
-                    const decoded = atob(payloadString);
-                    const parsed = JSON.parse(decoded);
+        // URL-decoded JSON
+        try {
+            const dec = decodeURIComponent(s);
+            if ((dec.startsWith('{') && dec.endsWith('}')) || (dec.startsWith('[') && dec.endsWith(']'))) {
+                return JSON.parse(dec);
+            }
+        } catch(e){}
+
+        // Strings wrapped in quotes -> unwrap and retry
+        try {
+            if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+                const unq = s.substring(1, s.length-1);
+                const tryInner = tryParseJSONorB64(unq);
+                if (tryInner) return tryInner;
+            }
+        } catch(e){}
+
+        // Base64 (URL-safe)
+        try {
+            let b = s.replace(/-/g,'+').replace(/_/g,'/');
+            try { b = decodeURIComponent(b); } catch(e){}
+            b = b + '='.repeat((4 - (b.length % 4)) % 4);
+            let raw = atob(b);
+            try { raw = decodeURIComponent(escape(raw)); } catch(e){}
+            if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
+                return JSON.parse(raw);
+            }
+            const nested = tryParseJSONorB64(raw);
+            if (nested) return nested;
+            return raw;
+        } catch(e){}
+
+        // fallback: try atob directly
+        try {
+            let raw = atob(s);
+            try { raw = decodeURIComponent(escape(raw)); } catch(e){}
+            const nested = tryParseJSONorB64(raw);
+            if (nested) return nested;
+            if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
+                return JSON.parse(raw);
+            }
+            return raw;
+        } catch(e){}
+
+        return null;
+    }
+
+    // ==================== PAYLOAD PARSING (from Spin & Win) ====================
+    function parseDeeplinkPayload() {
+        try {
+            const qs = new URLSearchParams(location.search || '');
+            const candidates = [];
+
+            ['start','data','s','p','payload'].forEach(k => { 
+                const v = qs.get(k); 
+                if (v) candidates.push(v); 
+            });
+
+            if (location.hash) {
+                let rawHash = location.hash.replace(/^#/,'');
+                if (rawHash.includes('?')) {
+                    const hashQs = rawHash.split('?').slice(1).join('?');
+                    const hparams = new URLSearchParams(hashQs);
+                    ['start','data','s','p','payload'].forEach(k => { 
+                        const v = hparams.get(k); 
+                        if (v) candidates.push(v); 
+                    });
+                } else {
+                    candidates.push(rawHash);
+                }
+            }
+
+            if (location.search && location.search.length > 1) {
+                candidates.push(location.search.replace(/^\?/,''));
+            }
+
+            for (const c of candidates) {
+                if (!c) continue;
+                const parsed = tryParseJSONorB64(c);
+                if (parsed && typeof parsed === 'object') {
+                    try { 
+                        sessionStorage.setItem('gainGridDashboardData', JSON.stringify(parsed)); 
+                    } catch(e){}
                     return parsed;
-                } catch (e1) {
-                    // Try URL decode then JSON
-                    try {
-                        const urlDecoded = decodeURIComponent(payloadString);
-                        const parsed = JSON.parse(urlDecoded);
-                        return parsed;
-                    } catch (e2) {
-                        // Try direct JSON
-                        try {
-                            const parsed = JSON.parse(payloadString);
-                            return parsed;
-                        } catch (e3) {
-                            console.warn('All decode attempts failed:', e3);
-                            return null;
-                        }
-                    }
                 }
-            } catch (error) {
-                console.error('Decode error:', error);
-                return null;
             }
-        }
 
-        async function handleBotPayload(payload) {
-            try {
-                console.log('🤖 Processing bot payload:', payload);
-                
-                // Calculate payload hash for continuity check
-                const payloadHash = JSON.stringify(payload);
-                
-                // Check if this is same as last payload
-                if (appState.lastPayloadHash === payloadHash) {
-                    console.log('🔄 Same payload detected, continuing session');
-                } else {
-                    console.log('🆕 New payload detected, resetting session');
-                    appState.lastPayloadHash = payloadHash;
-                }
-                
-                // Extract bot communication endpoints
-                appState.botWebhook = payload.webhook || payload.callback_url || payload.callbackUrl || null;
-                appState.botCallbackUrl = payload.callback_url || payload.webhook || null;
-                appState.botUserId = payload.user_id || payload.userId || payload.user?.id || null;
-                
-                // Extract user balance (G-coin balance from bot)
-                if (payload.balance !== undefined) {
-                    appState.balance = Number(payload.balance);
-                    console.log('💰 Updated balance from bot:', appState.balance);
-                }
-                
-                // Extract VIP level
-                if (payload.vip_level || payload.vipLevel) {
-                    appState.vipLevel = (payload.vip_level || payload.vipLevel || 'none').toString().toLowerCase();
-                    console.log('👑 Updated VIP level:', appState.vipLevel);
-                }
-                
-                // Extract user info
-                if (payload.user) {
-                    appState.user = { ...appState.user, ...payload.user };
-                } else if (payload.first_name || payload.username) {
-                    appState.user = {
-                        id: appState.botUserId || 'unknown',
-                        firstName: payload.first_name || 'User',
-                        lastName: payload.last_name || '',
-                        username: payload.username || `user_${Date.now()}`
-                    };
-                }
-                
-                // Extract tasks if provided
-                if (payload.tasks && Array.isArray(payload.tasks)) {
-                    appState.tasks = payload.tasks.map(task => ({
-                        ...task,
-                        completed: task.completed || false,
-                        link: task.link || getRandomSmartLink()
-                    }));
-                }
-                
-                // Extract posts if provided
-                if (payload.posts && Array.isArray(payload.posts)) {
-                    appState.posts = payload.posts;
-                }
-                
-                // Save session for continuity
-                saveSessionToStorage();
-                
-                // Update UI immediately
-                updateUIFromState();
-                
-                // Send acknowledgment back to bot
-                if (appState.botWebhook) {
-                    setTimeout(() => {
-                        sendToBot('payload_received', {
-                            user_id: appState.botUserId,
-                            balance: appState.balance,
-                            vip_level: appState.vipLevel,
-                            session_id: appState.sessionId
-                        });
-                    }, 1000);
-                }
-                
-            } catch (error) {
-                console.error('Bot payload handling error:', error);
+            const cached = sessionStorage.getItem('gainGridDashboardData');
+            if (cached) {
+                try { return JSON.parse(cached); } catch(e){}
             }
+            return null;
+        } catch(e) { 
+            console.warn('parseDeeplinkPayload err', e); 
+            return null; 
         }
+    }
 
-        function saveSessionToStorage() {
+    // ==================== SEND TO BOT (from Spin & Win pattern) ====================
+    async function postToBotWebhook(wrapper) {
+        try {
+            const webhookUrl = appState.incomingPayload && (
+                appState.incomingPayload.callback_url || 
+                appState.incomingPayload.callbackUrl || 
+                appState.incomingPayload.webhook || 
+                appState.incomingPayload.callbackurl
+            ) || '<% options.url %>';
+            
+            if (!webhookUrl || webhookUrl === '<% options.url %>') {
+                console.warn('No webhook/callback url to post to.');
+                return { ok: false, error: 'no_target' };
+            }
+            
+            const resp = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(wrapper),
+                keepalive: true
+            });
+            
+            return { 
+                ok: resp && resp.ok, 
+                status: resp && resp.status, 
+                text: await safeText(resp) 
+            };
+        } catch(e) {
+            console.error('postToBotWebhook err', e);
+            return { ok: false, error: String(e) };
+        }
+    }
+
+    // ==================== INITIALIZE BOT CONNECTION ====================
+    function initializeBotConnection(payload) {
+        try {
+            if (!payload) return;
+            
+            appState.incomingPayload = payload;
+            console.log('Bot payload received:', payload);
+            
+            // Map bot properties exactly as in your code
+            if (payload.gcoin !== undefined) {
+                appState.balance = Number(payload.gcoin) || 0;
+            }
+            
+            if (payload.vip_level || payload.vipLevel) {
+                appState.vipLevel = (payload.vip_level || payload.vipLevel || 'none').toString().toLowerCase();
+            }
+            
+            if (payload.vip_badge) {
+                appState.vipBadge = payload.vip_badge;
+            }
+            
+            if (payload.vip_expiry) {
+                appState.vipExpiry = payload.vip_expiry;
+            }
+            
+            if (payload.user_id || payload.userid || (payload.user && payload.user.user_id)) {
+                appState.telegramUserId = payload.user_id || payload.userid || (payload.user && payload.user.user_id);
+            }
+            
+            if (payload.username) {
+                appState.user = appState.user || {};
+                appState.user.username = payload.username;
+            }
+            
+            if (payload.first_name || payload.firstName) {
+                appState.user = appState.user || {};
+                appState.user.firstName = payload.first_name || payload.firstName;
+            }
+            
+            if (payload.last_name || payload.lastName) {
+                appState.user = appState.user || {};
+                appState.user.lastName = payload.last_name || payload.lastName;
+            }
+            
+            // Update counters from bot
+            if (payload.ads_viewed !== undefined) {
+                appState.dailyCounters.ads = Number(payload.ads_viewed) || 0;
+            }
+            
+            if (payload.tasks_done !== undefined) {
+                appState.dailyCounters.tasks = Number(payload.tasks_done) || 0;
+            }
+            
+            // Save to session for continuation
             try {
-                const sessionData = {
-                    userId: appState.botUserId,
+                sessionStorage.setItem('gainGridDashboardState', JSON.stringify({
                     balance: appState.balance,
                     vipLevel: appState.vipLevel,
+                    vipBadge: appState.vipBadge,
+                    vipExpiry: appState.vipExpiry,
+                    telegramUserId: appState.telegramUserId,
                     user: appState.user,
-                    lastPayloadHash: appState.lastPayloadHash,
-                    timestamp: Date.now(),
-                    sessionId: appState.sessionId
-                };
-                localStorage.setItem('gaingrid_session', JSON.stringify(sessionData));
-            } catch (error) {
-                console.warn('Failed to save session:', error);
-            }
-        }
-
-        function setupDemoUser() {
-            appState.user = {
-                id: 'demo_user_' + Date.now(),
-                firstName: 'Demo',
-                lastName: 'User',
-                username: 'demo_user'
-            };
-            appState.balance = 50000;
-            appState.vipLevel = 'gold';
-            updateUIFromState();
-        }
-
-        // ==================== BOT COMMUNICATION FUNCTIONS ====================
-        async function sendToBot(eventType, eventData = {}) {
-            try {
-                // If no webhook configured, queue event
-                if (!appState.botWebhook) {
-                    appState.pendingEvents.push({
-                        type: eventType,
-                        data: eventData,
-                        timestamp: Date.now()
-                    });
-                    console.log('📭 No webhook, queued event:', eventType);
-                    return false;
-                }
-                
-                // Prepare payload for bot
-                const payload = {
-                    event: eventType,
-                    user_id: appState.botUserId || appState.user?.id || 'unknown',
-                    timestamp: new Date().toISOString(),
-                    session_id: appState.sessionId,
-                    data: {
-                        ...eventData,
-                        current_balance: appState.balance,
-                        current_vip: appState.vipLevel,
-                        screen: getCurrentScreen()
-                    }
-                };
-                
-                console.log('📤 Sending to bot webhook:', payload);
-                
-                // Try fetch with keepalive for reliability
-                try {
-                    const response = await fetch(appState.botWebhook, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Session-ID': appState.sessionId,
-                            'X-User-ID': appState.botUserId || 'unknown'
-                        },
-                        body: JSON.stringify(payload),
-                        keepalive: true
-                    }).catch(fetchError => {
-                        console.warn('Fetch failed, trying beacon:', fetchError);
-                        return null;
-                    });
-                    
-                    if (response && response.ok) {
-                        console.log('✅ Bot response received');
-                        return true;
-                    }
-                } catch (fetchError) {
-                    console.warn('Fetch error:', fetchError);
-                }
-                
-                // Fallback to Beacon API
-                if (navigator.sendBeacon) {
-                    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-                    const beaconSent = navigator.sendBeacon(appState.botWebhook, blob);
-                    console.log('📡 Beacon sent:', beaconSent);
-                    return beaconSent;
-                }
-                
-                return false;
-                
-            } catch (error) {
-                console.error('❌ Error sending to bot:', error);
-                appState.pendingEvents.push({
-                    type: eventType,
-                    data: eventData,
                     timestamp: Date.now()
-                });
+                }));
+            } catch(e) {
+                console.warn('Session storage error:', e);
+            }
+            
+            // Update UI immediately
+            updateUIFromBotData();
+            
+            // Send acknowledgment to bot
+            sendDashboardEvent('dashboard_loaded', {
+                user_id: appState.telegramUserId,
+                balance: appState.balance,
+                vip_level: appState.vipLevel,
+                screen: 'dashboard',
+                session_id: Date.now().toString()
+            });
+            
+        } catch(error) {
+            console.error('Bot connection error:', error);
+        }
+    }
+
+    // ==================== SEND DASHBOARD EVENTS TO BOT ====================
+    async function sendDashboardEvent(action, eventData = {}) {
+        try {
+            if (!appState.incomingPayload) {
+                console.warn('No incoming payload, cannot send event');
                 return false;
             }
-        }
-
-        function sendPendingEvents() {
-            if (appState.pendingEvents.length === 0 || !appState.botWebhook) return;
             
-            const events = [...appState.pendingEvents];
-            appState.pendingEvents = [];
-            
-            events.forEach(event => {
-                setTimeout(() => {
-                    sendToBot(event.type, event.data);
-                }, 100);
-            });
-        }
-
-        // ==================== TELEGRAM WEBAPP ====================
-        function initializeTelegramWebApp() {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    appState.WebApp = window.Telegram.WebApp;
-                    appState.isTelegramWebApp = true;
-                    
-                    // Expand to full height
-                    appState.WebApp.expand();
-                    
-                    // Set background color
-                    appState.WebApp.setBackgroundColor('#0F0F14');
-                    
-                    // Get Telegram user data
-                    const tgUser = appState.WebApp.initDataUnsafe?.user;
-                    if (tgUser) {
-                        appState.user = {
-                            id: tgUser.id.toString(),
-                            firstName: tgUser.first_name,
-                            lastName: tgUser.last_name || '',
-                            username: tgUser.username,
-                            photoUrl: tgUser.photo_url
-                        };
-                        
-                        // If no bot user ID, use Telegram ID
-                        if (!appState.botUserId) {
-                            appState.botUserId = tgUser.id.toString();
-                        }
-                        
-                        updateUIFromState();
-                    }
-                    
-                    // Ready the WebApp
-                    appState.WebApp.ready();
-                    
-                    console.log('✅ Telegram WebApp initialized');
+            const wrapper = {
+                action: action,
+                payload: {
+                    user_id: appState.telegramUserId || (appState.user && appState.user.id) || null,
+                    timestamp: new Date().toISOString(),
+                    session_id: Date.now().toString(),
+                    ...eventData
+                },
+                meta: { 
+                    from_frontend: true,
+                    dashboard_version: '1.0',
+                    event_source: 'gainGrid_dashboard'
                 }
-            } catch (error) {
-                console.warn('Telegram WebApp init error:', error);
+            };
+            
+            console.log('Sending to bot:', wrapper);
+            const result = await postToBotWebhook(wrapper);
+            
+            if (!result.ok) {
+                console.warn('Failed to send event to bot:', result);
+                // Queue for retry
+                queueEventForRetry(action, eventData);
+                return false;
             }
+            
+            return true;
+            
+        } catch(error) {
+            console.error('Error sending dashboard event:', error);
+            queueEventForRetry(action, eventData);
+            return false;
         }
+    }
 
-        // ==================== UI UPDATE FUNCTIONS ====================
-        function updateUIFromState() {
+    function queueEventForRetry(action, eventData) {
+        const pendingEvents = JSON.parse(localStorage.getItem('gainGridPendingEvents') || '[]');
+        pendingEvents.push({
+            action,
+            eventData,
+            timestamp: Date.now(),
+            retryCount: 0
+        });
+        localStorage.setItem('gainGridPendingEvents', JSON.stringify(pendingEvents));
+    }
+
+    // ==================== UPDATE UI FROM BOT DATA ====================
+    function updateUIFromBotData() {
+        try {
             // Update balance display
-            updateBalanceDisplay();
-            
-            // Update VIP badge
-            updateVipBadge();
-            
-            // Update user info
-            updateUserInfo();
-            
-            // Update counters
-            updateAllCounters();
-        }
-
-        function updateBalanceDisplay() {
             const balanceText = document.getElementById('balanceText');
             const statGcoins = document.getElementById('statGcoins');
             
-            const formattedBalance = appState.balance.toLocaleString();
-            
             if (balanceText) {
-                balanceText.textContent = formattedBalance;
+                balanceText.textContent = appState.balance.toLocaleString();
             }
+            
             if (statGcoins) {
-                statGcoins.textContent = formattedBalance;
-            }
-        }
-
-        function updateVipBadge() {
-            const vipBadge = document.getElementById('vipBadge');
-            if (!vipBadge) return;
-            
-            // Reset classes
-            vipBadge.className = 'vip-badge';
-            
-            // Add level class
-            vipBadge.classList.add(appState.vipLevel);
-            
-            // Set text
-            const levelNames = {
-                none: 'No VIP',
-                basic: 'Basic VIP',
-                silver: 'Silver VIP',
-                gold: 'Gold VIP',
-                premium: 'Premium VIP'
-            };
-            
-            vipBadge.textContent = levelNames[appState.vipLevel] || 'No VIP';
-            
-            // Update colors
-            const colors = {
-                none: { bg: 'rgba(255,255,255,0.1)', text: '#9AA0A6' },
-                basic: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8b5cf6' },
-                silver: { bg: 'rgba(156, 163, 175, 0.2)', text: '#9ca3af' },
-                gold: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b' },
-                premium: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444' }
-            };
-            
-            const color = colors[appState.vipLevel] || colors.none;
-            vipBadge.style.background = color.bg;
-            vipBadge.style.color = color.text;
-        }
-
-        function updateUserInfo() {
-            if (!appState.user) return;
-            
-            const profileName = document.getElementById('profileName');
-            const profileUsername = document.getElementById('profileUsername');
-            const profileAvatar = document.getElementById('profileAvatar');
-            
-            if (profileName) {
-                const fullName = `${appState.user.firstName || ''} ${appState.user.lastName || ''}`.trim();
-                profileName.textContent = fullName || 'User';
+                statGcoins.textContent = appState.balance.toLocaleString();
             }
             
-            if (profileUsername) {
-                profileUsername.textContent = appState.user.username ? `@${appState.user.username}` : '@username';
-            }
+            // Update VIP display
+            updateVipDisplay();
             
-            if (profileAvatar) {
-                if (appState.user.photoUrl) {
-                    profileAvatar.innerHTML = `<img src="${appState.user.photoUrl}" alt="Profile">`;
-                } else {
-                    const initials = (appState.user.firstName?.[0] || 'U') + (appState.user.lastName?.[0] || '');
+            // Update user info
+            if (appState.user) {
+                const profileName = document.getElementById('profileName');
+                const profileUsername = document.getElementById('profileUsername');
+                const profileAvatar = document.getElementById('profileAvatar');
+                
+                if (profileName) {
+                    const firstName = appState.user.firstName || '';
+                    const lastName = appState.user.lastName || '';
+                    profileName.textContent = `${firstName} ${lastName}`.trim() || 'User';
+                }
+                
+                if (profileUsername) {
+                    profileUsername.textContent = appState.user.username ? `@${appState.user.username}` : '@username';
+                }
+                
+                if (profileAvatar) {
+                    const initials = getInitials(appState.user.firstName, appState.user.lastName);
+                    profileAvatar.innerHTML = initials;
                     profileAvatar.textContent = initials;
                 }
             }
+            
+            // Update counters
+            updateCounters();
+            
+        } catch(error) {
+            console.error('UI update error:', error);
         }
+    }
 
-        function updateAllCounters() {
-            // Task counter
-            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
-            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
-            
-            // Ads counter
-            const watchedAds = appState.ads.filter(a => a.watched).length;
-            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
-            
-            // Profile stats
-            document.getElementById('statTotalEarned').textContent = calculateTotalEarned().toLocaleString();
-            document.getElementById('statTasksDone').textContent = appState.dailyCounters.tasks.toString();
+    function updateVipDisplay() {
+        const vipBadge = document.getElementById('vipBadge');
+        if (!vipBadge) return;
+        
+        // Clear classes
+        vipBadge.className = 'vip-badge';
+        
+        // Add level class
+        vipBadge.classList.add(appState.vipLevel);
+        
+        // Set text based on vip level
+        let badgeText = '';
+        switch(appState.vipLevel) {
+            case 'basic': badgeText = 'Basic VIP'; break;
+            case 'silver': badgeText = 'Silver VIP'; break;
+            case 'gold': badgeText = 'Gold VIP'; break;
+            case 'premium': badgeText = 'Premium VIP'; break;
+            default: badgeText = 'No VIP';
         }
+        
+        vipBadge.textContent = badgeText;
+        
+        // Update style based on level
+        const colors = {
+            none: { bg: 'rgba(255,255,255,0.1)', text: '#9AA0A6' },
+            basic: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8b5cf6' },
+            silver: { bg: 'rgba(156, 163, 175, 0.2)', text: '#9ca3af' },
+            gold: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b' },
+            premium: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444' }
+        };
+        
+        const color = colors[appState.vipLevel] || colors.none;
+        vipBadge.style.background = color.bg;
+        vipBadge.style.color = color.text;
+    }
 
-        function calculateTotalEarned() {
-            // This would normally come from bot or local history
-            const savedTotal = localStorage.getItem('gaingrid_total_earned');
-            return savedTotal ? parseInt(savedTotal) : appState.balance * 2;
-        }
-
-        // ==================== DATA LOADING ====================
-        async function loadInitialData() {
-            try {
-                // Load platforms
-                loadPlatforms();
-                
-                // Load demo posts if no posts from bot
-                if (appState.posts.length === 0) {
-                    await loadDemoPosts();
-                }
-                
-                // Load tasks if no tasks from bot
-                if (appState.tasks.length === 0) {
-                    await loadTasks();
-                }
-                
-                // Load ads
-                await loadAds();
-                
-                // Update UI
-                updateFeed();
-                updateTasks();
-                updateAds();
-                
-            } catch (error) {
-                console.error('Data loading error:', error);
-            }
-        }
-
-        function loadPlatforms() {
-            const platformGrid = document.getElementById('platformGrid');
-            if (!platformGrid) return;
+    // ==================== INITIALIZATION ====================
+    async function initializeApp() {
+        try {
+            // 1. Parse incoming payload from bot (same as Spin & Win)
+            const payload = parseDeeplinkPayload();
             
-            platformGrid.innerHTML = '';
-            
-            PLATFORMS.forEach(platform => {
-                const platformElement = createPlatformElement(platform);
-                platformGrid.appendChild(platformElement);
-                
-                // Add duplicate for seamless scrolling
-                const duplicate = createPlatformElement(platform);
-                platformGrid.appendChild(duplicate);
-            });
-        }
-
-        function createPlatformElement(platform) {
-            const div = document.createElement('div');
-            div.className = `platform-card ${platform.id}`;
-            div.onclick = () => filterTasksByPlatform(platform.id);
-            
-            let svgIcon = '';
-            
-            switch (platform.id) {
-                case 'youtube':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>';
-                    break;
-                case 'telegram':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>';
-                    break;
-                case 'instagram':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
-                    break;
-                default:
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-            }
-            
-            div.innerHTML = `
-                <div class="platform-icon" style="color: ${platform.color}">
-                    ${svgIcon}
-                </div>
-                <div class="platform-name">${platform.name}</div>
-                <div class="platform-count">${getRandomCount()} tasks</div>
-            `;
-            
-            return div;
-        }
-
-        async function loadDemoPosts() {
-            appState.posts = [
-                {
-                    id: '1',
-                    userId: '123456',
-                    username: 'johndoe',
-                    userAvatar: 'JD',
-                    content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available!',
-                    media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://example.com/join',
-                    linkType: 'join',
-                    reward: 5000,
-                    likes: 24,
-                    comments: [
-                        { id: 'c1', userId: 'user1', username: 'Alice', text: 'Great opportunity!' },
-                        { id: 'c2', userId: 'user2', username: 'Bob', text: 'Just completed!' }
-                    ],
-                    shares: 12,
-                    timestamp: '2 hours ago',
-                    userHasLiked: false
-                },
-                {
-                    id: '2',
-                    userId: '789012',
-                    username: 'sarahkim',
-                    userAvatar: 'SK',
-                    content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes!',
-                    media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://example.com/survey',
-                    linkType: 'visit',
-                    reward: 3000,
-                    likes: 18,
-                    comments: [
-                        { id: 'c3', userId: 'user3', username: 'Charlie', text: 'Easy money!' }
-                    ],
-                    shares: 3,
-                    timestamp: '5 hours ago',
-                    userHasLiked: true
-                },
-                {
-                    id: '3',
-                    userId: '345678',
-                    username: 'mikepeters',
-                    userAvatar: 'MP',
-                    content: 'Watch this short video and get rewarded! No sign-up required. Just watch and earn!',
-                    media: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://example.com/watch',
-                    linkType: 'watch',
-                    reward: 2500,
-                    likes: 42,
-                    comments: [],
-                    shares: 8,
-                    timestamp: '1 day ago',
-                    userHasLiked: false
-                }
-            ];
-        }
-
-        async function loadTasks() {
-            appState.tasks = [
-                {
-                    id: 't1',
-                    platform: 'youtube',
-                    title: 'Watch YouTube Video',
-                    description: 'Watch full video and like. Stay 02:30 for reward.',
-                    duration: 150,
-                    reward: 5000,
-                    link: getRandomSmartLink(),
-                    completed: false
-                },
-                {
-                    id: 't2',
-                    platform: 'telegram',
-                    title: 'Join Telegram Channel',
-                    description: 'Join channel and stay active. Stay 00:45 for reward.',
-                    duration: 45,
-                    reward: 3500,
-                    link: getRandomSmartLink(),
-                    completed: false
-                },
-                {
-                    id: 't3',
-                    platform: 'website',
-                    title: 'Visit Website & Sign Up',
-                    description: 'Visit partner site and complete registration. Stay 01:15 for reward.',
-                    duration: 75,
-                    reward: 3000,
-                    link: getRandomSmartLink(),
-                    completed: false
-                }
-            ];
-            
-            generateRandomTasks();
-        }
-
-        async function loadAds() {
-            appState.ads = [];
-            for (let i = 0; i < 20; i++) {
-                appState.ads.push({
-                    id: `ad${i + 1}`,
-                    title: getRandomAdTitle(),
-                    duration: Math.floor(Math.random() * 30) + 30,
-                    reward: Math.floor(Math.random() * 61) + 60,
-                    source: getRandomAdSource(),
-                    link: getRandomSmartLink(),
-                    watched: i < 5
-                });
-            }
-        }
-
-        // ==================== UI RENDERING ====================
-        function updateFeed() {
-            const feedContainer = document.getElementById('feedContainer');
-            if (!feedContainer) return;
-            
-            feedContainer.innerHTML = '';
-            
-            if (appState.posts.length === 0) {
-                feedContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        No posts yet. Be the first to create a post!
-                    </div>
-                `;
-                return;
-            }
-            
-            appState.posts.forEach(post => {
-                const postElement = createPostElement(post);
-                feedContainer.appendChild(postElement);
-            });
-        }
-
-        function createPostElement(post) {
-            const div = document.createElement('div');
-            div.className = 'post-card';
-            div.dataset.postId = post.id;
-            
-            const mediaHtml = post.media ? `
-                <div class="post-media">
-                    <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
-                </div>
-            ` : '';
-            
-            const actionText = getActionText(post.linkType);
-            
-            div.innerHTML = `
-                <div class="post-header" onclick="viewUserProfile('${post.userId}')">
-                    <div class="avatar">
-                        ${post.userAvatar}
-                    </div>
-                    <div class="post-meta">
-                        <div class="poster-name">${post.username}</div>
-                        <div class="post-time">${post.timestamp}</div>
-                    </div>
-                </div>
-                <div class="post-content">${post.content}</div>
-                ${mediaHtml}
-                <div class="earnings-bar">
-                    <span class="earnings-label">Earn up to ${post.reward.toLocaleString()} G-coins</span>
-                </div>
-                <div class="post-actions">
-                    <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                  ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
-                        </svg>
-                        <span>${post.likes}</span>
-                    </button>
-                    <button class="action-btn" onclick="handleTaskAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>${actionText}</span>
-                    </button>
-                    <button class="action-btn" onclick="toggleComments('${post.id}')">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>${post.comments.length}</span>
-                    </button>
-                </div>
-                <div class="comments-section" id="comments-${post.id}">
-                    <div class="comments-container" id="comments-container-${post.id}">
-                        ${post.comments.map(comment => `
-                            <div class="comment-item">
-                                <div class="comment-avatar">${comment.username.charAt(0)}</div>
-                                <div class="comment-content">
-                                    <div class="comment-author">${comment.username}</div>
-                                    <div class="comment-text">${comment.text}</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="comment-input-container">
-                        <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
-                        <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
-                    </div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        function updateTasks() {
-            const taskList = document.getElementById('taskList');
-            if (!taskList) return;
-            
-            taskList.innerHTML = '';
-            
-            const allTasks = [...appState.tasks, ...appState.randomTasks];
-            
-            if (allTasks.length === 0) {
-                taskList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        No tasks available. Check back later!
-                    </div>
-                `;
-                return;
-            }
-            
-            allTasks.forEach(task => {
-                const taskElement = createTaskElement(task);
-                taskList.appendChild(taskElement);
-            });
-        }
-
-        function createTaskElement(task) {
-            const div = document.createElement('div');
-            div.className = `task-card ${task.completed ? 'completed' : ''}`;
-            div.dataset.taskId = task.id;
-            
-            const platform = PLATFORMS.find(p => p.id === task.platform) || PLATFORMS[0];
-            
-            div.innerHTML = `
-                <div class="task-header">
-                    <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;">
-                    </div>
-                    <div class="task-info">
-                        <h3 class="task-title">${task.title}</h3>
-                        <p class="task-description">${task.description}</p>
-                    </div>
-                    <div class="task-reward">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="10" cy="10" r="9" fill="#FFC857" />
-                            <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text>
-                        </svg>
-                        <span>${task.reward.toLocaleString()}</span>
-                    </div>
-                </div>
-                <div class="task-footer">
-                    <button class="task-btn primary" onclick="startTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
-                        ${task.completed ? 'Completed' : 'Start Task'}
-                    </button>
-                    <button class="task-btn secondary" onclick="viewTaskDetails('${task.id}')">
-                        Details
-                    </button>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        function updateAds() {
-            const watchGrid = document.getElementById('watchGrid');
-            if (!watchGrid) return;
-            
-            watchGrid.innerHTML = '';
-            
-            if (appState.ads.length === 0) {
-                watchGrid.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
-                        No ads available. Check back later!
-                    </div>
-                `;
-                return;
-            }
-            
-            appState.ads.forEach(ad => {
-                const adElement = createAdElement(ad);
-                watchGrid.appendChild(adElement);
-            });
-        }
-
-        function createAdElement(ad) {
-            const div = document.createElement('div');
-            div.className = `video-card ${ad.watched ? 'watched' : ''}`;
-            div.dataset.adId = ad.id;
-            
-            div.innerHTML = `
-                <div class="video-thumbnail" onclick="watchAd('${ad.id}')">
-                    ${ad.watched ? `
-                        <div class="watched-overlay">
-                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)" />
-                                <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                    ` : `
-                        <svg class="play-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" />
-                            <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
-                        </svg>
-                    `}
-                    <span class="video-duration">0:${ad.duration.toString().padStart(2, '0')}</span>
-                </div>
-                <div class="video-info">
-                    <div class="video-advertiser">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <rect width="14" height="14" rx="3" fill="${getRandomColor()}" />
-                        </svg>
-                        <span>${ad.source}</span>
-                    </div>
-                    <h3 class="video-title">${ad.title}</h3>
-                    <div class="video-meta">
-                        ${ad.watched ? `
-                            <span class="collected-badge">Collected</span>
-                        ` : `
-                            <span>Watch 0:${ad.duration.toString().padStart(2, '0')} · Earn</span>
-                        `}
-                        <span class="video-reward">+${ad.reward} G-coins</span>
-                    </div>
-                </div>
-            `;
-            
-            return div;
-        }
-
-        // ==================== TASK FUNCTIONS ====================
-        function generateRandomTasks() {
-            appState.randomTasks = [];
-            const taskCount = Math.min(10, 20 - appState.tasks.length);
-            
-            for (let i = 0; i < taskCount; i++) {
-                appState.randomTasks.push({
-                    id: `random${i + 1}`,
-                    platform: 'website',
-                    title: getRandomTaskTitle(),
-                    description: getRandomTaskDescription(),
-                    duration: Math.floor(Math.random() * 120) + 60,
-                    reward: Math.floor(Math.random() * 201) + 100,
-                    link: getRandomSmartLink(),
-                    completed: false,
-                    isRandom: true
-                });
-            }
-        }
-
-        function filterTasksByPlatform(platformId) {
-            const taskList = document.getElementById('taskList');
-            if (!taskList) return;
-            
-            taskList.innerHTML = '';
-            
-            const filteredTasks = [...appState.tasks, ...appState.randomTasks].filter(task => 
-                task.platform === platformId && !task.completed
-            );
-            
-            if (filteredTasks.length === 0) {
-                taskList.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        No tasks available for ${PLATFORMS.find(p => p.id === platformId)?.name || 'this platform'}. Check back later!
-                    </div>
-                `;
-                return;
-            }
-            
-            filteredTasks.forEach(task => {
-                const taskElement = createTaskElement(task);
-                taskList.appendChild(taskElement);
-            });
-        }
-
-        async function startTask(taskId) {
-            const allTasks = [...appState.tasks, ...appState.randomTasks];
-            const task = allTasks.find(t => t.id === taskId);
-            
-            if (!task || task.completed) return;
-            
-            if (appState.dailyCounters.tasks >= 20) {
-                showToast('Daily task limit reached! Come back tomorrow.', 'warning');
-                return;
-            }
-            
-            appState.currentTask = task;
-            
-            // Send event to bot
-            await sendToBot('task_started', {
-                task_id: task.id,
-                task_type: task.platform,
-                reward_amount: task.reward,
-                task_title: task.title
-            });
-            
-            openBrowserModal();
-            document.getElementById('browserUrl').textContent = task.link;
-            document.getElementById('browserIframe').src = task.link;
-            
-            startTimer(task.duration, 'task', task);
-        }
-
-        async function completeTask(data) {
-            try {
-                // Find and mark task as completed
-                let task = appState.tasks.find(t => t.id === data.id);
-                if (!task) {
-                    task = appState.randomTasks.find(t => t.id === data.id);
-                }
-                
-                if (task) {
-                    task.completed = true;
-                }
-                
-                // Update counters
-                appState.dailyCounters.tasks++;
-                
-                // Calculate reward with VIP bonus
-                const baseReward = data.reward;
-                const vipBonus = getVipBonus(appState.vipLevel);
-                const totalReward = baseReward + vipBonus;
-                
-                // Update balance
-                appState.balance += totalReward;
-                updateBalanceDisplay();
-                
-                // Save total earned
-                const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
-                localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
-                
-                // Update UI
-                updateTasks();
-                updateAllCounters();
-                
-                // Send completion event to bot
-                await sendToBot('task_completed', {
-                    task_id: data.id,
-                    base_reward: baseReward,
-                    vip_bonus: vipBonus,
-                    total_reward: totalReward,
-                    new_balance: appState.balance,
-                    task_type: data.platform
-                });
-                
-                // Save session
-                saveSessionToStorage();
-                
-                // Close modal and show success
-                closeBrowserModal();
-                showToast(`Task completed! +${totalReward.toLocaleString()} G-Coins`, 'success');
-                
-            } catch (error) {
-                console.error('Task completion error:', error);
-                showToast('Failed to complete task', 'error');
-            }
-        }
-
-        // ==================== AD FUNCTIONS ====================
-        async function watchAd(adId) {
-            const ad = appState.ads.find(a => a.id === adId);
-            if (!ad || ad.watched) return;
-            
-            if (appState.dailyCounters.ads >= 20) {
-                showToast('Daily ad limit reached! Come back tomorrow.', 'warning');
-                return;
-            }
-            
-            appState.currentAd = ad;
-            
-            // Send start event to bot
-            await sendToBot('ad_started', {
-                ad_id: ad.id,
-                ad_title: ad.title,
-                reward_amount: ad.reward,
-                duration: ad.duration
-            });
-            
-            // Try Monetag ad first
-            if (typeof show_10274566 === 'function') {
+            // 2. Check for saved state
+            const savedState = sessionStorage.getItem('gainGridDashboardState');
+            if (savedState) {
                 try {
-                    show_10274566('pop').then(async () => {
-                        await completeAd(ad);
-                    }).catch((error) => {
-                        console.log('Monetag ad failed, using fallback:', error);
-                        openAdFallback(ad);
-                    });
-                } catch (error) {
-                    openAdFallback(ad);
+                    const saved = JSON.parse(savedState);
+                    // Merge with current appState
+                    Object.assign(appState, saved);
+                } catch(e) {
+                    console.warn('Could not load saved state:', e);
                 }
-            } else {
+            }
+            
+            // 3. Initialize bot connection
+            if (payload) {
+                initializeBotConnection(payload);
+            } else if (savedState) {
+                // If no new payload but saved state exists, use saved state
+                updateUIFromBotData();
+            }
+            
+            // 4. Initialize Telegram WebApp if available
+            if (window.Telegram && window.Telegram.WebApp) {
+                appState.WebApp = window.Telegram.WebApp;
+                appState.isTelegramWebApp = true;
+                appState.WebApp.ready();
+                appState.WebApp.expand();
+                
+                // Get user data from Telegram
+                const telegramUser = appState.WebApp.initDataUnsafe.user;
+                if (telegramUser) {
+                    appState.user = appState.user || {};
+                    appState.user.id = telegramUser.id;
+                    appState.user.firstName = telegramUser.first_name;
+                    appState.user.lastName = telegramUser.last_name || '';
+                    appState.user.username = telegramUser.username;
+                    appState.user.photoUrl = telegramUser.photo_url;
+                    
+                    if (!appState.telegramUserId) {
+                        appState.telegramUserId = telegramUser.id;
+                    }
+                }
+            }
+            
+            // 5. Load platforms
+            loadPlatforms();
+            
+            // 6. Load demo data (only if no data from bot)
+            if (appState.posts.length === 0) {
+                await loadDemoPosts();
+            }
+            if (appState.tasks.length === 0) {
+                await loadTasks();
+            }
+            if (appState.ads.length === 0) {
+                await loadAds();
+            }
+            
+            // 7. Update UI
+            updateUIFromBotData();
+            updateFeed();
+            updateTasks();
+            updateAds();
+            
+            // 8. Setup event listeners
+            setupEventListeners();
+            initPlatformAutoScroll();
+            
+            // 9. Hide loading overlay
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 500);
+            
+            // 10. Retry any pending events
+            retryPendingEvents();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            showToast('Failed to initialize app', 'error');
+            
+            // Fallback: Hide loading anyway
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }, 1000);
+        }
+    }
+
+    // ==================== LOAD DATA FUNCTIONS ====================
+    async function loadDemoPosts() {
+        appState.posts = [
+            {
+                id: '1',
+                userId: '123456',
+                username: 'johndoe',
+                userAvatar: 'JD',
+                content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available!',
+                media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                link: 'https://example.com/join',
+                linkType: 'join',
+                reward: 5000,
+                likes: 24,
+                comments: [
+                    { id: 'c1', userId: 'user1', username: 'Alice', text: 'Great opportunity!' },
+                    { id: 'c2', userId: 'user2', username: 'Bob', text: 'Just completed!' }
+                ],
+                shares: 12,
+                timestamp: '2 hours ago',
+                userHasLiked: false
+            },
+            {
+                id: '2',
+                userId: '789012',
+                username: 'sarahkim',
+                userAvatar: 'SK',
+                content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes!',
+                media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                link: 'https://example.com/survey',
+                linkType: 'visit',
+                reward: 3000,
+                likes: 18,
+                comments: [
+                    { id: 'c3', userId: 'user3', username: 'Charlie', text: 'Easy money!' }
+                ],
+                shares: 3,
+                timestamp: '5 hours ago',
+                userHasLiked: true
+            },
+            {
+                id: '3',
+                userId: '345678',
+                username: 'mikepeters',
+                userAvatar: 'MP',
+                content: 'Watch this short video and get rewarded! No sign-up required. Just watch and earn!',
+                media: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                link: 'https://example.com/watch',
+                linkType: 'watch',
+                reward: 2500,
+                likes: 42,
+                comments: [],
+                shares: 8,
+                timestamp: '1 day ago',
+                userHasLiked: false
+            }
+        ];
+        
+        updateFeed();
+    }
+
+    async function loadTasks() {
+        appState.tasks = [
+            {
+                id: 't1',
+                platform: 'youtube',
+                title: 'Watch YouTube Video',
+                description: 'Watch full video and like. Stay 02:30 for reward.',
+                duration: 150,
+                reward: 5000,
+                link: getRandomSmartLink(),
+                completed: false
+            },
+            {
+                id: 't2',
+                platform: 'telegram',
+                title: 'Join Telegram Channel',
+                description: 'Join channel and stay active. Stay 00:45 for reward.',
+                duration: 45,
+                reward: 3500,
+                link: getRandomSmartLink(),
+                completed: false
+            },
+            {
+                id: 't3',
+                platform: 'website',
+                title: 'Visit Website & Sign Up',
+                description: 'Visit partner site and complete registration. Stay 01:15 for reward.',
+                duration: 75,
+                reward: 3000,
+                link: getRandomSmartLink(),
+                completed: false
+            }
+        ];
+        
+        generateRandomTasks();
+        updateTasks();
+    }
+
+    async function loadAds() {
+        appState.ads = [];
+        for (let i = 0; i < 20; i++) {
+            appState.ads.push({
+                id: `ad${i + 1}`,
+                title: getRandomAdTitle(),
+                duration: Math.floor(Math.random() * 30) + 30,
+                reward: Math.floor(Math.random() * 61) + 60,
+                source: getRandomAdSource(),
+                link: getRandomSmartLink(),
+                watched: i < 5
+            });
+        }
+        
+        updateAds();
+    }
+
+    // ==================== TASK FUNCTIONS ====================
+    function generateRandomTasks() {
+        appState.randomTasks = [];
+        const taskCount = Math.min(10, 20 - appState.tasks.length);
+        
+        for (let i = 0; i < taskCount; i++) {
+            appState.randomTasks.push({
+                id: `random${i + 1}`,
+                platform: 'website',
+                title: getRandomTaskTitle(),
+                description: getRandomTaskDescription(),
+                duration: Math.floor(Math.random() * 120) + 60,
+                reward: Math.floor(Math.random() * 201) + 100,
+                link: getRandomSmartLink(),
+                completed: false,
+                isRandom: true
+            });
+        }
+    }
+
+    function filterTasksByPlatform(platformId) {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) return;
+        
+        taskList.innerHTML = '';
+        
+        const filteredTasks = [...appState.tasks, ...appState.randomTasks].filter(task => 
+            task.platform === platformId && !task.completed
+        );
+        
+        if (filteredTasks.length === 0) {
+            taskList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    No tasks available for ${PLATFORMS.find(p => p.id === platformId)?.name || 'this platform'}. Check back later!
+                </div>
+            `;
+            return;
+        }
+        
+        filteredTasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+    }
+
+    async function startTask(taskId) {
+        const allTasks = [...appState.tasks, ...appState.randomTasks];
+        const task = allTasks.find(t => t.id === taskId);
+        
+        if (!task || task.completed) return;
+        
+        if (appState.dailyCounters.tasks >= 20) {
+            showToast('Daily task limit reached! Come back tomorrow.', 'warning');
+            return;
+        }
+        
+        appState.currentTask = task;
+        
+        // Send to bot
+        await sendDashboardEvent('task_started', {
+            task_id: task.id,
+            platform: task.platform,
+            reward: task.reward,
+            task_title: task.title,
+            current_balance: appState.balance
+        });
+        
+        openBrowserModal();
+        
+        document.getElementById('browserUrl').textContent = task.link;
+        document.getElementById('browserIframe').src = task.link;
+        
+        startTimer(task.duration, 'task', task);
+    }
+
+    async function completeTask(data) {
+        try {
+            let task = appState.tasks.find(t => t.id === data.id);
+            if (!task) {
+                task = appState.randomTasks.find(t => t.id === data.id);
+            }
+            
+            if (task) {
+                task.completed = true;
+            }
+            
+            appState.dailyCounters.tasks++;
+            
+            const baseReward = data.reward;
+            const vipBonus = getVipBonus(appState.vipLevel);
+            const totalReward = baseReward + vipBonus;
+            
+            appState.balance += totalReward;
+            updateUIFromBotData();
+            
+            await sendDashboardEvent('task_completed', {
+                task_id: data.id,
+                platform: data.platform,
+                base_reward: baseReward,
+                vip_bonus: vipBonus,
+                total_reward: totalReward,
+                new_balance: appState.balance,
+                tasks_done: appState.dailyCounters.tasks
+            });
+            
+            closeBrowserModal();
+            showToast(`Task completed! +${totalReward.toLocaleString()} G-Coins`, 'success');
+            
+            updateTasks();
+            updateCounters();
+            
+        } catch (error) {
+            console.error('Task completion error:', error);
+            showToast('Failed to complete task', 'error');
+        }
+    }
+
+    // ==================== AD FUNCTIONS ====================
+    async function watchAd(adId) {
+        const ad = appState.ads.find(a => a.id === adId);
+        if (!ad || ad.watched) return;
+        
+        if (appState.dailyCounters.ads >= 20) {
+            showToast('Daily ad limit reached! Come back tomorrow.', 'warning');
+            return;
+        }
+        
+        appState.currentAd = ad;
+        
+        await sendDashboardEvent('ad_started', {
+            ad_id: ad.id,
+            ad_title: ad.title,
+            reward: ad.reward,
+            duration: ad.duration,
+            current_balance: appState.balance
+        });
+        
+        if (typeof show_10274566 === 'function') {
+            try {
+                show_10274566('pop').then(async () => {
+                    await completeAd(ad);
+                }).catch((error) => {
+                    console.log('Monetag ad failed, using fallback:', error);
+                    openAdFallback(ad);
+                });
+            } catch (error) {
                 openAdFallback(ad);
             }
+        } else {
+            openAdFallback(ad);
         }
+    }
 
-        function openAdFallback(ad) {
-            openBrowserModal();
-            document.getElementById('browserUrl').textContent = ad.link;
-            document.getElementById('browserIframe').src = ad.link;
-            startTimer(ad.duration, 'ad', ad);
-        }
+    function openAdFallback(ad) {
+        openBrowserModal();
+        
+        document.getElementById('browserUrl').textContent = ad.link;
+        document.getElementById('browserIframe').src = ad.link;
+        
+        startTimer(ad.duration, 'ad', ad);
+    }
 
-        async function completeAd(data) {
-            try {
-                // Mark ad as watched
-                const ad = appState.ads.find(a => a.id === data.id);
-                if (ad) {
-                    ad.watched = true;
-                }
-                
-                // Update counters
-                appState.dailyCounters.ads++;
-                
-                // Calculate reward with VIP bonus
-                const baseReward = data.reward;
-                const vipBonus = getVipBonus(appState.vipLevel);
-                const totalReward = baseReward + vipBonus;
-                
-                // Update balance
-                appState.balance += totalReward;
-                updateBalanceDisplay();
-                
-                // Save total earned
-                const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
-                localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
-                
-                // Update UI
-                updateAds();
-                updateAllCounters();
-                
-                // Send completion event to bot
-                await sendToBot('ad_completed', {
-                    ad_id: data.id,
-                    base_reward: baseReward,
-                    vip_bonus: vipBonus,
-                    total_reward: totalReward,
-                    new_balance: appState.balance,
-                    ad_title: data.title
-                });
-                
-                // Save session
-                saveSessionToStorage();
-                
-                // Close modal if open
-                if (document.getElementById('browserModal').classList.contains('active')) {
-                    closeBrowserModal();
-                }
-                
-                showToast(`Ad watched! +${totalReward} G-Coins`, 'success');
-                
-            } catch (error) {
-                console.error('Ad completion error:', error);
-                showToast('Failed to complete ad', 'error');
+    async function completeAd(data) {
+        try {
+            const ad = appState.ads.find(a => a.id === data.id);
+            if (ad) {
+                ad.watched = true;
             }
-        }
-
-        function cleanupWatched() {
-            appState.ads = appState.ads.filter(ad => !ad.watched);
-            appState.tasks = appState.tasks.filter(task => !task.completed);
-            appState.randomTasks = appState.randomTasks.filter(task => !task.completed);
+            
+            appState.dailyCounters.ads++;
+            
+            const baseReward = data.reward;
+            const vipBonus = getVipBonus(appState.vipLevel);
+            const totalReward = baseReward + vipBonus;
+            
+            appState.balance += totalReward;
+            updateUIFromBotData();
+            
+            await sendDashboardEvent('ad_completed', {
+                ad_id: data.id,
+                base_reward: baseReward,
+                vip_bonus: vipBonus,
+                total_reward: totalReward,
+                new_balance: appState.balance,
+                ads_viewed: appState.dailyCounters.ads
+            });
+            
+            if (document.getElementById('browserModal').classList.contains('active')) {
+                closeBrowserModal();
+            }
+            
+            showToast(`Ad watched! +${totalReward} G-Coins`, 'success');
             
             updateAds();
-            updateTasks();
-            showToast('Cleaned up completed items', 'success');
+            updateCounters();
+            
+        } catch (error) {
+            console.error('Ad completion error:', error);
+            showToast('Failed to complete ad', 'error');
         }
+    }
 
-        // ==================== POST FUNCTIONS ====================
-        function openComposer() {
-            if (!['gold', 'premium', 'silver'].includes(appState.vipLevel)) {
-                showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
-                return;
+    function cleanupWatched() {
+        appState.ads = appState.ads.filter(ad => !ad.watched);
+        appState.tasks = appState.tasks.filter(task => !task.completed);
+        appState.randomTasks = appState.randomTasks.filter(task => !task.completed);
+        
+        updateAds();
+        updateTasks();
+        
+        sendDashboardEvent('dashboard_cleanup', {
+            cleaned_ads: appState.ads.length,
+            cleaned_tasks: appState.tasks.length + appState.randomTasks.length
+        });
+        
+        showToast('Cleaned up completed items', 'success');
+    }
+
+    // ==================== POST FUNCTIONS ====================
+    function openComposer() {
+        if (!['gold', 'premium', 'silver'].includes(appState.vipLevel)) {
+            showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
+            return;
+        }
+        
+        if (appState.balance < 10000) {
+            showToast('Minimum 10,000 G-Coins required to create a post', 'error');
+            return;
+        }
+        
+        document.getElementById('composerModal').classList.add('active');
+    }
+
+    function closeComposer() {
+        document.getElementById('composerModal').classList.remove('active');
+        document.getElementById('postForm').reset();
+        document.getElementById('mediaPreview').innerHTML = '';
+    }
+
+    async function submitPost(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('postSubmitBtn');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Publishing...';
+        submitBtn.disabled = true;
+        
+        try {
+            const content = document.getElementById('postContent').value;
+            const link = document.getElementById('postLink').value;
+            const linkType = document.getElementById('postLinkType').value;
+            const reward = parseInt(document.getElementById('postReward').value);
+            
+            if (reward < 10000) {
+                throw new Error('Minimum reward is 10,000 G-Coins');
             }
             
-            if (appState.balance < 10000) {
-                showToast('Minimum 10,000 G-Coins required to create a post', 'error');
-                return;
+            if (reward > appState.balance) {
+                throw new Error('Insufficient balance');
             }
             
-            document.getElementById('composerModal').classList.add('active');
-        }
-
-        function closeComposer() {
-            document.getElementById('composerModal').classList.remove('active');
-            document.getElementById('postForm').reset();
-            document.getElementById('mediaPreview').innerHTML = '';
-        }
-
-        async function submitPost(event) {
-            event.preventDefault();
+            appState.balance -= reward;
+            updateUIFromBotData();
             
-            const submitBtn = document.getElementById('postSubmitBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Publishing...';
-            submitBtn.disabled = true;
-            
-            try {
-                const content = document.getElementById('postContent').value;
-                const link = document.getElementById('postLink').value;
-                const linkType = document.getElementById('postLinkType').value;
-                const reward = parseInt(document.getElementById('postReward').value);
-                
-                if (reward < 10000) {
-                    throw new Error('Minimum reward is 10,000 G-Coins');
-                }
-                
-                if (reward > appState.balance) {
-                    throw new Error('Insufficient balance');
-                }
-                
-                // Deduct balance for post creation
-                appState.balance -= reward;
-                updateBalanceDisplay();
-                
-                // Create post object
-                const newPost = {
-                    id: Date.now().toString(),
-                    userId: appState.botUserId || appState.user?.id || 'unknown',
-                    username: appState.user?.username || 'user',
-                    userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
-                    content: content,
-                    media: null,
-                    link: link,
-                    linkType: linkType,
-                    reward: reward,
-                    likes: 0,
-                    comments: [],
-                    shares: 0,
-                    timestamp: 'Just now',
-                    userHasLiked: false
-                };
-                
-                // Add to feed
-                appState.posts.unshift(newPost);
-                updateFeed();
-                
-                // Send event to bot
-                await sendToBot('post_created', {
-                    post_id: newPost.id,
-                    content_preview: content.substring(0, 100),
-                    link: link,
-                    link_type: linkType,
-                    reward_amount: reward,
-                    new_balance: appState.balance
-                });
-                
-                // Save session
-                saveSessionToStorage();
-                
-                // Close modal
-                closeComposer();
-                showToast('Post created successfully!', 'success');
-                
-            } catch (error) {
-                showToast(error.message, 'error');
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
-        }
-
-        // ==================== BROWSER MODAL FUNCTIONS ====================
-        function openBrowserModal() {
-            document.getElementById('browserModal').classList.add('active');
-        }
-
-        function closeBrowserModal() {
-            document.getElementById('browserModal').classList.remove('active');
-            document.getElementById('browserIframe').src = '';
-            
-            if (appState.timerInterval) {
-                clearInterval(appState.timerInterval);
-                appState.timerInterval = null;
-            }
-            
-            document.getElementById('timerDisplay').textContent = '00:00';
-            document.getElementById('timerProgressBar').style.width = '0%';
-        }
-
-        function startDirectAd() {
-            const ad = {
-                id: 'direct-ad',
-                title: 'Special Offer',
-                duration: 45,
-                reward: 100,
-                source: 'GridGain'
+            const newPost = {
+                id: Date.now().toString(),
+                userId: appState.telegramUserId || appState.user?.id || 'unknown',
+                username: appState.user?.username || 'user',
+                userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
+                content: content,
+                media: null,
+                link: link,
+                linkType: linkType,
+                reward: reward,
+                likes: 0,
+                comments: [],
+                shares: 0,
+                timestamp: 'Just now',
+                userHasLiked: false
             };
-            startTimer(ad.duration, 'ad', ad);
+            
+            appState.posts.unshift(newPost);
+            updateFeed();
+            
+            await sendDashboardEvent('post_created', {
+                post_id: newPost.id,
+                content_preview: content.substring(0, 100),
+                link: link,
+                link_type: linkType,
+                reward_amount: reward,
+                new_balance: appState.balance,
+                vip_level: appState.vipLevel
+            });
+            
+            closeComposer();
+            showToast('Post created successfully!', 'success');
+            
+        } catch (error) {
+            showToast(error.message, 'error');
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
         }
+    }
 
-        // ==================== TIMER FUNCTIONS ====================
-        function startTimer(seconds, type, data) {
-            let remaining = seconds;
-            const display = document.getElementById('timerDisplay');
-            const progressBar = document.getElementById('timerProgressBar');
-            const timerLabel = document.getElementById('timerLabel');
-            
-            timerLabel.textContent = type === 'task' 
-                ? 'Complete the task to earn rewards' 
-                : 'Watch the ad to earn rewards';
-            
-            document.getElementById('timerOverlay').style.display = 'flex';
+    // ==================== BROWSER MODAL FUNCTIONS ====================
+    function openBrowserModal() {
+        document.getElementById('browserModal').classList.add('active');
+    }
+
+    function closeBrowserModal() {
+        document.getElementById('browserModal').classList.remove('active');
+        document.getElementById('browserIframe').src = '';
+        
+        if (appState.timerInterval) {
+            clearInterval(appState.timerInterval);
+            appState.timerInterval = null;
+        }
+        
+        document.getElementById('timerDisplay').textContent = '00:00';
+        document.getElementById('timerProgressBar').style.width = '0%';
+    }
+
+    function startDirectAd() {
+        const ad = {
+            id: 'direct-ad',
+            title: 'Special Offer',
+            duration: 45,
+            reward: 100,
+            source: 'GridGain'
+        };
+        
+        startTimer(ad.duration, 'ad', ad);
+    }
+
+    // ==================== TIMER FUNCTIONS ====================
+    function startTimer(seconds, type, data) {
+        let remaining = seconds;
+        const display = document.getElementById('timerDisplay');
+        const progressBar = document.getElementById('timerProgressBar');
+        const timerLabel = document.getElementById('timerLabel');
+        
+        timerLabel.textContent = type === 'task' 
+            ? 'Complete the task to earn rewards' 
+            : 'Watch the ad to earn rewards';
+        
+        document.getElementById('timerOverlay').style.display = 'flex';
+        
+        updateTimerDisplay();
+        
+        appState.timerInterval = setInterval(() => {
+            remaining--;
             updateTimerDisplay();
             
-            appState.timerInterval = setInterval(() => {
-                remaining--;
-                updateTimerDisplay();
+            if (remaining <= 0) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
                 
-                if (remaining <= 0) {
-                    clearInterval(appState.timerInterval);
-                    appState.timerInterval = null;
-                    
-                    if (type === 'task') {
-                        completeTask(data);
-                    } else if (type === 'ad') {
-                        completeAd(data);
-                    }
+                if (type === 'task') {
+                    completeTask(data);
+                } else if (type === 'ad') {
+                    completeAd(data);
                 }
-            }, 1000);
-            
-            function updateTimerDisplay() {
-                const mins = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                
-                const progress = ((seconds - remaining) / seconds) * 100;
-                progressBar.style.width = `${progress}%`;
             }
+        }, 1000);
+        
+        function updateTimerDisplay() {
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            
+            const progress = ((seconds - remaining) / seconds) * 100;
+            progressBar.style.width = `${progress}%`;
         }
+    }
 
-        // ==================== SCREEN NAVIGATION ====================
-        function switchScreen(screenName) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            
-            const screen = document.getElementById(`${screenName}Screen`);
-            if (screen) {
-                screen.classList.add('active');
+    // ==================== SCREEN NAVIGATION ====================
+    function switchScreen(screenName) {
+        document.querySelectorAll('.screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const screen = document.getElementById(`${screenName}Screen`);
+        if (screen) {
+            screen.classList.add('active');
+        }
+        
+        const navItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
+            item.textContent.includes(screenName.charAt(0).toUpperCase() + screenName.slice(1).replace('Screen', ''))
+        );
+        
+        if (navItem) {
+            navItem.classList.add('active');
+        }
+        
+        window.location.hash = screenName;
+        
+        sendDashboardEvent('screen_switched', {
+            screen: screenName,
+            user_id: appState.telegramUserId
+        });
+    }
+
+    // ==================== HELPER FUNCTIONS ====================
+    function getRandomSmartLink() {
+        return SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+    }
+
+    function getRandomAdTitle() {
+        const titles = [
+            'Tech Review 2024',
+            'Crypto Market Update',
+            'Gaming News Today',
+            'Product Launch Event',
+            'Mobile App Review',
+            'Software Tutorial',
+            'Market Analysis',
+            'Investment Tips',
+            'Trading Strategies',
+            'Business Insights'
+        ];
+        return titles[Math.floor(Math.random() * titles.length)];
+    }
+
+    function getRandomAdSource() {
+        const sources = [
+            'TechBrand Co.',
+            'CryptoExchange',
+            'GameStore',
+            'Fashion Brand',
+            'Finance Corp',
+            'Market Network',
+            'Trade Hub',
+            'Business Inc'
+        ];
+        return sources[Math.floor(Math.random() * sources.length)];
+    }
+
+    function getRandomTaskTitle() {
+        const titles = [
+            'Website Visit Task',
+            'Survey Completion',
+            'App Installation',
+            'Product Review',
+            'Market Research',
+            'Data Collection',
+            'Feedback Submission',
+            'Content Testing'
+        ];
+        return titles[Math.floor(Math.random() * titles.length)];
+    }
+
+    function getRandomTaskDescription() {
+        const descriptions = [
+            'Visit website and stay for specified time',
+            'Complete short survey for research',
+            'Install app and open for verification',
+            'Review product features',
+            'Participate in market research',
+            'Collect required data points',
+            'Submit feedback about experience',
+            'Test content functionality'
+        ];
+        return descriptions[Math.floor(Math.random() * descriptions.length)];
+    }
+
+    function getRandomCount() {
+        return Math.floor(Math.random() * 10) + 1;
+    }
+
+    function getRandomColor() {
+        const colors = ['#4AA3FF', '#E33D7A', '#5B2E8A', '#FF98BD', '#FFC857'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function getActionText(type) {
+        const actions = {
+            visit: 'Visit',
+            join: 'Join',
+            watch: 'Watch',
+            install: 'Install',
+            signup: 'Sign Up'
+        };
+        return actions[type] || 'Open';
+    }
+
+    function getVipBonus(level) {
+        const bonuses = {
+            none: 0,
+            basic: 20,
+            silver: 40,
+            gold: 60,
+            premium: 100
+        };
+        return bonuses[level] || 0;
+    }
+
+    function getInitials(firstName, lastName) {
+        return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase() || 'U';
+    }
+
+    function updateCounters() {
+        const taskCounter = document.getElementById('taskCounter');
+        const adsCounter = document.getElementById('adsCounter');
+        const statTotalEarned = document.getElementById('statTotalEarned');
+        const statTasksDone = document.getElementById('statTasksDone');
+        
+        if (taskCounter) {
+            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
+            taskCounter.textContent = `${completedTasks}/20`;
+        }
+        
+        if (adsCounter) {
+            const watchedAds = appState.ads.filter(a => a.watched).length;
+            adsCounter.textContent = `${watchedAds}/20`;
+        }
+        
+        if (statTotalEarned) {
+            statTotalEarned.textContent = (appState.balance * 10).toLocaleString();
+        }
+        
+        if (statTasksDone) {
+            statTasksDone.textContent = appState.dailyCounters.tasks.toString();
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icons = {
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
+        toast.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-icon">${icons[type] || 'ℹ'}</div>
+                <div class="toast-message">${message}</div>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
             }
+        }, 5000);
+    }
+
+    // ==================== UI RENDER FUNCTIONS ====================
+    function loadPlatforms() {
+        const platformGrid = document.getElementById('platformGrid');
+        if (!platformGrid) return;
+        
+        platformGrid.innerHTML = '';
+        
+        PLATFORMS.forEach(platform => {
+            const platformElement = createPlatformElement(platform);
+            platformGrid.appendChild(platformElement);
             
-            const navItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
-                item.textContent.includes(screenName.charAt(0).toUpperCase() + screenName.slice(1).replace('Screen', ''))
-            );
-            
-            if (navItem) {
-                navItem.classList.add('active');
-            }
-            
-            window.location.hash = screenName;
-            
-            // Send screen change event to bot
-            sendToBot('screen_changed', {
-                screen: screenName,
-                timestamp: Date.now()
-            });
-        }
+            const platformElement2 = createPlatformElement(platform);
+            platformGrid.appendChild(platformElement2);
+        });
+    }
 
-        function getCurrentScreen() {
-            const activeScreen = document.querySelector('.screen.active');
-            return activeScreen ? activeScreen.id.replace('Screen', '') : 'gridhome';
+    function createPlatformElement(platform) {
+        const div = document.createElement('div');
+        div.className = `platform-card ${platform.id}`;
+        div.onclick = () => filterTasksByPlatform(platform.id);
+        
+        let svgIcon = '';
+        
+        switch (platform.id) {
+            case 'youtube':
+                svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>';
+                break;
+            case 'telegram':
+                svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>';
+                break;
+            case 'instagram':
+                svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+                break;
+            default:
+                svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
         }
+        
+        div.innerHTML = `
+            <div class="platform-icon" style="color: ${platform.color}">
+                ${svgIcon}
+            </div>
+            <div class="platform-name">${platform.name}</div>
+            <div class="platform-count">${getRandomCount()} tasks</div>
+        `;
+        
+        return div;
+    }
 
-        // ==================== UTILITY FUNCTIONS ====================
-        function getRandomSmartLink() {
-            return appState.SMART_LINKS[Math.floor(Math.random() * appState.SMART_LINKS.length)];
-        }
-
-        function getRandomAdTitle() {
-            const titles = [
-                'Tech Review 2024',
-                'Crypto Market Update',
-                'Gaming News Today',
-                'Product Launch Event',
-                'Mobile App Review',
-                'Software Tutorial',
-                'Market Analysis',
-                'Investment Tips',
-                'Trading Strategies',
-                'Business Insights'
-            ];
-            return titles[Math.floor(Math.random() * titles.length)];
-        }
-
-        function getRandomAdSource() {
-            const sources = [
-                'TechBrand Co.',
-                'CryptoExchange',
-                'GameStore',
-                'Fashion Brand',
-                'Finance Corp',
-                'Market Network',
-                'Trade Hub',
-                'Business Inc'
-            ];
-            return sources[Math.floor(Math.random() * sources.length)];
-        }
-
-        function getRandomTaskTitle() {
-            const titles = [
-                'Website Visit Task',
-                'Survey Completion',
-                'App Installation',
-                'Product Review',
-                'Market Research',
-                'Data Collection',
-                'Feedback Submission',
-                'Content Testing'
-            ];
-            return titles[Math.floor(Math.random() * titles.length)];
-        }
-
-        function getRandomTaskDescription() {
-            const descriptions = [
-                'Visit website and stay for specified time',
-                'Complete short survey for research',
-                'Install app and open for verification',
-                'Review product features',
-                'Participate in market research',
-                'Collect required data points',
-                'Submit feedback about experience',
-                'Test content functionality'
-            ];
-            return descriptions[Math.floor(Math.random() * descriptions.length)];
-        }
-
-        function getRandomCount() {
-            return Math.floor(Math.random() * 10) + 1;
-        }
-
-        function getRandomColor() {
-            const colors = ['#4AA3FF', '#E33D7A', '#5B2E8A', '#FF98BD', '#FFC857'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
-        function getActionText(type) {
-            const actions = {
-                visit: 'Visit',
-                join: 'Join',
-                watch: 'Watch',
-                install: 'Install',
-                signup: 'Sign Up'
-            };
-            return actions[type] || 'Open';
-        }
-
-        function getVipBonus(level) {
-            const bonuses = {
-                none: 0,
-                basic: 20,
-                silver: 40,
-                gold: 60,
-                premium: 100
-            };
-            return bonuses[level] || 0;
-        }
-
-        function getInitials(firstName, lastName) {
-            return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase() || 'U';
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            const icons = {
-                success: '✓',
-                error: '✗',
-                warning: '⚠',
-                info: 'ℹ'
-            };
-            
-            toast.innerHTML = `
-                <div class="toast-content">
-                    <div class="toast-icon">${icons[type] || 'ℹ'}</div>
-                    <div class="toast-message">${message}</div>
-                    <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+    function updateFeed() {
+        const feedContainer = document.getElementById('feedContainer');
+        if (!feedContainer) return;
+        
+        feedContainer.innerHTML = '';
+        
+        appState.posts.forEach(post => {
+            const postElement = createPostElement(post);
+            feedContainer.appendChild(postElement);
+        });
+        
+        if (appState.posts.length === 0) {
+            feedContainer.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    No posts yet. Be the first to create a post!
                 </div>
             `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 5000);
         }
+    }
 
-        // ==================== EVENT LISTENERS ====================
-        function setupAllEventListeners() {
-            // FAB scroll behavior
-            const mainContent = document.getElementById('mainContent');
-            const fab = document.getElementById('fabPost');
+    function createPostElement(post) {
+        const div = document.createElement('div');
+        div.className = 'post-card';
+        div.dataset.postId = post.id;
+        
+        const mediaHtml = post.media ? `
+            <div class="post-media">
+                <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
+            </div>
+        ` : '';
+        
+        const actionText = getActionText(post.linkType);
+        
+        div.innerHTML = `
+            <div class="post-header" onclick="viewUserProfile('${post.userId}')">
+                <div class="avatar">
+                    ${post.userAvatar}
+                </div>
+                <div class="post-meta">
+                    <div class="poster-name">${post.username}</div>
+                    <div class="post-time">${post.timestamp}</div>
+                </div>
+            </div>
+            <div class="post-content">${post.content}</div>
+            ${mediaHtml}
+            <div class="earnings-bar">
+                <span class="earnings-label">Earn up to ${post.reward.toLocaleString()} G-coins</span>
+            </div>
+            <div class="post-actions">
+                <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
+                    <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
+                              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                              ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
+                    </svg>
+                    <span>${post.likes}</span>
+                </button>
+                <button class="action-btn" onclick="handleTaskAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
+                    <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
+                              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>${actionText}</span>
+                </button>
+                <button class="action-btn" onclick="toggleComments('${post.id}')">
+                    <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
+                              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>${post.comments.length}</span>
+                </button>
+            </div>
+            <div class="comments-section" id="comments-${post.id}">
+                <div class="comments-container" id="comments-container-${post.id}">
+                    ${post.comments.map(comment => `
+                        <div class="comment-item">
+                            <div class="comment-avatar">${comment.username.charAt(0)}</div>
+                            <div class="comment-content">
+                                <div class="comment-author">${comment.username}</div>
+                                <div class="comment-text">${comment.text}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="comment-input-container">
+                    <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
+                    <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
+                </div>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    function updateTasks() {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) return;
+        
+        taskList.innerHTML = '';
+        
+        const allTasks = [...appState.tasks, ...appState.randomTasks];
+        
+        if (allTasks.length === 0) {
+            taskList.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                    No tasks available. Check back later!
+                </div>
+            `;
+            return;
+        }
+        
+        allTasks.forEach(task => {
+            const taskElement = createTaskElement(task);
+            taskList.appendChild(taskElement);
+        });
+        
+        updateTaskCounter();
+    }
+
+    function createTaskElement(task) {
+        const div = document.createElement('div');
+        div.className = `task-card ${task.completed ? 'completed' : ''}`;
+        div.dataset.taskId = task.id;
+        
+        const platform = PLATFORMS.find(p => p.id === task.platform) || PLATFORMS[0];
+        
+        div.innerHTML = `
+            <div class="task-header">
+                <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;">
+                    <!-- Platform icon will be added via CSS -->
+                </div>
+                <div class="task-info">
+                    <h3 class="task-title">${task.title}</h3>
+                    <p class="task-description">${task.description}</p>
+                </div>
+                <div class="task-reward">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="9" fill="#FFC857" />
+                        <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text>
+                    </svg>
+                    <span>${task.reward.toLocaleString()}</span>
+                </div>
+            </div>
+            <div class="task-footer">
+                <button class="task-btn primary" onclick="startTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
+                    ${task.completed ? 'Completed' : 'Start Task'}
+                </button>
+                <button class="task-btn secondary" onclick="viewTaskDetails('${task.id}')">
+                    Details
+                </button>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    function updateAds() {
+        const watchGrid = document.getElementById('watchGrid');
+        if (!watchGrid) return;
+        
+        watchGrid.innerHTML = '';
+        
+        if (appState.ads.length === 0) {
+            watchGrid.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
+                    No ads available. Check back later!
+                </div>
+            `;
+            return;
+        }
+        
+        appState.ads.forEach(ad => {
+            const adElement = createAdElement(ad);
+            watchGrid.appendChild(adElement);
+        });
+        
+        updateAdsCounter();
+    }
+
+    function createAdElement(ad) {
+        const div = document.createElement('div');
+        div.className = `video-card ${ad.watched ? 'watched' : ''}`;
+        div.dataset.adId = ad.id;
+        
+        div.innerHTML = `
+            <div class="video-thumbnail" onclick="watchAd('${ad.id}')">
+                ${ad.watched ? `
+                    <div class="watched-overlay">
+                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)" />
+                            <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                ` : `
+                    <svg class="play-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" />
+                        <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+                    </svg>
+                `}
+                <span class="video-duration">0:${ad.duration.toString().padStart(2, '0')}</span>
+            </div>
+            <div class="video-info">
+                <div class="video-advertiser">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="14" height="14" rx="3" fill="${getRandomColor()}" />
+                    </svg>
+                    <span>${ad.source}</span>
+                </div>
+                <h3 class="video-title">${ad.title}</h3>
+                <div class="video-meta">
+                    ${ad.watched ? `
+                        <span class="collected-badge">Collected</span>
+                    ` : `
+                        <span>Watch 0:${ad.duration.toString().padStart(2, '0')} · Earn</span>
+                    `}
+                    <span class="video-reward">+${ad.reward} G-coins</span>
+                </div>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    function updateTaskCounter() {
+        const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
+        document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
+    }
+
+    function updateAdsCounter() {
+        const watchedAds = appState.ads.filter(a => a.watched).length;
+        document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
+    }
+
+    // ==================== EVENT LISTENERS ====================
+    function setupEventListeners() {
+        const mainContent = document.getElementById('mainContent');
+        const fab = document.getElementById('fabPost');
+        
+        if (mainContent && fab) {
+            mainContent.addEventListener('scroll', () => {
+                const currentScroll = mainContent.scrollTop;
+                
+                if (currentScroll > appState.lastScrollPosition && currentScroll > 100) {
+                    fab.classList.add('hidden');
+                } else {
+                    fab.classList.remove('hidden');
+                }
+                
+                appState.lastScrollPosition = currentScroll;
+            });
+        }
+        
+        const mediaDropArea = document.getElementById('mediaDropArea');
+        const mediaInput = document.getElementById('mediaInput');
+        
+        if (mediaDropArea && mediaInput) {
+            mediaDropArea.addEventListener('click', () => mediaInput.click());
             
-            if (mainContent && fab) {
-                mainContent.addEventListener('scroll', () => {
-                    const currentScroll = mainContent.scrollTop;
-                    
-                    if (currentScroll > appState.lastScrollPosition && currentScroll > 100) {
-                        fab.classList.add('hidden');
-                    } else {
-                        fab.classList.remove('hidden');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                mediaDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                mediaDropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                mediaDropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                mediaDropArea.classList.add('drag-over');
+            }
+            
+            function unhighlight() {
+                mediaDropArea.classList.remove('drag-over');
+            }
+            
+            mediaDropArea.addEventListener('drop', handleDrop, false);
+            mediaInput.addEventListener('change', handleFiles, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles({ target: { files } });
+            }
+            
+            function handleFiles(e) {
+                const files = e.target.files;
+                const preview = document.getElementById('mediaPreview');
+                
+                preview.innerHTML = '';
+                
+                Array.from(files).forEach(file => {
+                    if (!file.type.match('image.*') && !file.type.match('video.*')) {
+                        showToast('Please upload only images or videos', 'error');
+                        return;
                     }
                     
-                    appState.lastScrollPosition = currentScroll;
-                });
-            }
-            
-            // Media drag and drop
-            const mediaDropArea = document.getElementById('mediaDropArea');
-            const mediaInput = document.getElementById('mediaInput');
-            
-            if (mediaDropArea && mediaInput) {
-                mediaDropArea.addEventListener('click', () => mediaInput.click());
-                
-                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                    mediaDropArea.addEventListener(eventName, preventDefaults, false);
-                });
-                
-                function preventDefaults(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                
-                ['dragenter', 'dragover'].forEach(eventName => {
-                    mediaDropArea.addEventListener(eventName, highlight, false);
-                });
-                
-                ['dragleave', 'drop'].forEach(eventName => {
-                    mediaDropArea.addEventListener(eventName, unhighlight, false);
-                });
-                
-                function highlight() {
-                    mediaDropArea.classList.add('drag-over');
-                }
-                
-                function unhighlight() {
-                    mediaDropArea.classList.remove('drag-over');
-                }
-                
-                mediaDropArea.addEventListener('drop', handleDrop, false);
-                mediaInput.addEventListener('change', handleFiles, false);
-                
-                function handleDrop(e) {
-                    const dt = e.dataTransfer;
-                    const files = dt.files;
-                    handleFiles({ target: { files } });
-                }
-                
-                function handleFiles(e) {
-                    const files = e.target.files;
-                    const preview = document.getElementById('mediaPreview');
+                    if (file.size > 10 * 1024 * 1024) {
+                        showToast('File size must be less than 10MB', 'error');
+                        return;
+                    }
                     
-                    preview.innerHTML = '';
-                    
-                    Array.from(files).forEach(file => {
-                        if (!file.type.match('image.*') && !file.type.match('video.*')) {
-                            showToast('Please upload only images or videos', 'error');
-                            return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewItem = document.createElement('div');
+                        previewItem.className = 'preview-item';
+                        
+                        if (file.type.match('image.*')) {
+                            previewItem.innerHTML = `
+                                <img src="${e.target.result}" alt="Preview">
+                                <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
+                            `;
+                        } else {
+                            previewItem.innerHTML = `
+                                <video src="${e.target.result}" controls></video>
+                                <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
+                            `;
                         }
                         
-                        if (file.size > 10 * 1024 * 1024) {
-                            showToast('File size must be less than 10MB', 'error');
-                            return;
-                        }
-                        
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const previewItem = document.createElement('div');
-                            previewItem.className = 'preview-item';
-                            
-                            if (file.type.match('image.*')) {
-                                previewItem.innerHTML = `
-                                    <img src="${e.target.result}" alt="Preview">
-                                    <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
-                                `;
-                            } else {
-                                previewItem.innerHTML = `
-                                    <video src="${e.target.result}" controls></video>
-                                    <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
-                                `;
-                            }
-                            
-                            preview.appendChild(previewItem);
-                        };
-                        
-                        reader.readAsDataURL(file);
-                    });
-                }
-            }
-            
-            // Profile menu buttons
-            document.getElementById('editProfileBtn')?.addEventListener('click', () => {
-                showProfileSection('edit');
-            });
-            
-            document.getElementById('transactionHistoryBtn')?.addEventListener('click', () => {
-                showProfileSection('transactions');
-            });
-            
-            document.getElementById('referralsBtn')?.addEventListener('click', () => {
-                showProfileSection('referrals');
-            });
-            
-            document.getElementById('settingsBtn')?.addEventListener('click', () => {
-                showProfileSection('settings');
-            });
-            
-            document.getElementById('helpSupportBtn')?.addEventListener('click', () => {
-                openHelpSupport();
-            });
-            
-            // Cleanup button
-            document.getElementById('cleanupBtn')?.addEventListener('click', cleanupWatched);
-            
-            // New task button
-            document.getElementById('newTaskBtn')?.addEventListener('click', () => {
-                showToast('Task creation feature coming soon!', 'info');
-            });
-            
-            // Hash change for navigation
-            window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.replace('#', '');
-                if (hash && hash !== 'iframe') {
-                    switchScreen(hash);
-                }
-            });
-            
-            // Send pending events every 10 seconds
-            setInterval(sendPendingEvents, 10000);
-        }
-
-        // ==================== PLATFORM AUTO SCROLL ====================
-        function initPlatformAutoScroll() {
-            const platformGrid = document.getElementById('platformGrid');
-            if (!platformGrid) return;
-            
-            const platformCards = platformGrid.querySelectorAll('.platform-card');
-            const totalWidth = Array.from(platformCards).reduce((sum, card) => sum + card.offsetWidth + 16, 0);
-            platformGrid.style.width = `${totalWidth * 2}px`;
-            
-            platformGrid.addEventListener('animationiteration', () => {
-                platformGrid.style.transform = 'translateX(0)';
-            });
-        }
-
-        // ==================== MONETAG AD INTEGRATION ====================
-        function initializeMonetagAds() {
-            if (typeof monetag !== 'undefined') {
-                try {
-                    show_10274566({ 
-                        type: 'inApp', 
-                        inAppSettings: { 
-                            frequency: 2, 
-                            capping: 0.1, 
-                            interval: 30, 
-                            timeout: 5, 
-                            everyPage: false 
-                        } 
-                    });
-                } catch (error) {
-                    console.log('Monetag interstitial setup error:', error);
-                }
-            }
-        }
-
-        window.addEventListener('load', initializeMonetagAds);
-
-        // ==================== PROFILE FUNCTIONS ====================
-        function showProfileSection(section) {
-            const modal = document.getElementById('profileSectionModal');
-            const title = document.getElementById('profileSectionTitle');
-            const content = document.getElementById('profileSectionContent');
-            
-            if (!modal || !title || !content) return;
-            
-            let sectionContent = '';
-            
-            switch (section) {
-                case 'edit':
-                    title.textContent = 'Edit Profile';
-                    sectionContent = `
-                        <div class="form-group">
-                            <label class="form-label">Telegram Username</label>
-                            <input type="text" class="form-input" value="${appState.user?.username || ''}" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">User ID</label>
-                            <input type="text" class="form-input" value="${appState.botUserId || ''}" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">VIP Level</label>
-                            <div class="vip-badge ${appState.vipLevel}" style="margin-top: 8px; display: inline-block;">
-                                ${appState.vipLevel.charAt(0).toUpperCase() + appState.vipLevel.slice(1)} VIP
-                            </div>
-                        </div>
-                    `;
-                    break;
+                        preview.appendChild(previewItem);
+                    };
                     
-                case 'transactions':
-                    title.textContent = 'Transaction History';
-                    sectionContent = `
-                        <div style="max-height: 400px; overflow-y: auto;">
-                            <div class="transaction-item">
-                                <div class="transaction-icon earn">+</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Task Reward - YouTube</div>
-                                    <div class="transaction-time">2 hours ago</div>
-                                </div>
-                                <div class="transaction-amount earn">+5,000</div>
-                            </div>
-                            <div class="transaction-item">
-                                <div class="transaction-icon earn">+</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Ad Watch Reward</div>
-                                    <div class="transaction-time">5 hours ago</div>
-                                </div>
-                                <div class="transaction-amount earn">+120</div>
-                            </div>
-                            <div class="transaction-item">
-                                <div class="transaction-icon spend">-</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Post Creation</div>
-                                    <div class="transaction-time">1 day ago</div>
-                                </div>
-                                <div class="transaction-amount spend">-10,000</div>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'referrals':
-                    title.textContent = 'Referrals';
-                    const refLink = `https://t.me/GridGain_Bot?start=${appState.botUserId || 'ref'}`;
-                    sectionContent = `
-                        <div class="form-group">
-                            <label class="form-label">Your Referral Link</label>
-                            <div style="display: flex; gap: 8px; margin-top: 8px;">
-                                <input type="text" class="form-input" value="${refLink}" id="refLinkInput" readonly>
-                                <button class="submit-btn" style="flex: 0 0 auto; padding: 0 16px;" 
-                                        onclick="copyRefLink()">
-                                    Copy
-                                </button>
-                            </div>
-                        </div>
-                        <div class="profile-stats" style="margin-top: 24px;">
-                            <div class="stat-item">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">Completed</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">Pending</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">Total Earned</div>
-                            </div>
-                        </div>
-                    `;
-                    break;
-                    
-                case 'settings':
-                    title.textContent = 'Settings';
-                    sectionContent = `
-                        <div class="form-group">
-                            <label class="form-label">App Version</label>
-                            <input type="text" class="form-input" value="1.0.0" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Last Updated</label>
-                            <input type="text" class="form-input" value="${new Date().toLocaleDateString()}" readonly>
-                        </div>
-                    `;
-                    break;
-            }
-            
-            content.innerHTML = sectionContent;
-            modal.classList.add('active');
-        }
-
-        function closeProfileSection() {
-            document.getElementById('profileSectionModal').classList.remove('active');
-        }
-
-        function openHelpSupport() {
-            if (appState.WebApp) {
-                appState.WebApp.openTelegramLink('https://t.me/GridGain_Bot?start=help');
-            } else {
-                window.open('https://t.me/GridGain_Bot?start=help', '_blank');
+                    reader.readAsDataURL(file);
+                });
             }
         }
-
-        function copyRefLink() {
-            const input = document.getElementById('refLinkInput');
-            if (input) {
-                input.select();
-                document.execCommand('copy');
-                showToast('Referral link copied!', 'success');
+        
+        document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+            showProfileSection('edit');
+        });
+        
+        document.getElementById('transactionHistoryBtn')?.addEventListener('click', () => {
+            showProfileSection('transactions');
+        });
+        
+        document.getElementById('referralsBtn')?.addEventListener('click', () => {
+            showProfileSection('referrals');
+        });
+        
+        document.getElementById('settingsBtn')?.addEventListener('click', () => {
+            showProfileSection('settings');
+        });
+        
+        document.getElementById('helpSupportBtn')?.addEventListener('click', () => {
+            openHelpSupport();
+        });
+        
+        document.getElementById('cleanupBtn')?.addEventListener('click', cleanupWatched);
+        
+        document.getElementById('newTaskBtn')?.addEventListener('click', () => {
+            showToast('Task creation feature coming soon!', 'info');
+        });
+        
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash && hash !== 'iframe') {
+                switchScreen(hash);
             }
-        }
+        });
+    }
 
-        // ==================== INTERACTION FUNCTIONS ====================
-        async function handleLike(postId, button) {
-            const post = appState.posts.find(p => p.id === postId);
-            if (!post) return;
-            
-            const wasLiked = post.userHasLiked;
-            post.userHasLiked = !wasLiked;
-            post.likes += wasLiked ? -1 : 1;
-            
-            button.classList.toggle('liked');
-            button.querySelector('span').textContent = post.likes;
-            
-            await sendToBot('post_liked', {
-                post_id: postId,
-                liked: !wasLiked,
-                new_like_count: post.likes
-            });
-        }
-
-        async function handleTaskAction(postId, link, type, reward) {
-            openBrowserModal();
-            
-            document.getElementById('browserUrl').textContent = link;
-            document.getElementById('browserIframe').src = link;
-            
-            const duration = type === 'watch' ? 90 : 60;
-            startTimer(duration, 'task', {
-                postId: postId,
-                type: type,
-                reward: reward
-            });
-            
-            await sendToBot('action_started', {
-                post_id: postId,
-                action: type,
-                reward: reward
-            });
-        }
-
-        function toggleComments(postId) {
-            const commentsSection = document.getElementById(`comments-${postId}`);
-            if (commentsSection) {
-                commentsSection.classList.toggle('active');
-            }
-        }
-
-        async function sendComment(postId) {
-            const input = document.getElementById(`comment-input-${postId}`);
-            if (!input) return;
-            
-            const text = input.value.trim();
-            if (!text) return;
-            
-            const post = appState.posts.find(p => p.id === postId);
-            if (!post) return;
-            
-            post.comments.push({
-                id: Date.now().toString(),
-                userId: appState.botUserId || 'user',
-                username: appState.user?.username || 'You',
-                text: text
-            });
-            
-            const commentsContainer = document.getElementById(`comments-container-${postId}`);
-            if (commentsContainer) {
-                const commentDiv = document.createElement('div');
-                commentDiv.className = 'comment-item';
-                commentDiv.innerHTML = `
-                    <div class="comment-avatar">${appState.user?.firstName?.[0] || 'U'}</div>
-                    <div class="comment-content">
-                        <div class="comment-author">${appState.user?.username || 'You'}</div>
-                        <div class="comment-text">${text}</div>
+    // ==================== PROFILE FUNCTIONS ====================
+    function showProfileSection(section) {
+        const modal = document.getElementById('profileSectionModal');
+        const title = document.getElementById('profileSectionTitle');
+        const content = document.getElementById('profileSectionContent');
+        
+        if (!modal || !title || !content) return;
+        
+        let sectionContent = '';
+        
+        switch (section) {
+            case 'edit':
+                title.textContent = 'Edit Profile';
+                sectionContent = `
+                    <div class="form-group">
+                        <label class="form-label">Telegram Username</label>
+                        <input type="text" class="form-input" value="${appState.user?.username || ''}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">User ID</label>
+                        <input type="text" class="form-input" value="${appState.telegramUserId || ''}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">VIP Level</label>
+                        <div class="vip-badge ${appState.vipLevel}" style="margin-top: 8px; display: inline-block;">
+                            ${appState.vipLevel.charAt(0).toUpperCase() + appState.vipLevel.slice(1)} VIP
+                        </div>
                     </div>
                 `;
-                commentsContainer.appendChild(commentDiv);
+                break;
+                
+            case 'transactions':
+                title.textContent = 'Transaction History';
+                sectionContent = `
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        <div class="transaction-item">
+                            <div class="transaction-icon earn">+</div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">Task Reward - YouTube</div>
+                                <div class="transaction-time">2 hours ago</div>
+                            </div>
+                            <div class="transaction-amount earn">+5,000</div>
+                        </div>
+                        <div class="transaction-item">
+                            <div class="transaction-icon earn">+</div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">Ad Watch Reward</div>
+                                <div class="transaction-time">5 hours ago</div>
+                            </div>
+                            <div class="transaction-amount earn">+120</div>
+                        </div>
+                        <div class="transaction-item">
+                            <div class="transaction-icon spend">-</div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">Post Creation</div>
+                                <div class="transaction-time">1 day ago</div>
+                            </div>
+                            <div class="transaction-amount spend">-10,000</div>
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'referrals':
+                title.textContent = 'Referrals';
+                const refLink = `https://t.me/GridGain_Bot?start=ref_${appState.telegramUserId || 'user'}`;
+                sectionContent = `
+                    <div class="form-group">
+                        <label class="form-label">Your Referral Link</label>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <input type="text" class="form-input" value="${refLink}" id="refLinkInput" readonly>
+                            <button class="submit-btn" style="flex: 0 0 auto; padding: 0 16px;" 
+                                    onclick="copyRefLink()">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="profile-stats" style="margin-top: 24px;">
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">0</div>
+                            <div class="stat-label">Total Earned</div>
+                        </div>
+                    </div>
+                `;
+                break;
+                
+            case 'settings':
+                title.textContent = 'Settings';
+                sectionContent = `
+                    <div class="form-group">
+                        <label class="form-label">App Version</label>
+                        <input type="text" class="form-input" value="1.0.0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Updated</label>
+                        <input type="text" class="form-input" value="${new Date().toLocaleDateString()}" readonly>
+                    </div>
+                `;
+                break;
+        }
+        
+        content.innerHTML = sectionContent;
+        modal.classList.add('active');
+        
+        sendDashboardEvent('profile_section_viewed', {
+            section: section,
+            user_id: appState.telegramUserId
+        });
+    }
+
+    function closeProfileSection() {
+        document.getElementById('profileSectionModal').classList.remove('active');
+    }
+
+    function openHelpSupport() {
+        if (appState.WebApp) {
+            appState.WebApp.openTelegramLink('https://t.me/GridGain_Bot?start=help');
+        } else {
+            window.open('https://t.me/GridGain_Bot?start=help', '_blank');
+        }
+    }
+
+    function copyRefLink() {
+        const input = document.getElementById('refLinkInput');
+        if (input) {
+            input.select();
+            document.execCommand('copy');
+            showToast('Referral link copied!', 'success');
+        }
+    }
+
+    // ==================== INTERACTION FUNCTIONS ====================
+    async function handleLike(postId, button) {
+        const post = appState.posts.find(p => p.id === postId);
+        if (!post) return;
+        
+        const wasLiked = post.userHasLiked;
+        post.userHasLiked = !wasLiked;
+        post.likes += wasLiked ? -1 : 1;
+        
+        button.classList.toggle('liked');
+        button.querySelector('span').textContent = post.likes;
+        
+        await sendDashboardEvent('post_liked', {
+            post_id: postId,
+            liked: !wasLiked,
+            new_likes_count: post.likes
+        });
+    }
+
+    async function handleTaskAction(postId, link, type, reward) {
+        openBrowserModal();
+        
+        document.getElementById('browserUrl').textContent = link;
+        document.getElementById('browserIframe').src = link;
+        
+        const duration = type === 'watch' ? 90 : 60;
+        startTimer(duration, 'task', {
+            id: postId,
+            type: type,
+            reward: reward,
+            platform: 'post_action'
+        });
+        
+        await sendDashboardEvent('post_action_started', {
+            post_id: postId,
+            action_type: type,
+            reward: reward,
+            link: link
+        });
+    }
+
+    function toggleComments(postId) {
+        const commentsSection = document.getElementById(`comments-${postId}`);
+        if (commentsSection) {
+            commentsSection.classList.toggle('active');
+        }
+    }
+
+    async function sendComment(postId) {
+        const input = document.getElementById(`comment-input-${postId}`);
+        if (!input) return;
+        
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const post = appState.posts.find(p => p.id === postId);
+        if (!post) return;
+        
+        post.comments.push({
+            id: Date.now().toString(),
+            userId: appState.telegramUserId || 'user',
+            username: appState.user?.username || 'You',
+            text: text
+        });
+        
+        const commentsContainer = document.getElementById(`comments-container-${postId}`);
+        if (commentsContainer) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment-item';
+            commentDiv.innerHTML = `
+                <div class="comment-avatar">${appState.user?.firstName?.[0] || 'U'}</div>
+                <div class="comment-content">
+                    <div class="comment-author">${appState.user?.username || 'You'}</div>
+                    <div class="comment-text">${text}</div>
+                </div>
+            `;
+            commentsContainer.appendChild(commentDiv);
+        }
+        
+        input.value = '';
+        
+        await sendDashboardEvent('comment_added', {
+            post_id: postId,
+            comment_length: text.length,
+            comment_preview: text.substring(0, 50)
+        });
+    }
+
+    function viewUserProfile(userId) {
+        switchScreen('profile');
+        showToast('User profile view coming soon!', 'info');
+    }
+
+    function viewTaskDetails(taskId) {
+        showToast('Task details coming soon!', 'info');
+    }
+
+    // ==================== PLATFORM AUTO SCROLL ====================
+    function initPlatformAutoScroll() {
+        const platformGrid = document.getElementById('platformGrid');
+        if (!platformGrid) return;
+        
+        const platformCards = platformGrid.querySelectorAll('.platform-card');
+        const totalWidth = Array.from(platformCards).reduce((sum, card) => sum + card.offsetWidth + 16, 0);
+        platformGrid.style.width = `${totalWidth * 2}px`;
+        
+        platformGrid.addEventListener('animationiteration', () => {
+            platformGrid.style.transform = 'translateX(0)';
+        });
+    }
+
+    // ==================== RETRY PENDING EVENTS ====================
+    async function retryPendingEvents() {
+        const pendingEvents = JSON.parse(localStorage.getItem('gainGridPendingEvents') || '[]');
+        if (pendingEvents.length === 0) return;
+        
+        for (const event of pendingEvents) {
+            if (event.retryCount < 3) {
+                try {
+                    await sendDashboardEvent(event.action, event.eventData);
+                    // Remove from pending if successful
+                    const updated = pendingEvents.filter(e => e !== event);
+                    localStorage.setItem('gainGridPendingEvents', JSON.stringify(updated));
+                } catch (error) {
+                    event.retryCount++;
+                }
+            }
+        }
+    }
+
+    // ==================== INITIALIZE MONETAG ADS ====================
+    function initializeMonetagAds() {
+        if (typeof monetag !== 'undefined') {
+            try {
+                show_10274566({ 
+                    type: 'inApp', 
+                    inAppSettings: { 
+                        frequency: 2, 
+                        capping: 0.1, 
+                        interval: 30, 
+                        timeout: 5, 
+                        everyPage: false 
+                    } 
+                });
+            } catch (error) {
+                console.log('Monetag interstitial setup error:', error);
             }
             
-            input.value = '';
-            
-            await sendToBot('comment_added', {
-                post_id: postId,
-                comment: text
-            });
+            if (typeof show_10274566 === 'function') {
+                console.log('Monetag rewarded ads ready');
+            }
         }
+    }
 
-        function viewUserProfile(userId) {
-            switchScreen('profile');
-            showToast('User profile view coming soon!', 'info');
-        }
+    window.addEventListener('load', initializeMonetagAds);
 
-        function viewTaskDetails(taskId) {
-            showToast('Task details coming soon!', 'info');
-        }
+    // ==================== EXPORT FUNCTIONS ====================
+    window.switchScreen = switchScreen;
+    window.openComposer = openComposer;
+    window.closeComposer = closeComposer;
+    window.handleLike = handleLike;
+    window.handleTaskAction = handleTaskAction;
+    window.toggleComments = toggleComments;
+    window.sendComment = sendComment;
+    window.watchAd = watchAd;
+    window.cleanupWatched = cleanupWatched;
+    window.startTask = startTask;
+    window.viewTaskDetails = viewTaskDetails;
+    window.viewUserProfile = viewUserProfile;
+    window.copyRefLink = copyRefLink;
+    window.closeBrowserModal = closeBrowserModal;
+    window.closeProfileSection = closeProfileSection;
+    window.showToast = showToast;
 
-        // ==================== EXPORT FUNCTIONS ====================
-        window.switchScreen = switchScreen;
-        window.openComposer = openComposer;
-        window.closeComposer = closeComposer;
-        window.handleLike = handleLike;
-        window.handleTaskAction = handleTaskAction;
-        window.toggleComments = toggleComments;
-        window.sendComment = sendComment;
-        window.watchAd = watchAd;
-        window.cleanupWatched = cleanupWatched;
-        window.startTask = startTask;
-        window.viewTaskDetails = viewTaskDetails;
-        window.viewUserProfile = viewUserProfile;
-        window.copyRefLink = copyRefLink;
-        window.closeBrowserModal = closeBrowserModal;
-        window.closeProfileSection = closeProfileSection;
-        window.showToast = showToast;
-    </script>
+    // ==================== START APP ====================
+    document.addEventListener('DOMContentLoaded', initializeApp);
+</script>
 </body>
 </html>
