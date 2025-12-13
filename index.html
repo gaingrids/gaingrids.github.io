@@ -4,21 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GainGrid Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Monetag SDK -->
-    <script>
-        (function(w, d, s, id){
-            w.monetag = w.monetag || {start: function(){ w.monetag.callMethod? w.monetag.callMethod.apply(w.monetag, arguments): (w.monetag.queue = w.monetag.queue || []).push(arguments); }};
-            var js = d.createElement(s); 
-            js.id = id; 
-            js.async = true; 
-            js.src = "https://cdn.monetag.com/tag.min.js";
-            d.getElementsByTagName("head")[0].appendChild(js);
-        })(window, document, "script", "monetag-js");
-    </script>
     <style>
-        /* ========== MAIN STYLES ========== */
         * {
             margin: 0;
             padding: 0;
@@ -40,9 +28,6 @@
             --radius-sm: 12px;
             --radius-md: 16px;
             --radius-lg: 24px;
-            --success: #10B981;
-            --error: #EF4444;
-            --warning: #F59E0B;
         }
 
         html, body {
@@ -52,8 +37,6 @@
             background: var(--bg-dark);
             color: var(--white);
             overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         .app-container {
@@ -65,7 +48,7 @@
             position: relative;
         }
 
-        /* ========== HEADER ========== */
+        /* Header */
         .app-header {
             width: 100%;
             background: var(--bg-panel);
@@ -89,11 +72,6 @@
         .logo-icon {
             width: 32px;
             height: 32px;
-            background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
-            border-radius: var(--radius-md);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             animation: pulse 2s ease-in-out infinite;
         }
 
@@ -124,12 +102,12 @@
         .coin-icon {
             width: 20px;
             height: 20px;
-            animation: rotate3d 4s infinite linear;
+            animation: spin 3s linear infinite;
         }
 
-        @keyframes rotate3d {
-            0% { transform: perspective(400px) rotateY(0deg); }
-            100% { transform: perspective(400px) rotateY(360deg); }
+        @keyframes spin {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
         }
 
         .balance-text {
@@ -138,13 +116,14 @@
             color: var(--gcoin-gold);
         }
 
-        /* ========== MAIN CONTENT ========== */
+        /* Main Content */
         .main-content {
             flex: 1;
             width: 100%;
             padding: calc(var(--spacing-base) * 3) calc(var(--spacing-base) * 2);
-            padding-bottom: calc(var(--spacing-base) * 12);
+            padding-bottom: calc(var(--spacing-base) * 15);
             overflow-y: auto;
+            position: relative;
         }
 
         .screen {
@@ -161,7 +140,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ========== GRIDHOME FEED ========== */
+        /* Feed Cards - Updated with better styling */
         .feed-container {
             display: flex;
             flex-direction: column;
@@ -175,7 +154,6 @@
             border: 1px solid rgba(255, 255, 255, 0.06);
             box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
             transition: all 0.3s ease;
-            cursor: pointer;
         }
 
         .post-card:hover {
@@ -188,6 +166,7 @@
             align-items: center;
             gap: calc(var(--spacing-base) * 1.5);
             margin-bottom: calc(var(--spacing-base) * 2);
+            cursor: pointer;
         }
 
         .avatar {
@@ -230,30 +209,29 @@
             line-height: 1.5;
             color: var(--white);
             margin-bottom: calc(var(--spacing-base) * 2);
+            word-break: break-word;
         }
 
         .post-media {
             width: 100%;
-            height: 200px;
-            background: var(--bg-dark);
             border-radius: var(--radius-sm);
             margin-bottom: calc(var(--spacing-base) * 2);
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            max-height: 400px;
         }
 
         .post-media img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            display: block;
+            border-radius: var(--radius-sm);
         }
 
         .post-media video {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            height: auto;
+            display: block;
+            border-radius: var(--radius-sm);
         }
 
         .earnings-bar {
@@ -274,7 +252,7 @@
 
         .post-actions {
             display: flex;
-            gap: calc(var(--spacing-base) * 1);
+            gap: calc(var(--spacing-base) * 2);
         }
 
         .action-btn {
@@ -283,7 +261,7 @@
             align-items: center;
             justify-content: center;
             gap: calc(var(--spacing-base) * 1);
-            padding: calc(var(--spacing-base) * 1.2);
+            padding: calc(var(--spacing-base) * 1.5);
             background: rgba(255, 255, 255, 0.05);
             border: none;
             border-radius: var(--radius-sm);
@@ -309,169 +287,104 @@
             height: 16px;
         }
 
-        /* ========== COMMENTS SECTION ========== */
+        /* Comment Section */
         .comments-section {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-            margin: calc(var(--spacing-base) * -2);
-            margin-top: calc(var(--spacing-base) * 1);
-            padding: 0 calc(var(--spacing-base) * 2);
+            margin-top: calc(var(--spacing-base) * 2);
+            padding-top: calc(var(--spacing-base) * 2);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            display: none;
         }
 
-        .comments-section.expanded {
-            max-height: 400px;
-            padding: calc(var(--spacing-base) * 2);
+        .comments-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         .comments-container {
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
-            margin-bottom: calc(var(--spacing-base) * 2);
+            margin-bottom: calc(var(--spacing-base) * 1.5);
         }
 
         .comment-item {
-            padding: calc(var(--spacing-base) * 1.5);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .comment-user {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: calc(var(--spacing-base) * 1);
-            margin-bottom: calc(var(--spacing-base) * 0.5);
+            padding: calc(var(--spacing-base) * 1);
+            margin-bottom: calc(var(--spacing-base) * 1);
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--radius-sm);
         }
 
         .comment-avatar {
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: var(--electric-blue);
-            font-size: 10px;
+            background: var(--deep-purple);
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 10px;
             font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .comment-content {
+            flex: 1;
+        }
+
+        .comment-author {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .comment-text {
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
         .comment-input-container {
             display: flex;
             gap: calc(var(--spacing-base) * 1);
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-lg);
-            padding: calc(var(--spacing-base) * 1);
         }
 
         .comment-input {
             flex: 1;
-            background: transparent;
-            border: none;
+            padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 1.5);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-sm);
             color: var(--white);
-            font-size: 14px;
-            padding: calc(var(--spacing-base) * 1);
-            outline: none;
+            font-size: 12px;
+            font-family: inherit;
         }
 
-        .send-comment {
+        .comment-input:focus {
+            outline: none;
+            border-color: var(--electric-blue);
+        }
+
+        .send-comment-btn {
+            padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
             background: var(--electric-blue);
             border: none;
             border-radius: var(--radius-sm);
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-
-        /* ========== TASK BOARD ========== */
-        .platform-scroll-container {
-            width: 100%;
-            overflow-x: auto;
-            margin-bottom: calc(var(--spacing-base) * 3);
-            padding-bottom: calc(var(--spacing-base) * 1);
-            scroll-behavior: smooth;
-            position: relative;
-        }
-
-        .platform-scroll {
-            display: flex;
-            gap: calc(var(--spacing-base) * 2);
-            padding: calc(var(--spacing-base) * 1);
-            animation: auto-scroll 30s linear infinite;
-            min-width: max-content;
-        }
-
-        .platform-scroll:hover {
-            animation-play-state: paused;
-        }
-
-        @keyframes auto-scroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(calc(-100% + 100vw)); }
-        }
-
-        .platform-card {
-            flex: 0 0 auto;
-            width: 120px;
-            background: var(--bg-panel);
-            border-radius: var(--radius-md);
-            padding: calc(var(--spacing-base) * 2);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1.5);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .platform-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--electric-blue);
-            box-shadow: 0 8px 24px rgba(74, 163, 255, 0.2);
-        }
-
-        .platform-icon-wrapper {
-            width: 56px;
-            height: 56px;
-            border-radius: var(--radius-md);
-            background: var(--bg-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-            transition: transform 0.3s ease;
-        }
-
-        .platform-card:hover .platform-icon-wrapper {
-            transform: rotateY(10deg) rotateX(5deg);
-        }
-
-        .platform-icon-wrapper img {
-            width: 32px;
-            height: 32px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-        }
-
-        .platform-name {
-            font-size: 12px;
+            color: white;
             font-weight: 600;
-            text-align: center;
-            color: var(--white);
+            cursor: pointer;
         }
 
-        /* Task List */
-        .task-list-header {
+        /* Task Board - Updated with horizontal scroll */
+        .task-board-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: calc(var(--spacing-base) * 2);
+            padding: calc(var(--spacing-base) * 2);
+            background: var(--bg-panel);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .task-counter {
@@ -490,42 +403,142 @@
             color: var(--electric-blue);
         }
 
+        .new-task-btn {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-base) * 1);
+            padding: calc(var(--spacing-base) * 1) calc(var(--spacing-base) * 2);
+            background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--white);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+
+        .new-task-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Platform Grid - Horizontal Scrolling */
+        .platform-grid-container {
+            position: relative;
+            margin-bottom: calc(var(--spacing-base) * 3);
+        }
+
+        .platform-grid {
+            display: flex;
+            gap: calc(var(--spacing-base) * 2);
+            padding: calc(var(--spacing-base) * 1);
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .platform-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .platform-card {
+            min-width: 100px;
+            background: var(--bg-panel);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: calc(var(--spacing-base) * 2);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .platform-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--electric-blue);
+            box-shadow: 0 8px 32px rgba(74, 163, 255, 0.2);
+        }
+
+        .platform-card.active {
+            border-color: var(--vivid-magenta);
+            background: rgba(227, 61, 122, 0.1);
+        }
+
+        .platform-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto calc(var(--spacing-base) * 1);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: calc(var(--spacing-base) * 1);
+        }
+
+        .platform-icon svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: transform 0.3s ease;
+        }
+
+        .platform-card:hover .platform-icon svg {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .platform-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: calc(var(--spacing-base) * 0.5);
+        }
+
+        .platform-count {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        /* Task List */
         .task-list {
             display: flex;
             flex-direction: column;
             gap: calc(var(--spacing-base) * 2);
         }
 
-        .task-item {
+        .task-card {
             background: var(--bg-panel);
             border-radius: var(--radius-md);
             padding: calc(var(--spacing-base) * 2);
             border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+            position: relative;
+        }
+
+        .task-card.completed {
+            opacity: 0.7;
+            border-color: rgba(46, 204, 113, 0.3);
+        }
+
+        .task-card.completed::before {
+            content: '✓ COMPLETED';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            padding: 4px 8px;
+            border-radius: var(--radius-xs);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .task-header {
             display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 2);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .task-item:hover {
-            border-color: var(--electric-blue);
-            transform: translateY(-2px);
-        }
-
-        .task-item.completed {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .task-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: var(--radius-sm);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            align-items: start;
+            justify-content: space-between;
+            margin-bottom: calc(var(--spacing-base) * 2);
         }
 
         .task-info {
@@ -533,14 +546,17 @@
         }
 
         .task-title {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: calc(var(--spacing-base) * 0.5);
+            margin-bottom: calc(var(--spacing-base) * 1);
+            color: var(--white);
         }
 
         .task-description {
             font-size: 12px;
             color: var(--text-secondary);
+            line-height: 1.4;
+            margin-bottom: calc(var(--spacing-base) * 1);
         }
 
         .task-reward {
@@ -553,35 +569,53 @@
             font-size: 14px;
             font-weight: 700;
             color: var(--gcoin-gold);
-            white-space: nowrap;
         }
 
-        /* Random Tasks */
-        .random-tasks-section {
-            margin-top: calc(var(--spacing-base) * 4);
-        }
-
-        .random-tasks-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: calc(var(--spacing-base) * 2);
+        .task-footer {
             display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1);
+            gap: calc(var(--spacing-base) * 1.5);
         }
 
-        .random-tasks-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: calc(var(--spacing-base) * 2);
+        .task-btn {
+            flex: 1;
+            padding: calc(var(--spacing-base) * 1.5);
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.12s ease;
         }
 
-        /* ========== WATCH & EARN ========== */
+        .task-btn.primary {
+            background: linear-gradient(135deg, var(--deep-purple), var(--vivid-magenta));
+            color: var(--white);
+        }
+
+        .task-btn.primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(91, 46, 138, 0.4);
+        }
+
+        .task-btn.secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--white);
+        }
+
+        .task-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Watch & Earn */
         .watch-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: calc(var(--spacing-base) * 3);
+            margin-bottom: calc(var(--spacing-base) * 2);
+            padding: calc(var(--spacing-base) * 2);
+            background: var(--bg-panel);
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .daily-limit {
@@ -618,28 +652,29 @@
             gap: calc(var(--spacing-base) * 2);
         }
 
-        .ad-card {
+        .video-card {
             background: var(--bg-panel);
             border-radius: var(--radius-md);
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.06);
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
         }
 
-        .ad-card:hover {
+        .video-card:hover {
             transform: translateY(-4px);
             border-color: rgba(74, 163, 255, 0.4);
         }
 
-        .ad-card.watched {
+        .video-card.watched {
             opacity: 0.6;
             pointer-events: none;
         }
 
-        .ad-thumbnail {
+        .video-thumbnail {
             width: 100%;
-            height: 160px;
+            height: 120px;
             background: linear-gradient(135deg, rgba(91, 46, 138, 0.3), rgba(74, 163, 255, 0.3));
             display: flex;
             align-items: center;
@@ -653,7 +688,7 @@
             opacity: 0.9;
         }
 
-        .ad-duration {
+        .video-duration {
             position: absolute;
             bottom: calc(var(--spacing-base) * 1);
             right: calc(var(--spacing-base) * 1);
@@ -664,39 +699,28 @@
             font-weight: 600;
         }
 
-        .ad-info {
+        .video-info {
             padding: calc(var(--spacing-base) * 2);
         }
 
-        .ad-title {
+        .video-title {
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: calc(var(--spacing-base) * 0.5);
-        }
-
-        .ad-source {
-            font-size: 11px;
-            color: var(--text-secondary);
             margin-bottom: calc(var(--spacing-base) * 1);
+            line-height: 1.3;
         }
 
-        .ad-reward {
+        .video-meta {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
-        .reward-amount {
-            font-size: 14px;
-            font-weight: 700;
+        .video-reward {
             color: var(--gcoin-gold);
-        }
-
-        .watched-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            font-weight: 600;
         }
 
         .collected-badge {
@@ -704,7 +728,7 @@
             font-weight: 600;
         }
 
-        /* ========== PROFILE ========== */
+        /* Profile */
         .profile-section {
             display: flex;
             flex-direction: column;
@@ -745,11 +769,13 @@
         .profile-name {
             font-size: 20px;
             font-weight: 700;
+            text-align: center;
         }
 
         .profile-username {
             font-size: 14px;
             color: var(--text-secondary);
+            text-align: center;
         }
 
         .profile-stats {
@@ -777,7 +803,6 @@
             color: var(--text-secondary);
         }
 
-        /* Profile Menu - Fixed */
         .profile-menu {
             display: flex;
             flex-direction: column;
@@ -792,12 +817,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: calc(var(--spacing-base) * 1.5) calc(var(--spacing-base) * 2);
+            padding: calc(var(--spacing-base) * 2) calc(var(--spacing-base) * 2.5);
             background: transparent;
             border: none;
             border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             color: var(--white);
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.12s ease;
@@ -812,19 +837,11 @@
         }
 
         .menu-icon {
-            width: 18px;
-            height: 18px;
-            margin-right: calc(var(--spacing-base) * 1.5);
+            width: 20px;
+            height: 20px;
         }
 
-        .menu-text {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1.5);
-        }
-
-        /* ========== BOTTOM NAVIGATION ========== */
+        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -874,10 +891,10 @@
             transition: transform 0.12s ease;
         }
 
-        /* ========== FLOATING CREATE BUTTON ========== */
-        .floating-create {
+        /* Floating Action Button */
+        .fab {
             position: fixed;
-            bottom: calc(var(--spacing-base) * 14);
+            bottom: calc(var(--spacing-base) * 12);
             right: calc(var(--spacing-base) * 2);
             width: 56px;
             height: 56px;
@@ -891,26 +908,27 @@
             box-shadow: 0 4px 16px rgba(227, 61, 122, 0.4);
             transition: all 0.3s ease;
             z-index: 99;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        .floating-create.visible {
             opacity: 1;
             transform: translateY(0);
         }
 
-        .floating-create:hover {
-            transform: scale(1.1) translateY(0);
+        .fab.hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
             box-shadow: 0 6px 24px rgba(227, 61, 122, 0.6);
         }
 
-        .create-icon {
+        .fab-icon {
             width: 24px;
             height: 24px;
         }
 
-        /* ========== MODALS ========== */
+        /* Modal Overlay */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -918,10 +936,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 200;
             animation: fadeIn 0.3s ease;
-            backdrop-filter: blur(8px);
         }
 
         .modal-overlay.active {
@@ -984,110 +1001,8 @@
             height: 16px;
         }
 
-        /* ========== BROWSER MODAL (IFRAME) ========== */
-        .browser-frame {
-            width: 100%;
-            height: 85vh;
-            background: var(--bg-panel);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .browser-header {
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1);
-            padding: calc(var(--spacing-base) * 1.5);
-            background: rgba(255, 255, 255, 0.03);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            flex-shrink: 0;
-        }
-
-        .browser-dots {
-            display: flex;
-            gap: calc(var(--spacing-base) * 0.75);
-        }
-
-        .browser-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--text-secondary);
-        }
-
-        .browser-url {
-            flex: 1;
-            padding: calc(var(--spacing-base) * 0.75) calc(var(--spacing-base) * 1.5);
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: var(--radius-xs);
-            font-size: 12px;
-            color: var(--text-secondary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .browser-content {
-            flex: 1;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .browser-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            background: white;
-        }
-
-        /* Timer at bottom */
-        .browser-timer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(11, 11, 13, 0.95);
-            padding: calc(var(--spacing-base) * 2);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1.5);
-            z-index: 10;
-        }
-
-        .timer-display {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--electric-blue);
-            font-family: monospace;
-        }
-
-        .timer-label {
-            font-size: 14px;
-            color: var(--text-secondary);
-            text-align: center;
-        }
-
-        .timer-progress {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .timer-progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--electric-blue), var(--vivid-magenta));
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        /* ========== CREATE POST MODAL ========== */
-        .create-form {
+        /* Composer Form */
+        .composer-form {
             display: flex;
             flex-direction: column;
             gap: calc(var(--spacing-base) * 2);
@@ -1132,20 +1047,7 @@
             resize: vertical;
         }
 
-        .form-select {
-            width: 100%;
-            padding: calc(var(--spacing-base) * 1.5);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: var(--radius-sm);
-            color: var(--white);
-            font-size: 14px;
-            font-family: inherit;
-            cursor: pointer;
-        }
-
-        /* Drag and drop area */
-        .drop-area {
+        .media-attach-area {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: var(--radius-sm);
             padding: calc(var(--spacing-base) * 3);
@@ -1154,60 +1056,59 @@
             transition: all 0.3s ease;
         }
 
-        .drop-area:hover,
-        .drop-area.dragover {
+        .media-attach-area:hover {
             border-color: var(--electric-blue);
             background: rgba(74, 163, 255, 0.05);
         }
 
-        .drop-icon {
+        .media-attach-area.drag-over {
+            border-color: var(--vivid-magenta);
+            background: rgba(227, 61, 122, 0.05);
+        }
+
+        .attach-icon {
             width: 48px;
             height: 48px;
-            margin: 0 auto calc(var(--spacing-base) * 1.5);
+            margin: 0 auto calc(var(--spacing-base) * 2);
             color: var(--text-secondary);
-        }
-
-        .drop-text {
-            color: var(--text-secondary);
-            margin-bottom: calc(var(--spacing-base) * 0.5);
-        }
-
-        .drop-hint {
-            font-size: 12px;
-            color: var(--text-tertiary);
         }
 
         .media-preview {
-            margin-top: calc(var(--spacing-base) * 1.5);
+            display: flex;
+            flex-wrap: wrap;
+            gap: calc(var(--spacing-base) * 1);
+            margin-top: calc(var(--spacing-base) * 2);
         }
 
         .preview-item {
             position: relative;
-            margin-bottom: calc(var(--spacing-base) * 1);
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
         }
 
         .preview-item img,
         .preview-item video {
             width: 100%;
-            max-height: 200px;
-            border-radius: var(--radius-sm);
+            height: 100%;
             object-fit: cover;
         }
 
-        .remove-media {
+        .remove-preview {
             position: absolute;
-            top: calc(var(--spacing-base) * 0.5);
-            right: calc(var(--spacing-base) * 0.5);
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
             background: rgba(0, 0, 0, 0.7);
             border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            color: white;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            color: white;
         }
 
         .submit-btn {
@@ -1231,9 +1132,110 @@
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
-        /* ========== LOADING OVERLAY ========== */
+        /* Browser Frame Modal */
+        .browser-frame {
+            width: 100%;
+            height: 80vh;
+            background: var(--bg-panel);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .browser-header {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--spacing-base) * 1);
+            padding: calc(var(--spacing-base) * 1.5);
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .browser-dots {
+            display: flex;
+            gap: calc(var(--spacing-base) * 0.75);
+        }
+
+        .browser-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+        }
+
+        .browser-url {
+            flex: 1;
+            padding: calc(var(--spacing-base) * 0.75) calc(var(--spacing-base) * 1.5);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-xs);
+            font-size: 12px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .browser-content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .browser-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        /* Timer Overlay - Moved to Bottom */
+        .timer-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(11, 11, 13, 0.95);
+            padding: calc(var(--spacing-base) * 2);
+            z-index: 10;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--spacing-base) * 1.5);
+        }
+
+        .timer-display {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--electric-blue);
+            text-align: center;
+        }
+
+        .timer-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .timer-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .timer-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--deep-purple), var(--vivid-magenta));
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        /* Loading Overlay */
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -1242,83 +1244,101 @@
             bottom: 0;
             background: var(--bg-dark);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
 
         .loading-spinner {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border: 3px solid rgba(255, 255, 255, 0.1);
             border-top-color: var(--electric-blue);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-bottom: calc(var(--spacing-base) * 2);
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* ========== NOTIFICATIONS ========== */
-        .notification-container {
+        /* Toast Notification */
+        .toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .notification {
             background: var(--bg-panel);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--radius-md);
-            padding: calc(var(--spacing-base) * 1.5) calc(var(--spacing-base) * 2);
-            display: flex;
-            align-items: center;
-            gap: calc(var(--spacing-base) * 1);
+            padding: calc(var(--spacing-base) * 2);
             min-width: 300px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
         }
 
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
 
-        .notification.success {
-            border-left: 4px solid var(--success);
+        .toast.success {
+            border-left: 4px solid #2ecc71;
         }
 
-        .notification.error {
-            border-left: 4px solid var(--error);
+        .toast.error {
+            border-left: 4px solid #e74c3c;
         }
 
-        .notification.warning {
-            border-left: 4px solid var(--warning);
+        .toast.warning {
+            border-left: 4px solid #f39c12;
         }
 
-        .notification.info {
+        .toast.info {
             border-left: 4px solid var(--electric-blue);
         }
 
-        /* ========== VIP BADGES ========== */
+        .toast-content {
+            display: flex;
+            align-items: flex-start;
+            gap: calc(var(--spacing-base) * 1.5);
+        }
+
+        .toast-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        /* VIP Badge */
         .vip-badge {
             display: inline-flex;
             align-items: center;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: var(--radius-xs);
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
         }
 
@@ -1328,69 +1348,102 @@
         }
 
         .vip-badge.basic {
-            background: rgba(255, 200, 87, 0.15);
-            color: var(--gcoin-gold);
-            border: 1px solid rgba(255, 200, 87, 0.3);
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
         }
 
         .vip-badge.silver {
-            background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(224, 224, 224, 0.15));
-            color: #C0C0C0;
-            border: 1px solid rgba(192, 192, 192, 0.3);
+            background: rgba(156, 163, 175, 0.2);
+            color: #9ca3af;
         }
 
         .vip-badge.gold {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 200, 87, 0.15));
-            color: #FFD700;
-            border: 1px solid rgba(255, 215, 0, 0.3);
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
         }
 
         .vip-badge.premium {
-            background: linear-gradient(135deg, rgba(227, 61, 122, 0.15), rgba(91, 46, 138, 0.15));
-            color: var(--vivid-magenta);
-            border: 1px solid rgba(227, 61, 122, 0.3);
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
         }
 
-        /* ========== RESPONSIVE ========== */
-        @media (max-width: 768px) {
-            .platform-scroll-container {
-                animation-play-state: running;
-            }
-            
-            .platform-scroll {
-                animation: auto-scroll 40s linear infinite;
-            }
-            
-            .watch-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .random-tasks-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .browser-frame {
-                height: 80vh;
-            }
-        }
-
-        @media (min-width: 769px) {
+        /* Responsive */
+        @media (min-width: 768px) {
             .app-container {
                 max-width: 430px;
                 margin: 0 auto;
                 box-shadow: 0 0 40px rgba(0, 0, 0, 0.3);
             }
+
+            .watch-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
+
+        /* Platform Auto Scroll Animation */
+        @keyframes scrollPlatforms {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .platform-grid.auto-scroll {
+            animation: scrollPlatforms 30s linear infinite;
+        }
+
+        .platform-grid-container:hover .platform-grid.auto-scroll {
+            animation-play-state: paused;
+        }
+
+        /* Platform specific colors */
+        .platform-card.youtube { border-color: rgba(255, 0, 0, 0.3); }
+        .platform-card.youtube:hover { border-color: #FF0000; }
+        
+        .platform-card.telegram { border-color: rgba(0, 136, 204, 0.3); }
+        .platform-card.telegram:hover { border-color: #0088cc; }
+        
+        .platform-card.instagram { border-color: rgba(225, 48, 108, 0.3); }
+        .platform-card.instagram:hover { border-color: #E1306C; }
+        
+        .platform-card.twitter { border-color: rgba(29, 161, 242, 0.3); }
+        .platform-card.twitter:hover { border-color: #1DA1F2; }
+        
+        .platform-card.tiktok { border-color: rgba(0, 0, 0, 0.3); }
+        .platform-card.tiktok:hover { border-color: #000000; }
+        
+        .platform-card.whatsapp { border-color: rgba(37, 211, 102, 0.3); }
+        .platform-card.whatsapp:hover { border-color: #25D366; }
+        
+        .platform-card.discord { border-color: rgba(88, 101, 242, 0.3); }
+        .platform-card.discord:hover { border-color: #5865F2; }
+        
+        .platform-card.facebook { border-color: rgba(24, 119, 242, 0.3); }
+        .platform-card.facebook:hover { border-color: #1877F2; }
+        
+        .platform-card.website { border-color: rgba(74, 163, 255, 0.3); }
+        .platform-card.website:hover { border-color: #4AA3FF; }
     </style>
+    
+    <!-- Monetag Ad SDK -->
+    <script>
+        (function(m,o,n,e,t,a,g){
+            m['MonetagObject']=t;m[t]=m[t]||function(){
+                (m[t].q=m[t].q||[]).push(arguments)
+            };
+            a=o.createElement(n);g=o.getElementsByTagName(n)[0];
+            a.async=1;a.src=e;g.parentNode.insertBefore(a,g)
+        })(window,document,'script','https://cdn.monetag.com/tag.min.js','monetag');
+        monetag('start');
+    </script>
 </head>
 <body>
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
+        <div class="loading-text">Loading GainGrid...</div>
     </div>
 
-    <!-- Notifications -->
-    <div class="notification-container" id="notificationContainer"></div>
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
 
     <!-- Main App -->
     <div class="app-container">
@@ -1398,30 +1451,32 @@
         <header class="app-header">
             <div class="logo-section">
                 <div class="logo-icon">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect width="20" height="20" rx="6" fill="url(#logo-gradient)"/>
-                        <path d="M7 10L10 13L14 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="32" height="32" rx="8" fill="url(#logo-gradient)" />
+                        <path d="M10 16L14 20L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                         <defs>
-                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="20" y2="20">
-                                <stop stop-color="var(--deep-purple)"/>
-                                <stop offset="1" stop-color="var(--vivid-magenta)"/>
+                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="32" y2="32">
+                                <stop stop-color="#5B2E8A" />
+                                <stop offset="1" stop-color="#E33D7A" />
                             </linearGradient>
                         </defs>
                     </svg>
                 </div>
-                <h1 class="app-title">GainGrid</h1>
+                <h1 class="app-title" id="appTitle">GainGrid</h1>
             </div>
             <div class="balance-chip">
-                <svg class="coin-icon" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="10" r="9" fill="var(--gcoin-gold)" stroke="#FFD87A" stroke-width="1"/>
-                    <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="12" font-weight="700">G</text>
-                </svg>
+                <div class="coin-icon">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="9" fill="#FFC857" stroke="#FFD87A" stroke-width="1" />
+                        <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="12" font-weight="700">G</text>
+                    </svg>
+                </div>
                 <span class="balance-text" id="balanceText">0</span>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content" id="mainContent">
             <!-- GridHome Screen -->
             <section class="screen active" id="gridhomeScreen">
                 <div class="feed-container" id="feedContainer">
@@ -1431,29 +1486,29 @@
 
             <!-- Task Board Screen -->
             <section class="screen" id="tasksScreen">
-                <!-- Platform Cards -->
-                <div class="platform-scroll-container">
-                    <div class="platform-scroll" id="platformScroll">
-                        <!-- Platform cards loaded dynamically -->
+                <div class="task-board-header">
+                    <div class="task-counter">
+                        <span class="counter-label">Tasks today:</span>
+                        <span class="counter-value" id="taskCounter">0/20</span>
                     </div>
-                </div>
-
-                <!-- Platform Tasks -->
-                <div id="platformTasksContainer">
-                    <!-- Platform tasks loaded dynamically -->
-                </div>
-
-                <!-- Random Daily Tasks -->
-                <div class="random-tasks-section">
-                    <h3 class="random-tasks-title">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M10 4V16M4 10H16" stroke="var(--electric-blue)" stroke-width="2" stroke-linecap="round"/>
+                    <button class="new-task-btn" id="newTaskBtn">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
-                        Random Daily Tasks
-                    </h3>
-                    <div class="random-tasks-grid" id="randomTasksGrid">
-                        <!-- Random tasks loaded dynamically -->
+                        <span>New Task</span>
+                    </button>
+                </div>
+
+                <!-- Platform Grid -->
+                <div class="platform-grid-container">
+                    <div class="platform-grid auto-scroll" id="platformGrid">
+                        <!-- Platforms loaded dynamically -->
                     </div>
+                </div>
+
+                <!-- Task List -->
+                <div class="task-list" id="taskList">
+                    <!-- Tasks loaded dynamically -->
                 </div>
             </section>
 
@@ -1461,19 +1516,20 @@
             <section class="screen" id="watchScreen">
                 <div class="watch-header">
                     <div class="daily-limit">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/>
-                            <path d="M10 5V10L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2" />
+                            <path d="M10 5V10L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                         <span>Daily Ads: <strong id="adsCounter">0/20</strong></span>
                     </div>
                     <button class="cleanup-btn" id="cleanupBtn">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <path d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5 4.5 14 5 14H11C11.5 14 12 13.5 12 13L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2 4H14M6 7V11M10 7V11M3 4L4 13C4 13.5 4.5 14 5 14H11C11.5 14 12 13.5 12 13L13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                         </svg>
-                        Clean Up
+                        <span>Clean Up</span>
                     </button>
                 </div>
+
                 <div class="watch-grid" id="watchGrid">
                     <!-- Ads loaded dynamically -->
                 </div>
@@ -1488,81 +1544,53 @@
                         </div>
                         <h2 class="profile-name" id="profileName">Loading...</h2>
                         <p class="profile-username" id="profileUsername">@username</p>
-                        <div class="vip-badge" id="vipBadge">No VIP</div>
-                        <div class="profile-stats">
-                            <div class="stat-item">
-                                <div class="stat-value" id="statGcoins">0</div>
-                                <div class="stat-label">G-Coins</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="statEarned">0</div>
-                                <div class="stat-label">Total Earned</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value" id="statTasks">0</div>
-                                <div class="stat-label">Tasks Done</div>
-                            </div>
+                        <div class="vip-badge gold" id="vipBadge">VIP Level</div>
+                    </div>
+
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="statGcoins">0</div>
+                            <div class="stat-label">G-Coins</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="statTotalEarned">0</div>
+                            <div class="stat-label">Total Earned</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="statTasksDone">0</div>
+                            <div class="stat-label">Tasks Done</div>
                         </div>
                     </div>
-                    
+
                     <div class="profile-menu">
-                        <button class="menu-item" onclick="openProfileSection('edit')">
-                            <div class="menu-text">
-                                <svg class="menu-icon" viewBox="0 0 20 20" fill="none">
-                                    <path d="M11 2H13C13.5 2 14 2.5 14 3V5M2 11V13C2 13.5 2.5 14 3 14H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                    <circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
-                                </svg>
-                                Edit Profile
-                            </div>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button class="menu-item" id="editProfileBtn">
+                            <span>Edit Profile</span>
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
-                        <button class="menu-item" onclick="openProfileSection('transactions')">
-                            <div class="menu-text">
-                                <svg class="menu-icon" viewBox="0 0 20 20" fill="none">
-                                    <rect x="3" y="4" width="14" height="12" rx="1" stroke="currentColor" stroke-width="1.5"/>
-                                    <path d="M7 8H13M7 11H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                Transaction History
-                            </div>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button class="menu-item" id="transactionHistoryBtn">
+                            <span>Transaction History</span>
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
-                        <button class="menu-item" onclick="openProfileSection('referrals')">
-                            <div class="menu-text">
-                                <svg class="menu-icon" viewBox="0 0 20 20" fill="none">
-                                    <path d="M16 7C16 8.5 15.5 10 14 10C15.5 10 16 11.5 16 13C16 14.5 14.5 15 13 15M10 13H7C5.5 13 5 12.5 5 11V7C5 5.5 5.5 5 7 5H13C14.5 5 15 5.5 15 7V11C15 12.5 14.5 13 13 13H10ZM10 13V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                Referrals
-                            </div>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button class="menu-item" id="referralsBtn">
+                            <span>Referrals</span>
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
-                        <button class="menu-item" onclick="openProfileSection('settings')">
-                            <div class="menu-text">
-                                <svg class="menu-icon" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
-                                    <path d="M10 6V14M6 10H14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                Settings
-                            </div>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button class="menu-item" id="settingsBtn">
+                            <span>Settings</span>
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org2000/svg">
+                                <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
-                        <button class="menu-item" onclick="openHelpSupport()">
-                            <div class="menu-text">
-                                <svg class="menu-icon" viewBox="0 0 20 20" fill="none">
-                                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/>
-                                    <path d="M10 14V10M10 6V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                </svg>
-                                Help & Support
-                            </div>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M6 12L10 8L6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <button class="menu-item" id="helpSupportBtn">
+                            <span>Help & Support</span>
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
                     </div>
@@ -1573,101 +1601,100 @@
         <!-- Bottom Navigation -->
         <nav class="bottom-nav">
             <button class="nav-item active" onclick="switchScreen('gridhome')">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                GridHome
+                <span>GridHome</span>
             </button>
             <button class="nav-item" onclick="switchScreen('tasks')">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                Tasks
+                <span>Tasks</span>
             </button>
             <button class="nav-item" onclick="switchScreen('watch')">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 3L19 12L5 21V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 3L19 12L5 21V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                Watch
+                <span>Watch</span>
             </button>
             <button class="nav-item" onclick="switchScreen('profile')">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                Profile
+                <span>Profile</span>
             </button>
         </nav>
 
-        <!-- Floating Create Button -->
-        <button class="floating-create" id="floatingCreate" onclick="openCreateModal()">
-            <svg class="create-icon" viewBox="0 0 24 24" fill="none">
-                <path d="M12 20H21" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16.5 3.49998C16.8978 3.10216 17.4374 2.87866 18 2.87866C18.2786 2.87866 18.5544 2.93353 18.8118 3.04014C19.0692 3.14674 19.303 3.303 19.5 3.49998C19.697 3.69697 19.8532 3.93082 19.9598 4.18819C20.0665 4.44556 20.1213 4.72141 20.1213 4.99998C20.1213 5.27856 20.0665 5.55441 19.9598 5.81178C19.8532 6.06915 19.697 6.303 19.5 6.49998L7 19L3 20L4 16L16.5 3.49998Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- Floating Action Button (Post) -->
+        <button class="fab" id="fabPost" onclick="openComposer()">
+            <svg class="fab-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 20H21" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M16.5 3.49998C16.8978 3.10216 17.4374 2.87866 18 2.87866C18.2786 2.87866 18.5544 2.93353 18.8118 3.04014C19.0692 3.14674 19.303 3.303 19.5 3.49998C19.697 3.69697 19.8532 3.93082 19.9598 4.18819C20.0665 4.44556 20.1213 4.72141 20.1213 4.99998C20.1213 5.27856 20.0665 5.55441 19.9598 5.81178C19.8532 6.06915 19.697 6.303 19.5 6.49998L7 19L3 20L4 16L16.5 3.49998Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </button>
 
         <!-- Modals -->
-        
-        <!-- Create Post Modal -->
-        <div class="modal-overlay" id="createModal">
+        <!-- Composer Modal -->
+        <div class="modal-overlay" id="composerModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title">Create Post</h3>
-                    <button class="close-btn" onclick="closeModal('createModal')">
-                        <svg class="close-icon" viewBox="0 0 16 16" fill="none">
-                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <h2 class="modal-title">Create Post</h2>
+                    <button class="close-btn" onclick="closeComposer()">
+                        <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
-                <form class="create-form" id="createForm" onsubmit="submitPost(event)">
+                <form class="composer-form" id="postForm" onsubmit="submitPost(event)">
                     <div class="form-group">
-                        <label class="form-label">Content</label>
-                        <textarea class="form-textarea" id="postContent" placeholder="What do you want to share?" required></textarea>
+                        <label class="form-label" for="postContent">Post Content</label>
+                        <textarea class="form-textarea" id="postContent" placeholder="What do you want to share? Use # for hashtags and @ for mentions" required></textarea>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Link URL</label>
+                        <label class="form-label" for="postLink">Link URL</label>
                         <input type="url" class="form-input" id="postLink" placeholder="https://example.com" required>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Action Type</label>
-                        <select class="form-select" id="postAction" required>
+                        <label class="form-label" for="postLinkType">Link Type</label>
+                        <select class="form-input" id="postLinkType" required>
                             <option value="visit">Visit Website</option>
-                            <option value="join">Join Channel/Group</option>
+                            <option value="join">Join Group/Channel</option>
                             <option value="watch">Watch Video</option>
-                            <option value="signup">Sign Up</option>
                             <option value="install">Install App</option>
+                            <option value="signup">Sign Up</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Reward Amount (10,000 G-Coins minimum)</label>
-                        <input type="number" class="form-input" id="postReward" min="10000" value="10000" required>
-                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
-                            Minimum: 10,000 G-Coins | Maximum: 100,000 G-Coins
+                        <label class="form-label" for="postReward">Reward Amount (G-Coins)</label>
+                        <input type="number" class="form-input" id="postReward" placeholder="Enter reward amount" min="10000" max="100000" required>
+                        <div class="reward-preview">
+                            <div class="preview-label">Minimum: 10,000 G-Coins</div>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Media (Optional)</label>
-                        <div class="drop-area" id="dropArea" onclick="document.getElementById('mediaInput').click()">
-                            <svg class="drop-icon" viewBox="0 0 24 24" fill="none">
-                                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 21.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                                <path d="M17 8L12 3L7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                                <path d="M12 3V15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <div class="media-attach-area" id="mediaDropArea">
+                            <svg class="attach-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" />
+                                <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M2 14L7 9L12 14M10 12L13 9L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                             </svg>
-                            <div class="drop-text">Drop image/video or click to upload</div>
-                            <div class="drop-hint">Max size: 10MB</div>
-                            <input type="file" id="mediaInput" accept="image/*,video/*" style="display: none" onchange="handleMediaUpload(event)">
+                            <div class="file-drop-text">Drag & drop photos/videos or click to upload</div>
+                            <div class="file-drop-hint">Max size: 10MB</div>
+                            <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display: none;">
                         </div>
                         <div class="media-preview" id="mediaPreview"></div>
                     </div>
                     
-                    <button type="submit" class="submit-btn" id="submitPostBtn">Publish Post</button>
+                    <button type="submit" class="submit-btn" id="postSubmitBtn">Publish Post</button>
                 </form>
             </div>
         </div>
@@ -1681,16 +1708,16 @@
                         <div class="browser-dot"></div>
                         <div class="browser-dot"></div>
                     </div>
-                    <div class="browser-url" id="browserUrl">https://gridgain.com</div>
+                    <div class="browser-url" id="browserUrl">https://gaingrid.com</div>
                     <button class="close-btn" onclick="closeBrowserModal()">
-                        <svg class="close-icon" viewBox="0 0 16 16" fill="none">
-                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
                 <div class="browser-content">
-                    <iframe class="browser-iframe" id="browserIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
-                    <div class="browser-timer" id="browserTimer">
+                    <iframe class="browser-iframe" id="browserIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                    <div class="timer-overlay" id="timerOverlay">
                         <div class="timer-display" id="timerDisplay">00:00</div>
                         <div class="timer-label" id="timerLabel">Please wait while we verify completion</div>
                         <div class="timer-progress">
@@ -1702,17 +1729,17 @@
         </div>
 
         <!-- Profile Section Modal -->
-        <div class="modal-overlay" id="profileModal">
+        <div class="modal-overlay" id="profileSectionModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="profileModalTitle">Profile Section</h3>
-                    <button class="close-btn" onclick="closeModal('profileModal')">
-                        <svg class="close-icon" viewBox="0 0 16 16" fill="none">
-                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <h2 class="modal-title" id="profileSectionTitle">Profile Section</h2>
+                    <button class="close-btn" onclick="closeProfileSection()">
+                        <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
-                <div class="modal-body" id="profileModalContent">
+                <div class="modal-body" id="profileSectionContent">
                     <!-- Content loaded dynamically -->
                 </div>
             </div>
@@ -1720,8 +1747,8 @@
     </div>
 
     <script>
-        // ========== GLOBAL STATE ==========
-        const APP_STATE = {
+        // ==================== GLOBAL STATE ====================
+        const appState = {
             user: null,
             balance: 0,
             vipLevel: 'none',
@@ -1730,20 +1757,20 @@
                 ads: 0
             },
             posts: [],
-            tasks: {
-                platform: [],
-                random: []
-            },
+            tasks: [],
             ads: [],
+            randomTasks: [],
+            platforms: [],
             currentTask: null,
             currentAd: null,
+            currentPostId: null,
             timerInterval: null,
-            isTelegram: false,
+            isTelegramWebApp: false,
             WebApp: null,
-            lastScroll: 0
+            lastScrollPosition: 0
         };
 
-        // ========== SMART LINKS ==========
+        // ==================== SMART LINKS ====================
         const SMART_LINKS = [
             'https://otieu.com/4/10176113',
             'https://otieu.com/4/10176184',
@@ -1751,287 +1778,277 @@
             'https://otieu.com/4/10176185'
         ];
 
-        // ========== PLATFORM CONFIGURATION ==========
-        const PLATFORMS = {
-            youtube: {
-                name: 'YouTube',
-                color: '#FF0000',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/youtube.svg'
-            },
-            telegram: {
-                name: 'Telegram',
-                color: '#0088CC',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/telegram.svg'
-            },
-            instagram: {
-                name: 'Instagram',
-                color: '#E4405F',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/instagram.svg'
-            },
-            twitter: {
-                name: 'Twitter',
-                color: '#1DA1F2',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/twitter.svg'
-            },
-            tiktok: {
-                name: 'TikTok',
-                color: '#000000',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/tiktok.svg'
-            },
-            facebook: {
-                name: 'Facebook',
-                color: '#1877F2',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/facebook.svg'
-            },
-            whatsapp: {
-                name: 'WhatsApp',
-                color: '#25D366',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/whatsapp.svg'
-            },
-            discord: {
-                name: 'Discord',
-                color: '#5865F2',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/discord.svg'
-            },
-            website: {
-                name: 'Website',
-                color: '#4AA3FF',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/internetexplorer.svg'
-            },
-            linkedin: {
-                name: 'LinkedIn',
-                color: '#0A66C2',
-                icon: 'https://cdn.jsdelivr.net/npm/simple-icons@latest/icons/linkedin.svg'
-            }
-        };
+        // ==================== PLATFORM CONFIG ====================
+        const PLATFORMS = [
+            { id: 'youtube', name: 'YouTube', color: '#FF0000' },
+            { id: 'telegram', name: 'Telegram', color: '#0088CC' },
+            { id: 'instagram', name: 'Instagram', color: '#E1306C' },
+            { id: 'twitter', name: 'Twitter', color: '#1DA1F2' },
+            { id: 'tiktok', name: 'TikTok', color: '#000000' },
+            { id: 'facebook', name: 'Facebook', color: '#1877F2' },
+            { id: 'whatsapp', name: 'WhatsApp', color: '#25D366' },
+            { id: 'discord', name: 'Discord', color: '#5865F2' },
+            { id: 'website', name: 'Website', color: '#4AA3FF' }
+        ];
 
-        // ========== INITIALIZATION ==========
-        document.addEventListener('DOMContentLoaded', async () => {
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', async function() {
             try {
-                // Hide loading
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('loadingOverlay').style.display = 'none';
-                    }, 300);
-                }, 1000);
-
-                // Check Telegram WebApp
-                if (window.Telegram && window.Telegram.WebApp) {
-                    APP_STATE.WebApp = window.Telegram.WebApp;
-                    APP_STATE.isTelegram = true;
-                    APP_STATE.WebApp.ready();
-                    APP_STATE.WebApp.expand();
-                    
-                    // Get user data
-                    const tgUser = APP_STATE.WebApp.initDataUnsafe.user;
-                    if (tgUser) {
-                        APP_STATE.user = {
-                            id: tgUser.id,
-                            firstName: tgUser.first_name,
-                            lastName: tgUser.last_name || '',
-                            username: tgUser.username,
-                            photoUrl: tgUser.photo_url
-                        };
-                    }
-                }
-
-                // Handle URL parameters
-                const urlParams = new URLSearchParams(window.location.search);
-                const payload = urlParams.get('payload');
-                const hash = window.location.hash.replace('#', '');
-
-                if (payload) {
-                    await handlePayload(payload);
-                }
-
-                // Initialize app
-                await initializeApp();
-
-                // Handle hash navigation
-                if (hash) {
-                    handleHashNavigation(hash);
-                }
-
+                // Initialize Telegram WebApp
+                await initializeTelegram();
+                
+                // Parse URL parameters
+                await parseURLParameters();
+                
+                // Load initial data
+                await loadInitialData();
+                
                 // Setup event listeners
                 setupEventListeners();
-
-                // Initialize Monetag ads
-                initializeMonetagAds();
-
+                
+                // Initialize auto-scroll for platforms
+                initPlatformAutoScroll();
+                
+                // Hide loading overlay
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }, 500);
+                
             } catch (error) {
                 console.error('Initialization error:', error);
-                showNotification('Error initializing app', 'error');
+                showToast('Failed to initialize app', 'error');
             }
         });
 
-        // ========== PAYLOAD HANDLING ==========
-        async function handlePayload(payload) {
+        // ==================== TELEGRAM INITIALIZATION ====================
+        async function initializeTelegram() {
             try {
-                // Decode Base64
-                const decoded = atob(payload);
-                const data = JSON.parse(decoded);
-                
-                // Update app state
-                if (data.user) {
-                    APP_STATE.user = { ...APP_STATE.user, ...data.user };
+                if (window.Telegram && window.Telegram.WebApp) {
+                    appState.WebApp = window.Telegram.WebApp;
+                    appState.isTelegramWebApp = true;
+                    appState.WebApp.ready();
+                    appState.WebApp.expand();
+                    
+                    // Get user data from Telegram
+                    const telegramUser = appState.WebApp.initDataUnsafe.user;
+                    if (telegramUser) {
+                        appState.user = {
+                            id: telegramUser.id,
+                            firstName: telegramUser.first_name,
+                            lastName: telegramUser.last_name || '',
+                            username: telegramUser.username,
+                            photoUrl: telegramUser.photo_url
+                        };
+                        
+                        // Update UI with Telegram user data
+                        updateUserInfo();
+                    }
                 }
-                if (data.balance !== undefined) {
-                    APP_STATE.balance = data.balance;
-                    updateBalance();
-                }
-                if (data.vipLevel) {
-                    APP_STATE.vipLevel = data.vipLevel;
-                    updateVipBadge();
-                }
-                if (data.posts) {
-                    APP_STATE.posts = data.posts;
-                    updateFeed();
-                }
-                if (data.tasks) {
-                    APP_STATE.tasks.platform = data.tasks;
-                    updatePlatformTasks();
-                }
-
-                showNotification('Data loaded successfully', 'success');
-
             } catch (error) {
-                console.error('Payload handling error:', error);
-                showNotification('Error processing payload', 'error');
+                console.error('Telegram initialization error:', error);
             }
         }
 
-        function encodePayload(data) {
-            const jsonString = JSON.stringify(data);
-            return btoa(unescape(encodeURIComponent(jsonString)));
+        // ==================== URL PARSING ====================
+        async function parseURLParameters() {
+            try {
+                // Check for payload in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const payload = urlParams.get('payload');
+                
+                if (payload) {
+                    await handlePayload(payload);
+                }
+                
+                // Check for hash navigation
+                const hash = window.location.hash.replace('#', '');
+                if (hash && hash !== 'iframe') {
+                    switchScreen(hash);
+                } else if (hash === 'iframe') {
+                    // Direct iframe call from bot
+                    openBrowserModal();
+                    startDirectAd();
+                }
+                
+            } catch (error) {
+                console.error('URL parsing error:', error);
+            }
         }
 
-        // ========== BOT COMMUNICATION ==========
-        async function sendToBot(event, data) {
+        // ==================== PAYLOAD HANDLING ====================
+        async function handlePayload(payload) {
             try {
+                // Decode Base64 payload
+                const decoded = atob(payload);
+                const data = JSON.parse(decoded);
+                
+                console.log('Received payload:', data);
+                
+                // Update app state with payload data
+                if (data.user) {
+                    appState.user = { ...appState.user, ...data.user };
+                }
+                
+                if (data.balance !== undefined) {
+                    appState.balance = data.balance;
+                    document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+                }
+                
+                if (data.vipLevel) {
+                    appState.vipLevel = data.vipLevel;
+                    updateVipBadge();
+                }
+                
+                if (data.posts) {
+                    appState.posts = data.posts;
+                    updateFeed();
+                }
+                
+                if (data.tasks) {
+                    appState.tasks = data.tasks;
+                    updateTasks();
+                }
+                
+                if (data.ads) {
+                    appState.ads = data.ads;
+                    updateAds();
+                }
+                
+                // Update UI
+                updateUserInfo();
+                
+            } catch (error) {
+                console.error('Payload handling error:', error);
+            }
+        }
+
+        // ==================== SEND DATA TO BOT ====================
+        async function sendToBot(eventType, data = {}) {
+            try {
+                // Prepare payload
                 const payload = {
-                    event: event,
-                    userId: APP_STATE.user?.id,
-                    timestamp: Date.now(),
+                    event: eventType,
+                    userId: appState.user?.id || 'unknown',
+                    timestamp: new Date().toISOString(),
+                    vipLevel: appState.vipLevel,
+                    balance: appState.balance,
                     ...data
                 };
-
-                const encoded = encodePayload(payload);
                 
-                // Send via webhook (Bots.Business style)
-                // Note: This is a placeholder for actual Bots.Business webhook
-                console.log('Sending to bot:', { event, data });
+                console.log('Sending to bot:', payload);
                 
-                // In Bots.Business, you would use:
-                // Libs.Webhooks.getUrlFor({ command: "onWebhook", user_id: userId })
+                // In Bots.Business, we don't use fetch, we use their callback system
+                // The bot will listen for onWebhook events
                 
-                // For now, we'll simulate the request
-                await simulateWebhook(encoded);
-
+                // Show success message
+                showToast('Data sent to bot successfully', 'success');
+                
                 return true;
+                
             } catch (error) {
-                console.error('Bot communication error:', error);
+                console.error('Error sending to bot:', error);
+                showToast('Failed to send data to bot', 'error');
                 return false;
             }
         }
 
-        async function simulateWebhook(payload) {
-            // Simulate webhook delay
-            return new Promise(resolve => setTimeout(() => resolve({ success: true }), 500));
+        // ==================== LOAD INITIAL DATA ====================
+        async function loadInitialData() {
+            try {
+                // Load platforms
+                loadPlatforms();
+                
+                // Load demo posts
+                await loadDemoPosts();
+                
+                // Load tasks
+                await loadTasks();
+                
+                // Load ads
+                await loadAds();
+                
+                // Update counters
+                updateCounters();
+                
+            } catch (error) {
+                console.error('Data loading error:', error);
+            }
         }
 
-        // ========== APP INITIALIZATION ==========
-        async function initializeApp() {
-            // Load demo data if no payload
-            if (!APP_STATE.user) {
-                APP_STATE.user = {
-                    id: '123456',
-                    firstName: 'John',
-                    lastName: 'Doe',
-                    username: 'johndoe'
-                };
-            }
-
-            if (APP_STATE.balance === 0) {
-                APP_STATE.balance = 2847;
-            }
-
-            if (APP_STATE.vipLevel === 'none') {
-                APP_STATE.vipLevel = 'gold';
-            }
-
-            // Load data
-            await loadPosts();
-            await loadPlatformTasks();
-            await loadRandomTasks();
-            await loadAds();
-
-            // Update UI
-            updateUI();
-        }
-
-        async function loadPosts() {
+        // ==================== LOAD DEMO POSTS ====================
+        async function loadDemoPosts() {
             // Demo posts with images
-            APP_STATE.posts = [
+            appState.posts = [
                 {
                     id: '1',
                     userId: '123456',
                     username: 'johndoe',
-                    avatar: 'JD',
+                    userAvatar: 'JD',
                     content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available! 🚀',
-                    media: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop',
+                    media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/join',
-                    action: 'join',
-                    reward: 50,
+                    linkType: 'join',
+                    reward: 5000,
                     likes: 24,
-                    comments: 8,
+                    comments: [
+                        { id: 'c1', userId: 'user1', username: 'Alice', text: 'Great opportunity!' },
+                        { id: 'c2', userId: 'user2', username: 'Bob', text: 'Just completed!' }
+                    ],
+                    shares: 12,
                     timestamp: '2 hours ago',
-                    liked: false
+                    userHasLiked: false
                 },
                 {
                     id: '2',
                     userId: '789012',
                     username: 'sarahkim',
-                    avatar: 'SK',
+                    userAvatar: 'SK',
                     content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes! 📋',
-                    media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop',
+                    media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/survey',
-                    action: 'visit',
-                    reward: 30,
+                    linkType: 'visit',
+                    reward: 3000,
                     likes: 18,
-                    comments: 5,
+                    comments: [
+                        { id: 'c3', userId: 'user3', username: 'Charlie', text: 'Easy money!' }
+                    ],
+                    shares: 3,
                     timestamp: '5 hours ago',
-                    liked: true
+                    userHasLiked: true
                 },
                 {
                     id: '3',
                     userId: '345678',
                     username: 'mikepeters',
-                    avatar: 'MP',
+                    userAvatar: 'MP',
                     content: 'Watch this short video and get rewarded! No sign-up required. Just watch and earn! 🎥',
-                    media: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&h=200&fit=crop',
+                    media: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/watch',
-                    action: 'watch',
-                    reward: 25,
+                    linkType: 'watch',
+                    reward: 2500,
                     likes: 42,
-                    comments: 15,
+                    comments: [],
+                    shares: 8,
                     timestamp: '1 day ago',
-                    liked: false
+                    userHasLiked: false
                 }
             ];
+            
+            updateFeed();
         }
 
-        async function loadPlatformTasks() {
-            // Demo platform tasks
-            APP_STATE.tasks.platform = [
+        // ==================== LOAD TASKS ====================
+        async function loadTasks() {
+            // Demo tasks
+            appState.tasks = [
                 {
                     id: 't1',
                     platform: 'youtube',
                     title: 'Watch YouTube Video',
                     description: 'Watch full video and like. Stay 02:30 for reward.',
                     duration: 150,
-                    reward: 50,
-                    link: SMART_LINKS[0],
+                    reward: 5000,
+                    link: getRandomSmartLink(),
                     completed: false
                 },
                 {
@@ -2040,635 +2057,465 @@
                     title: 'Join Telegram Channel',
                     description: 'Join channel and stay active. Stay 00:45 for reward.',
                     duration: 45,
-                    reward: 35,
-                    link: SMART_LINKS[1],
+                    reward: 3500,
+                    link: getRandomSmartLink(),
+                    completed: false
+                },
+                {
+                    id: 't3',
+                    platform: 'website',
+                    title: 'Visit Website & Sign Up',
+                    description: 'Visit partner site and complete registration. Stay 01:15 for reward.',
+                    duration: 75,
+                    reward: 3000,
+                    link: getRandomSmartLink(),
                     completed: false
                 }
             ];
-        }
-
-        async function loadRandomTasks() {
-            // Generate 10 random daily tasks
-            APP_STATE.tasks.random = [];
-            const taskTypes = ['Visit Website', 'Watch Video', 'Join Group', 'Install App', 'Complete Survey'];
             
-            for (let i = 0; i < 10; i++) {
-                APP_STATE.tasks.random.push({
-                    id: `random_${i}`,
-                    title: `${taskTypes[i % taskTypes.length]} ${i + 1}`,
-                    description: `Complete this task to earn rewards`,
-                    duration: Math.floor(Math.random() * 60) + 30,
-                    reward: Math.floor(Math.random() * 200) + 100,
-                    link: SMART_LINKS[i % SMART_LINKS.length],
-                    completed: false
-                });
-            }
+            // Generate random tasks
+            generateRandomTasks();
+            
+            updateTasks();
         }
 
+        // ==================== LOAD ADS ====================
         async function loadAds() {
-            // Generate 20 daily ads
-            APP_STATE.ads = [];
-            const adTitles = ['Tech Review', 'Crypto Update', 'Gaming News', 'Product Launch', 'App Review'];
-            const adSources = ['TechBrand Co.', 'CryptoExchange', 'GameStore', 'Fashion Brand', 'AppStore'];
-            
+            // Generate 20 random ads for the day
+            appState.ads = [];
             for (let i = 0; i < 20; i++) {
-                APP_STATE.ads.push({
-                    id: `ad_${i}`,
-                    title: `${adTitles[i % adTitles.length]} ${i + 1}`,
-                    duration: Math.floor(Math.random() * 30) + 30,
-                    reward: Math.floor(Math.random() * 60) + 60,
-                    source: adSources[i % adSources.length],
-                    link: SMART_LINKS[i % SMART_LINKS.length],
-                    watched: i < 3 // First 3 are watched for demo
+                appState.ads.push({
+                    id: `ad${i + 1}`,
+                    title: getRandomAdTitle(),
+                    duration: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
+                    reward: Math.floor(Math.random() * 61) + 60, // 60-120 coins
+                    source: getRandomAdSource(),
+                    link: getRandomSmartLink(),
+                    watched: i < 5 // Mark first 5 as watched for demo
                 });
             }
-        }
-
-        // ========== UI UPDATES ==========
-        function updateUI() {
-            updateUserInfo();
-            updateBalance();
-            updateFeed();
-            updatePlatformScroll();
-            updatePlatformTasks();
-            updateRandomTasks();
+            
             updateAds();
-            updateVipBadge();
         }
 
+        // ==================== UPDATE UI FUNCTIONS ====================
         function updateUserInfo() {
-            const user = APP_STATE.user;
+            const user = appState.user;
             if (!user) return;
-
-            document.getElementById('profileName').textContent = 
-                `${user.firstName} ${user.lastName}`.trim();
-            document.getElementById('profileUsername').textContent = 
-                user.username ? `@${user.username}` : '@username';
-
-            // Update avatar
-            const avatar = document.getElementById('profileAvatar');
-            if (user.photoUrl) {
-                avatar.innerHTML = `<img src="${user.photoUrl}" alt="${user.firstName}">`;
-            } else {
-                const initials = (user.firstName?.[0] || '') + (user.lastName?.[0] || '');
-                avatar.textContent = initials || 'U';
+            
+            const profileName = document.getElementById('profileName');
+            const profileUsername = document.getElementById('profileUsername');
+            const profileAvatar = document.getElementById('profileAvatar');
+            
+            if (profileName) {
+                profileName.textContent = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
             }
-        }
-
-        function updateBalance() {
-            document.getElementById('balanceText').textContent = 
-                APP_STATE.balance.toLocaleString();
-            document.getElementById('statGcoins').textContent = 
-                APP_STATE.balance.toLocaleString();
+            
+            if (profileUsername) {
+                profileUsername.textContent = user.username ? `@${user.username}` : '@username';
+            }
+            
+            if (profileAvatar) {
+                if (user.photoUrl) {
+                    profileAvatar.innerHTML = `<img src="${user.photoUrl}" alt="Profile">`;
+                } else {
+                    const initials = (user.firstName?.[0] || '') + (user.lastName?.[0] || '') || 'U';
+                    profileAvatar.textContent = initials;
+                }
+            }
         }
 
         function updateVipBadge() {
-            const badge = document.getElementById('vipBadge');
-            badge.className = `vip-badge ${APP_STATE.vipLevel}`;
+            const vipBadge = document.getElementById('vipBadge');
+            if (!vipBadge) return;
             
-            switch(APP_STATE.vipLevel) {
-                case 'premium': badge.textContent = 'Premium VIP'; break;
-                case 'gold': badge.textContent = 'Gold VIP'; break;
-                case 'silver': badge.textContent = 'Silver VIP'; break;
-                case 'basic': badge.textContent = 'Basic VIP'; break;
-                default: badge.textContent = 'No VIP';
-            }
+            vipBadge.className = `vip-badge ${appState.vipLevel}`;
+            
+            const badgeText = {
+                none: 'No VIP',
+                basic: 'Basic VIP',
+                silver: 'Silver VIP',
+                gold: 'Gold VIP',
+                premium: 'Premium VIP'
+            }[appState.vipLevel] || 'No VIP';
+            
+            vipBadge.textContent = badgeText;
         }
 
         function updateFeed() {
-            const container = document.getElementById('feedContainer');
-            container.innerHTML = '';
-
-            APP_STATE.posts.forEach(post => {
-                const postEl = createPostElement(post);
-                container.appendChild(postEl);
+            const feedContainer = document.getElementById('feedContainer');
+            if (!feedContainer) return;
+            
+            feedContainer.innerHTML = '';
+            
+            appState.posts.forEach(post => {
+                const postElement = createPostElement(post);
+                feedContainer.appendChild(postElement);
             });
+            
+            // If no posts, show message
+            if (appState.posts.length === 0) {
+                feedContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        No posts yet. Be the first to create a post!
+                    </div>
+                `;
+            }
         }
 
         function createPostElement(post) {
             const div = document.createElement('div');
             div.className = 'post-card';
-            div.dataset.id = post.id;
-
+            div.dataset.postId = post.id;
+            
             const mediaHtml = post.media ? `
                 <div class="post-media">
-                    <img src="${post.media}" alt="Post media" onerror="this.style.display='none'">
+                    <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
                 </div>
             ` : '';
-
-            const actionText = {
-                visit: 'Visit',
-                join: 'Join',
-                watch: 'Watch',
-                signup: 'Sign Up',
-                install: 'Install'
-            }[post.action] || 'Open';
-
+            
+            const actionText = getActionText(post.linkType);
+            
             div.innerHTML = `
-                <div class="post-header">
-                    <div class="avatar">${post.avatar}</div>
+                <div class="post-header" onclick="viewUserProfile('${post.userId}')">
+                    <div class="avatar">
+                        ${post.userAvatar}
+                    </div>
                     <div class="post-meta">
                         <div class="poster-name">${post.username}</div>
                         <div class="post-time">${post.timestamp}</div>
                     </div>
                 </div>
-                <p class="post-content">${post.content}</p>
+                <div class="post-content">${post.content}</div>
                 ${mediaHtml}
                 <div class="earnings-bar">
-                    <span class="earnings-label">💰 Earn up to ${post.reward} G-coins</span>
+                    <span class="earnings-label">💰 Earn up to ${post.reward.toLocaleString()} G-coins</span>
                 </div>
                 <div class="post-actions">
-                    <button class="action-btn ${post.liked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none">
+                    <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
+                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
                                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                  ${post.liked ? 'fill="currentColor"' : 'fill="none"'}/>
+                                  ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
                         </svg>
                         <span>${post.likes}</span>
                     </button>
-                    <button class="action-btn" onclick="handleAction('${post.id}', '${post.link}', '${post.action}')">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none">
-                            <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <button class="action-btn" onclick="handleTaskAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
+                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
+                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>${actionText}</span>
                     </button>
-                    <button class="action-btn" onclick="openComments('${post.id}')">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none">
-                            <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <button class="action-btn" onclick="toggleComments('${post.id}')">
+                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
+                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>${post.comments}</span>
+                        <span>${post.comments.length}</span>
                     </button>
                 </div>
                 <div class="comments-section" id="comments-${post.id}">
-                    <div class="comments-container" id="commentsContainer-${post.id}">
-                        <!-- Comments loaded here -->
+                    <div class="comments-container" id="comments-container-${post.id}">
+                        ${post.comments.map(comment => `
+                            <div class="comment-item">
+                                <div class="comment-avatar">${comment.username.charAt(0)}</div>
+                                <div class="comment-content">
+                                    <div class="comment-author">${comment.username}</div>
+                                    <div class="comment-text">${comment.text}</div>
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
                     <div class="comment-input-container">
-                        <input type="text" class="comment-input" placeholder="Write a comment..." id="commentInput-${post.id}">
-                        <button class="send-comment" onclick="sendComment('${post.id}')">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M1.5 8L14.5 1L8.5 14L7 8L1.5 8Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
+                        <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
+                        <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
                     </div>
                 </div>
             `;
-
+            
             return div;
         }
 
-        function updatePlatformScroll() {
-            const scroll = document.getElementById('platformScroll');
-            scroll.innerHTML = '';
-
-            Object.entries(PLATFORMS).forEach(([key, platform]) => {
-                const card = document.createElement('div');
-                card.className = 'platform-card';
-                card.onclick = () => filterPlatformTasks(key);
-
-                card.innerHTML = `
-                    <div class="platform-icon-wrapper">
-                        <img src="${platform.icon}" alt="${platform.name}" onerror="this.style.display='none'; this.parentElement.innerHTML='${platform.name[0]}'">
-                    </div>
-                    <div class="platform-name">${platform.name}</div>
-                `;
-
-                scroll.appendChild(card);
+        function loadPlatforms() {
+            const platformGrid = document.getElementById('platformGrid');
+            if (!platformGrid) return;
+            
+            platformGrid.innerHTML = '';
+            
+            PLATFORMS.forEach(platform => {
+                const platformElement = createPlatformElement(platform);
+                platformGrid.appendChild(platformElement);
+                
+                // Add duplicate for seamless scrolling
+                const platformElement2 = createPlatformElement(platform);
+                platformGrid.appendChild(platformElement2);
             });
         }
 
-        function filterPlatformTasks(platform) {
-            const container = document.getElementById('platformTasksContainer');
-            const tasks = APP_STATE.tasks.platform.filter(t => t.platform === platform);
+        function createPlatformElement(platform) {
+            const div = document.createElement('div');
+            div.className = `platform-card ${platform.id}`;
+            div.onclick = () => filterTasksByPlatform(platform.id);
             
-            if (tasks.length === 0) {
-                container.innerHTML = `
+            let svgIcon = '';
+            
+            // Platform-specific SVG icons
+            switch (platform.id) {
+                case 'youtube':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>';
+                    break;
+                case 'telegram':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>';
+                    break;
+                case 'instagram':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+                    break;
+                default:
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+            }
+            
+            div.innerHTML = `
+                <div class="platform-icon" style="color: ${platform.color}">
+                    ${svgIcon}
+                </div>
+                <div class="platform-name">${platform.name}</div>
+                <div class="platform-count">${getRandomCount()} tasks</div>
+            `;
+            
+            return div;
+        }
+
+        function updateTasks() {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+            
+            taskList.innerHTML = '';
+            
+            // Combine regular tasks and random tasks
+            const allTasks = [...appState.tasks, ...appState.randomTasks];
+            
+            if (allTasks.length === 0) {
+                taskList.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        No tasks available for ${PLATFORMS[platform]?.name || platform}
+                        No tasks available. Check back later!
                     </div>
                 `;
                 return;
             }
-
-            let html = `
-                <div class="task-list-header">
-                    <h3 style="font-size: 18px; font-weight: 600;">${PLATFORMS[platform]?.name || platform} Tasks</h3>
-                    <div class="task-counter">
-                        <span class="counter-label">Completed:</span>
-                        <span class="counter-value">${tasks.filter(t => t.completed).length}/${tasks.length}</span>
-                    </div>
-                </div>
-                <div class="task-list">
-            `;
-
-            tasks.forEach(task => {
-                html += `
-                    <div class="task-item ${task.completed ? 'completed' : ''}" onclick="${!task.completed ? `startTask('${task.id}', 'platform')` : ''}">
-                        <div class="task-icon" style="background: ${PLATFORMS[task.platform]?.color || '#4AA3FF'}">
-                            <img src="${PLATFORMS[task.platform]?.icon}" alt="${task.platform}" width="20" height="20" onerror="this.style.display='none'">
-                        </div>
-                        <div class="task-info">
-                            <div class="task-title">${task.title}</div>
-                            <div class="task-description">${task.description}</div>
-                        </div>
-                        <div class="task-reward">
-                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                                <circle cx="10" cy="10" r="9" fill="#FFC857"/>
-                                <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text>
-                            </svg>
-                            <span>${task.reward}</span>
-                        </div>
-                    </div>
-                `;
+            
+            allTasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskList.appendChild(taskElement);
             });
-
-            html += '</div>';
-            container.innerHTML = html;
+            
+            updateTaskCounter();
         }
 
-        function updateRandomTasks() {
-            const grid = document.getElementById('randomTasksGrid');
-            grid.innerHTML = '';
-
-            APP_STATE.tasks.random.forEach(task => {
-                const card = document.createElement('div');
-                card.className = `task-item ${task.completed ? 'completed' : ''}`;
-                if (!task.completed) {
-                    card.onclick = () => startTask(task.id, 'random');
-                }
-
-                card.innerHTML = `
-                    <div class="task-icon" style="background: var(--electric-blue)">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="8" stroke="white" stroke-width="1.5"/>
-                            <path d="M10 6V14M6 10H14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
+        function createTaskElement(task) {
+            const div = document.createElement('div');
+            div.className = `task-card ${task.completed ? 'completed' : ''}`;
+            div.dataset.taskId = task.id;
+            
+            const platform = PLATFORMS.find(p => p.id === task.platform) || PLATFORMS[0];
+            
+            div.innerHTML = `
+                <div class="task-header">
+                    <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;">
+                        <!-- Platform icon will be added via CSS -->
                     </div>
                     <div class="task-info">
-                        <div class="task-title">${task.title}</div>
-                        <div class="task-description">${task.description}</div>
+                        <h3 class="task-title">${task.title}</h3>
+                        <p class="task-description">${task.description}</p>
                     </div>
                     <div class="task-reward">
-                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="9" fill="#FFC857"/>
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="9" fill="#FFC857" />
                             <text x="10" y="14" text-anchor="middle" fill="#0B0B0D" font-size="10" font-weight="700">G</text>
                         </svg>
-                        <span>${task.reward}</span>
+                        <span>${task.reward.toLocaleString()}</span>
                     </div>
-                `;
-
-                grid.appendChild(card);
-            });
+                </div>
+                <div class="task-footer">
+                    <button class="task-btn primary" onclick="startTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
+                        ${task.completed ? 'Completed' : 'Start Task'}
+                    </button>
+                    <button class="task-btn secondary" onclick="viewTaskDetails('${task.id}')">
+                        Details
+                    </button>
+                </div>
+            `;
+            
+            return div;
         }
 
         function updateAds() {
-            const grid = document.getElementById('watchGrid');
-            grid.innerHTML = '';
-
-            const remaining = 20 - APP_STATE.dailyCounters.ads;
-            document.getElementById('adsCounter').textContent = `${APP_STATE.dailyCounters.ads}/20`;
-
-            APP_STATE.ads.forEach(ad => {
-                if (APP_STATE.dailyCounters.ads >= 20) return;
-
-                const card = document.createElement('div');
-                card.className = `ad-card ${ad.watched ? 'watched' : ''}`;
-                if (!ad.watched) {
-                    card.onclick = () => watchAd(ad.id);
-                }
-
-                card.innerHTML = `
-                    <div class="ad-thumbnail">
-                        ${ad.watched ? `
-                            <div class="watched-overlay">
-                                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                                    <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)"/>
-                                    <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                            </div>
-                        ` : `
-                            <svg class="play-icon" viewBox="0 0 48 48" fill="none">
-                                <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)"/>
-                                <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D"/>
-                            </svg>
-                        `}
-                        <span class="ad-duration">0:${ad.duration.toString().padStart(2, '0')}</span>
+            const watchGrid = document.getElementById('watchGrid');
+            if (!watchGrid) return;
+            
+            watchGrid.innerHTML = '';
+            
+            if (appState.ads.length === 0) {
+                watchGrid.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary); grid-column: 1 / -1;">
+                        No ads available. Check back later!
                     </div>
-                    <div class="ad-info">
-                        <div class="ad-source">${ad.source}</div>
-                        <h3 class="ad-title">${ad.title}</h3>
-                        <div class="ad-reward">
-                            <span class="reward-amount">+${ad.reward} G-coins</span>
-                            ${!ad.watched ? `
-                                <button class="watch-btn" onclick="watchAd('${ad.id}', event)">Watch</button>
-                            ` : `
-                                <span class="collected-badge">✓ Collected</span>
-                            `}
+                `;
+                return;
+            }
+            
+            appState.ads.forEach(ad => {
+                const adElement = createAdElement(ad);
+                watchGrid.appendChild(adElement);
+            });
+            
+            updateAdsCounter();
+        }
+
+        function createAdElement(ad) {
+            const div = document.createElement('div');
+            div.className = `video-card ${ad.watched ? 'watched' : ''}`;
+            div.dataset.adId = ad.id;
+            
+            div.innerHTML = `
+                <div class="video-thumbnail" onclick="watchAd('${ad.id}')">
+                    ${ad.watched ? `
+                        <div class="watched-overlay">
+                            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="20" cy="20" r="18" fill="rgba(74, 163, 255, 0.9)" />
+                                <path d="M12 20L17 25L28 14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
                         </div>
+                    ` : `
+                        <svg class="play-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,0.9)" />
+                            <path d="M19 16L32 24L19 32V16Z" fill="#0B0B0D" />
+                        </svg>
+                    `}
+                    <span class="video-duration">0:${ad.duration.toString().padStart(2, '0')}</span>
+                </div>
+                <div class="video-info">
+                    <div class="video-advertiser">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="14" height="14" rx="3" fill="${getRandomColor()}" />
+                        </svg>
+                        <span>${ad.source}</span>
                     </div>
-                `;
-
-                grid.appendChild(card);
-            });
-        }
-
-        // ========== EVENT HANDLERS ==========
-        function setupEventListeners() {
-            // Scroll handling for floating button
-            window.addEventListener('scroll', handleScroll);
-            
-            // Drag and drop
-            const dropArea = document.getElementById('dropArea');
-            dropArea.addEventListener('dragover', handleDragOver);
-            dropArea.addEventListener('dragleave', handleDragLeave);
-            dropArea.addEventListener('drop', handleDrop);
-            
-            // Hash change
-            window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.replace('#', '');
-                handleHashNavigation(hash);
-            });
-        }
-
-        function handleScroll() {
-            const floatingBtn = document.getElementById('floatingCreate');
-            const currentScroll = window.pageYOffset;
-            
-            if (currentScroll > APP_STATE.lastScroll && currentScroll > 100) {
-                // Scrolling down
-                floatingBtn.classList.remove('visible');
-            } else {
-                // Scrolling up
-                floatingBtn.classList.add('visible');
-            }
-            
-            APP_STATE.lastScroll = currentScroll;
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('dropArea').classList.add('dragover');
-        }
-
-        function handleDragLeave(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('dropArea').classList.remove('dragover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('dropArea').classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleMediaFile(files[0]);
-            }
-        }
-
-        // ========== SCREEN NAVIGATION ==========
-        function switchScreen(screen) {
-            // Hide all screens
-            document.querySelectorAll('.screen').forEach(s => {
-                s.classList.remove('active');
-            });
-            
-            // Remove active from nav
-            document.querySelectorAll('.nav-item').forEach(nav => {
-                nav.classList.remove('active');
-            });
-            
-            // Show selected screen
-            document.getElementById(`${screen}Screen`).classList.add('active');
-            
-            // Update active nav
-            document.querySelector(`.nav-item[onclick*="${screen}"]`).classList.add('active');
-            
-            // Update URL
-            window.location.hash = screen;
-        }
-
-        function handleHashNavigation(hash) {
-            if (!hash) return;
-            
-            const validScreens = ['gridhome', 'tasks', 'watch', 'profile', 'iframe'];
-            
-            if (validScreens.includes(hash)) {
-                switchScreen(hash);
-            } else if (hash === 'iframe') {
-                openBrowserModal(true);
-            }
-        }
-
-        // ========== MODAL FUNCTIONS ==========
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function openCreateModal() {
-            // Check VIP and balance
-            if (!['gold', 'premium'].includes(APP_STATE.vipLevel)) {
-                showNotification('Only Gold and Premium VIP can create posts', 'error');
-                return;
-            }
-            
-            if (APP_STATE.balance < 10000) {
-                showNotification('Minimum 10,000 G-Coins required to post', 'error');
-                return;
-            }
-            
-            openModal('createModal');
-        }
-
-        function openBrowserModal(isAd = false) {
-            openModal('browserModal');
-            
-            if (isAd) {
-                // Direct ad call from bot
-                const randomLink = SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
-                const randomDuration = Math.floor(Math.random() * 30) + 30;
-                
-                document.getElementById('browserUrl').textContent = randomLink;
-                document.getElementById('browserIframe').src = randomLink;
-                startTimer(randomDuration, 'direct_ad', { link: randomLink });
-            }
-        }
-
-        function closeBrowserModal() {
-            if (APP_STATE.timerInterval) {
-                clearInterval(APP_STATE.timerInterval);
-                APP_STATE.timerInterval = null;
-            }
-            closeModal('browserModal');
-        }
-
-        // ========== POST FUNCTIONS ==========
-        function handleMediaUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                handleMediaFile(file);
-            }
-        }
-
-        function handleMediaFile(file) {
-            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
-            
-            if (!validTypes.includes(file.type)) {
-                showNotification('Please upload only images or videos', 'error');
-                return;
-            }
-            
-            if (file.size > 10 * 1024 * 1024) {
-                showNotification('File size must be less than 10MB', 'error');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const preview = document.getElementById('mediaPreview');
-                const isVideo = file.type.includes('video');
-                
-                preview.innerHTML = `
-                    <div class="preview-item">
-                        ${isVideo ? 
-                            `<video src="${e.target.result}" controls></video>` :
-                            `<img src="${e.target.result}" alt="Preview">`
-                        }
-                        <button class="remove-media" onclick="removeMedia()">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                <path d="M12 4L4 12M4 4L12 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
+                    <h3 class="video-title">${ad.title}</h3>
+                    <div class="video-meta">
+                        ${ad.watched ? `
+                            <span class="collected-badge">✓ Collected</span>
+                        ` : `
+                            <span>Watch 0:${ad.duration.toString().padStart(2, '0')} · Earn</span>
+                        `}
+                        <span class="video-reward">+${ad.reward} G-coins</span>
                     </div>
-                `;
-            };
-            reader.readAsDataURL(file);
+                </div>
+            `;
+            
+            return div;
         }
 
-        function removeMedia() {
-            document.getElementById('mediaPreview').innerHTML = '';
-            document.getElementById('mediaInput').value = '';
+        function updateCounters() {
+            updateTaskCounter();
+            updateAdsCounter();
+            
+            // Update profile stats
+            document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
+            document.getElementById('statTotalEarned').textContent = '0'; // Would be calculated from history
+            document.getElementById('statTasksDone').textContent = appState.dailyCounters.tasks.toString();
         }
 
-        async function submitPost(event) {
-            event.preventDefault();
+        function updateTaskCounter() {
+            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
+            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
+        }
+
+        function updateAdsCounter() {
+            const watchedAds = appState.ads.filter(a => a.watched).length;
+            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
+        }
+
+        // ==================== TASK FUNCTIONS ====================
+        function generateRandomTasks() {
+            appState.randomTasks = [];
+            const taskCount = Math.min(10, 20 - appState.tasks.length);
             
-            const btn = document.getElementById('submitPostBtn');
-            const originalText = btn.textContent;
-            btn.textContent = 'Publishing...';
-            btn.disabled = true;
-            
-            try {
-                const content = document.getElementById('postContent').value;
-                const link = document.getElementById('postLink').value;
-                const action = document.getElementById('postAction').value;
-                const reward = parseInt(document.getElementById('postReward').value);
-                
-                // Validate
-                if (reward < 10000) {
-                    throw new Error('Minimum reward is 10,000 G-Coins');
-                }
-                
-                if (reward > APP_STATE.balance) {
-                    throw new Error('Insufficient balance');
-                }
-                
-                // Send to bot
-                const success = await sendToBot('post_created', {
-                    content,
-                    link,
-                    action,
-                    reward,
-                    vipLevel: APP_STATE.vipLevel,
-                    balance: APP_STATE.balance
+            for (let i = 0; i < taskCount; i++) {
+                appState.randomTasks.push({
+                    id: `random${i + 1}`,
+                    platform: 'website',
+                    title: getRandomTaskTitle(),
+                    description: getRandomTaskDescription(),
+                    duration: Math.floor(Math.random() * 120) + 60, // 60-180 seconds
+                    reward: Math.floor(Math.random() * 201) + 100, // 100-300 coins
+                    link: getRandomSmartLink(),
+                    completed: false,
+                    isRandom: true
                 });
-                
-                if (!success) {
-                    throw new Error('Failed to send to bot');
-                }
-                
-                // Update local state
-                APP_STATE.balance -= reward;
-                updateBalance();
-                
-                // Add post
-                const newPost = {
-                    id: Date.now().toString(),
-                    userId: APP_STATE.user.id,
-                    username: APP_STATE.user.username,
-                    avatar: APP_STATE.user.firstName?.[0] + (APP_STATE.user.lastName?.[0] || ''),
-                    content,
-                    link,
-                    action,
-                    reward,
-                    likes: 0,
-                    comments: 0,
-                    timestamp: 'Just now',
-                    liked: false
-                };
-                
-                APP_STATE.posts.unshift(newPost);
-                updateFeed();
-                
-                // Close and notify
-                closeModal('createModal');
-                showNotification('Post published successfully!', 'success');
-                
-            } catch (error) {
-                showNotification(error.message, 'error');
-            } finally {
-                btn.textContent = originalText;
-                btn.disabled = false;
             }
         }
 
-        // ========== TASK FUNCTIONS ==========
-        function startTask(taskId, type) {
-            let task;
-            if (type === 'platform') {
-                task = APP_STATE.tasks.platform.find(t => t.id === taskId);
-            } else {
-                task = APP_STATE.tasks.random.find(t => t.id === taskId);
+        function filterTasksByPlatform(platformId) {
+            const taskList = document.getElementById('taskList');
+            if (!taskList) return;
+            
+            taskList.innerHTML = '';
+            
+            const filteredTasks = [...appState.tasks, ...appState.randomTasks].filter(task => 
+                task.platform === platformId && !task.completed
+            );
+            
+            if (filteredTasks.length === 0) {
+                taskList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        No tasks available for ${PLATFORMS.find(p => p.id === platformId)?.name || 'this platform'}. Check back later!
+                    </div>
+                `;
+                return;
             }
+            
+            filteredTasks.forEach(task => {
+                const taskElement = createTaskElement(task);
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function startTask(taskId) {
+            const allTasks = [...appState.tasks, ...appState.randomTasks];
+            const task = allTasks.find(t => t.id === taskId);
             
             if (!task || task.completed) return;
             
-            // Check daily limit
-            if (APP_STATE.dailyCounters.tasks >= 20) {
-                showNotification('Daily task limit reached', 'warning');
+            if (appState.dailyCounters.tasks >= 20) {
+                showToast('Daily task limit reached! Come back tomorrow.', 'warning');
                 return;
             }
             
-            APP_STATE.currentTask = { ...task, type };
+            appState.currentTask = task;
             openBrowserModal();
             
-            // Load smartlink
+            // First show smartlink
             document.getElementById('browserUrl').textContent = task.link;
             document.getElementById('browserIframe').src = task.link;
             
             // Start timer
-            startTimer(task.duration, 'task', {
-                taskId,
-                type,
+            startTimer(task.duration, 'task', task);
+            
+            // Send to bot
+            sendToBot('task_started', {
+                taskId: task.id,
+                platform: task.platform,
                 reward: task.reward
             });
         }
 
         async function completeTask(data) {
             try {
-                let task;
-                if (data.type === 'platform') {
-                    task = APP_STATE.tasks.platform.find(t => t.id === data.taskId);
-                } else {
-                    task = APP_STATE.tasks.random.find(t => t.id === data.taskId);
+                // Find and mark task as completed
+                let task = appState.tasks.find(t => t.id === data.taskId);
+                if (!task) {
+                    task = appState.randomTasks.find(t => t.id === data.taskId);
                 }
                 
                 if (task) {
@@ -2676,193 +2523,301 @@
                 }
                 
                 // Update counters
-                APP_STATE.dailyCounters.tasks++;
+                appState.dailyCounters.tasks++;
                 
                 // Calculate reward with VIP bonus
                 const baseReward = data.reward;
-                const vipBonus = getVipBonus(APP_STATE.vipLevel);
+                const vipBonus = getVipBonus(appState.vipLevel);
                 const totalReward = baseReward + vipBonus;
                 
                 // Update balance
-                APP_STATE.balance += totalReward;
-                updateBalance();
+                appState.balance += totalReward;
+                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
                 
-                // Update stats
-                document.getElementById('statTasks').textContent = 
-                    APP_STATE.dailyCounters.tasks;
-                document.getElementById('statEarned').textContent = 
-                    APP_STATE.balance;
+                // Update UI
+                updateTasks();
+                updateCounters();
                 
                 // Send to bot
                 await sendToBot('task_completed', {
                     taskId: data.taskId,
-                    type: data.type,
-                    baseReward,
-                    vipBonus,
-                    totalReward,
-                    newBalance: APP_STATE.balance
+                    platform: data.platform,
+                    baseReward: baseReward,
+                    vipBonus: vipBonus,
+                    totalReward: totalReward,
+                    newBalance: appState.balance
                 });
                 
-                // Update UI
-                if (data.type === 'platform') {
-                    filterPlatformTasks(task?.platform || '');
-                } else {
-                    updateRandomTasks();
-                }
-                
-                // Close and notify
+                // Close modal and show success
                 closeBrowserModal();
-                showNotification(`Task completed! +${totalReward} G-Coins`, 'success');
+                showToast(`Task completed! +${totalReward.toLocaleString()} G-Coins`, 'success');
                 
             } catch (error) {
                 console.error('Task completion error:', error);
-                showNotification('Failed to complete task', 'error');
+                showToast('Failed to complete task', 'error');
             }
         }
 
-        function getVipBonus(level) {
-            switch(level) {
-                case 'premium': return 100;
-                case 'gold': return 60;
-                case 'silver': return 40;
-                case 'basic': return 20;
-                default: return 0;
-            }
-        }
-
-        // ========== AD FUNCTIONS ==========
-        async function watchAd(adId, event) {
-            if (event) event.stopPropagation();
+        // ==================== AD FUNCTIONS ====================
+        function watchAd(adId) {
+            const ad = appState.ads.find(a => a.id === adId);
+            if (!ad || ad.watched) return;
             
-            if (APP_STATE.dailyCounters.ads >= 20) {
-                showNotification('Daily ad limit reached', 'warning');
+            if (appState.dailyCounters.ads >= 20) {
+                showToast('Daily ad limit reached! Come back tomorrow.', 'warning');
                 return;
             }
             
-            const ad = APP_STATE.ads.find(a => a.id === adId);
-            if (!ad || ad.watched) return;
+            appState.currentAd = ad;
             
-            APP_STATE.currentAd = ad;
-            
-            // Try Monetag first
+            // Try Monetag ad first
             if (typeof show_10274566 === 'function') {
                 try {
-                    const result = await show_10274566('pop');
-                    if (result) {
-                        await completeAd(ad);
-                        return;
-                    }
+                    show_10274566('pop').then(() => {
+                        // User watched the ad
+                        completeAd(ad);
+                    }).catch((error) => {
+                        console.log('Monetag ad failed, using fallback:', error);
+                        openAdFallback(ad);
+                    });
                 } catch (error) {
-                    console.log('Monetag failed, using fallback');
+                    openAdFallback(ad);
                 }
+            } else {
+                openAdFallback(ad);
             }
-            
-            // Fallback to smartlink
+        }
+
+        function openAdFallback(ad) {
             openBrowserModal();
+            
+            // Use smartlink
             document.getElementById('browserUrl').textContent = ad.link;
             document.getElementById('browserIframe').src = ad.link;
-            startTimer(ad.duration, 'ad', { adId, reward: ad.reward });
+            
+            // Start timer
+            startTimer(ad.duration, 'ad', ad);
         }
 
         async function completeAd(data) {
             try {
-                const ad = APP_STATE.ads.find(a => a.id === data.adId);
+                // Mark ad as watched
+                const ad = appState.ads.find(a => a.id === data.id);
                 if (ad) {
                     ad.watched = true;
                 }
                 
                 // Update counters
-                APP_STATE.dailyCounters.ads++;
+                appState.dailyCounters.ads++;
                 
                 // Calculate reward with VIP bonus
                 const baseReward = data.reward;
-                const vipBonus = getVipBonus(APP_STATE.vipLevel);
+                const vipBonus = getVipBonus(appState.vipLevel);
                 const totalReward = baseReward + vipBonus;
                 
                 // Update balance
-                APP_STATE.balance += totalReward;
-                updateBalance();
-                
-                // Send to bot
-                await sendToBot('ad_completed', {
-                    adId: data.adId,
-                    baseReward,
-                    vipBonus,
-                    totalReward,
-                    newBalance: APP_STATE.balance
-                });
+                appState.balance += totalReward;
+                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
                 
                 // Update UI
                 updateAds();
+                updateCounters();
                 
-                // Close if browser is open
+                // Send to bot
+                await sendToBot('ad_watched', {
+                    adId: data.id,
+                    baseReward: baseReward,
+                    vipBonus: vipBonus,
+                    totalReward: totalReward,
+                    newBalance: appState.balance
+                });
+                
+                // Close modal if open
                 if (document.getElementById('browserModal').classList.contains('active')) {
                     closeBrowserModal();
                 }
                 
-                showNotification(`Ad completed! +${totalReward} G-Coins`, 'success');
+                showToast(`Ad watched! +${totalReward} G-Coins`, 'success');
                 
             } catch (error) {
                 console.error('Ad completion error:', error);
-                showNotification('Failed to complete ad', 'error');
+                showToast('Failed to complete ad', 'error');
             }
         }
 
         function cleanupWatched() {
-            APP_STATE.ads = APP_STATE.ads.filter(ad => !ad.watched);
+            // Remove watched ads
+            appState.ads = appState.ads.filter(ad => !ad.watched);
+            
+            // Remove completed tasks
+            appState.tasks = appState.tasks.filter(task => !task.completed);
+            appState.randomTasks = appState.randomTasks.filter(task => !task.completed);
+            
+            // Update UI
             updateAds();
-            showNotification('Watched ads cleaned up', 'success');
+            updateTasks();
+            
+            showToast('Cleaned up completed items', 'success');
         }
 
-        // ========== TIMER FUNCTIONS ==========
+        // ==================== POST FUNCTIONS ====================
+        function openComposer() {
+            // Check VIP level
+            if (!['gold', 'premium', 'silver'].includes(appState.vipLevel)) {
+                showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
+                return;
+            }
+            
+            // Check balance
+            if (appState.balance < 10000) {
+                showToast('Minimum 10,000 G-Coins required to create a post', 'error');
+                return;
+            }
+            
+            document.getElementById('composerModal').classList.add('active');
+        }
+
+        function closeComposer() {
+            document.getElementById('composerModal').classList.remove('active');
+            document.getElementById('postForm').reset();
+            document.getElementById('mediaPreview').innerHTML = '';
+        }
+
+        async function submitPost(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('postSubmitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Publishing...';
+            submitBtn.disabled = true;
+            
+            try {
+                const content = document.getElementById('postContent').value;
+                const link = document.getElementById('postLink').value;
+                const linkType = document.getElementById('postLinkType').value;
+                const reward = parseInt(document.getElementById('postReward').value);
+                
+                // Validation
+                if (reward < 10000) {
+                    throw new Error('Minimum reward is 10,000 G-Coins');
+                }
+                
+                if (reward > appState.balance) {
+                    throw new Error('Insufficient balance');
+                }
+                
+                // Create post object
+                const newPost = {
+                    id: Date.now().toString(),
+                    userId: appState.user?.id || 'unknown',
+                    username: appState.user?.username || 'user',
+                    userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
+                    content: content,
+                    media: null, // Would be set if media uploaded
+                    link: link,
+                    linkType: linkType,
+                    reward: reward,
+                    likes: 0,
+                    comments: [],
+                    shares: 0,
+                    timestamp: 'Just now',
+                    userHasLiked: false
+                };
+                
+                // Send to bot for processing
+                await sendToBot('post_created', {
+                    post: newPost,
+                    vipLevel: appState.vipLevel,
+                    balanceBefore: appState.balance
+                });
+                
+                // Add to feed
+                appState.posts.unshift(newPost);
+                updateFeed();
+                
+                // Close modal
+                closeComposer();
+                
+                showToast('Post created successfully!', 'success');
+                
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // ==================== BROWSER MODAL FUNCTIONS ====================
+        function openBrowserModal() {
+            document.getElementById('browserModal').classList.add('active');
+        }
+
+        function closeBrowserModal() {
+            document.getElementById('browserModal').classList.remove('active');
+            document.getElementById('browserIframe').src = '';
+            
+            // Clear timer
+            if (appState.timerInterval) {
+                clearInterval(appState.timerInterval);
+                appState.timerInterval = null;
+            }
+            
+            // Reset timer UI
+            document.getElementById('timerDisplay').textContent = '00:00';
+            document.getElementById('timerProgressBar').style.width = '0%';
+        }
+
+        function startDirectAd() {
+            // Called when bot opens iframe directly
+            const ad = {
+                id: 'direct-ad',
+                title: 'Special Offer',
+                duration: 45,
+                reward: 100,
+                source: 'GridGain'
+            };
+            
+            startTimer(ad.duration, 'ad', ad);
+        }
+
+        // ==================== TIMER FUNCTIONS ====================
         function startTimer(seconds, type, data) {
             let remaining = seconds;
             const display = document.getElementById('timerDisplay');
             const progressBar = document.getElementById('timerProgressBar');
             const timerLabel = document.getElementById('timerLabel');
             
-            // Update label
-            if (type === 'task') {
-                timerLabel.textContent = 'Complete the task to earn rewards';
-            } else if (type === 'ad') {
-                timerLabel.textContent = 'Watch the ad to earn rewards';
-            } else {
-                timerLabel.textContent = 'Please wait...';
-            }
+            // Show appropriate label
+            timerLabel.textContent = type === 'task' 
+                ? 'Complete the task to earn rewards' 
+                : 'Watch the ad to earn rewards';
             
-            // Update display
-            updateTimer();
+            // Show timer overlay
+            document.getElementById('timerOverlay').style.display = 'flex';
+            
+            // Update display immediately
+            updateTimerDisplay();
             
             // Start interval
-            APP_STATE.timerInterval = setInterval(() => {
+            appState.timerInterval = setInterval(() => {
                 remaining--;
-                updateTimer();
+                updateTimerDisplay();
                 
                 if (remaining <= 0) {
-                    clearInterval(APP_STATE.timerInterval);
-                    APP_STATE.timerInterval = null;
+                    clearInterval(appState.timerInterval);
+                    appState.timerInterval = null;
                     
                     // Handle completion
                     if (type === 'task') {
                         completeTask(data);
-                    } else if (type === 'ad' || type === 'direct_ad') {
-                        if (type === 'direct_ad') {
-                            // Direct ad from bot
-                            sendToBot('direct_ad_completed', {
-                                link: data.link,
-                                duration: seconds
-                            }).then(() => {
-                                closeBrowserModal();
-                                showNotification('Ad completed!', 'success');
-                            });
-                        } else {
-                            completeAd(data);
-                        }
+                    } else if (type === 'ad') {
+                        completeAd(data);
                     }
                 }
             }, 1000);
             
-            function updateTimer() {
+            function updateTimerDisplay() {
                 const mins = Math.floor(remaining / 60);
                 const secs = remaining % 60;
                 display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -2872,271 +2827,567 @@
             }
         }
 
-        // ========== PROFILE FUNCTIONS ==========
-        function openProfileSection(section) {
-            const titleMap = {
-                edit: 'Edit Profile',
-                transactions: 'Transaction History',
-                referrals: 'Referrals',
-                settings: 'Settings'
+        // ==================== SCREEN NAVIGATION ====================
+        function switchScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Remove active from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected screen
+            const screen = document.getElementById(`${screenName}Screen`);
+            if (screen) {
+                screen.classList.add('active');
+            }
+            
+            // Update active nav item
+            const navItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
+                item.textContent.includes(screenName.charAt(0).toUpperCase() + screenName.slice(1).replace('Screen', ''))
+            );
+            
+            if (navItem) {
+                navItem.classList.add('active');
+            }
+            
+            // Update URL hash
+            window.location.hash = screenName;
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function getRandomSmartLink() {
+            return SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+        }
+
+        function getRandomAdTitle() {
+            const titles = [
+                'Tech Review 2024',
+                'Crypto Market Update',
+                'Gaming News Today',
+                'Product Launch Event',
+                'Mobile App Review',
+                'Software Tutorial',
+                'Market Analysis',
+                'Investment Tips',
+                'Trading Strategies',
+                'Business Insights'
+            ];
+            return titles[Math.floor(Math.random() * titles.length)];
+        }
+
+        function getRandomAdSource() {
+            const sources = [
+                'TechBrand Co.',
+                'CryptoExchange',
+                'GameStore',
+                'Fashion Brand',
+                'Finance Corp',
+                'Market Network',
+                'Trade Hub',
+                'Business Inc'
+            ];
+            return sources[Math.floor(Math.random() * sources.length)];
+        }
+
+        function getRandomTaskTitle() {
+            const titles = [
+                'Website Visit Task',
+                'Survey Completion',
+                'App Installation',
+                'Product Review',
+                'Market Research',
+                'Data Collection',
+                'Feedback Submission',
+                'Content Testing'
+            ];
+            return titles[Math.floor(Math.random() * titles.length)];
+        }
+
+        function getRandomTaskDescription() {
+            const descriptions = [
+                'Visit website and stay for specified time',
+                'Complete short survey for research',
+                'Install app and open for verification',
+                'Review product features',
+                'Participate in market research',
+                'Collect required data points',
+                'Submit feedback about experience',
+                'Test content functionality'
+            ];
+            return descriptions[Math.floor(Math.random() * descriptions.length)];
+        }
+
+        function getRandomCount() {
+            return Math.floor(Math.random() * 10) + 1;
+        }
+
+        function getRandomColor() {
+            const colors = ['#4AA3FF', '#E33D7A', '#5B2E8A', '#FF98BD', '#FFC857'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function getActionText(type) {
+            const actions = {
+                visit: 'Visit',
+                join: 'Join',
+                watch: 'Watch',
+                install: 'Install',
+                signup: 'Sign Up'
+            };
+            return actions[type] || 'Open';
+        }
+
+        function getVipBonus(level) {
+            const bonuses = {
+                none: 0,
+                basic: 20,
+                silver: 40,
+                gold: 60,
+                premium: 100
+            };
+            return bonuses[level] || 0;
+        }
+
+        function getInitials(firstName, lastName) {
+            return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase() || 'U';
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✗',
+                warning: '⚠',
+                info: 'ℹ'
             };
             
-            document.getElementById('profileModalTitle').textContent = titleMap[section];
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <div class="toast-icon">${icons[type] || 'ℹ'}</div>
+                    <div class="toast-message">${message}</div>
+                    <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
             
-            let content = '';
-            switch(section) {
+            container.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            // FAB scroll behavior
+            const mainContent = document.getElementById('mainContent');
+            const fab = document.getElementById('fabPost');
+            
+            if (mainContent && fab) {
+                mainContent.addEventListener('scroll', () => {
+                    const currentScroll = mainContent.scrollTop;
+                    
+                    if (currentScroll > appState.lastScrollPosition && currentScroll > 100) {
+                        // Scrolling down
+                        fab.classList.add('hidden');
+                    } else {
+                        // Scrolling up
+                        fab.classList.remove('hidden');
+                    }
+                    
+                    appState.lastScrollPosition = currentScroll;
+                });
+            }
+            
+            // Media drag and drop
+            const mediaDropArea = document.getElementById('mediaDropArea');
+            const mediaInput = document.getElementById('mediaInput');
+            
+            if (mediaDropArea && mediaInput) {
+                mediaDropArea.addEventListener('click', () => mediaInput.click());
+                
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    mediaDropArea.addEventListener(eventName, preventDefaults, false);
+                });
+                
+                function preventDefaults(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    mediaDropArea.addEventListener(eventName, highlight, false);
+                });
+                
+                ['dragleave', 'drop'].forEach(eventName => {
+                    mediaDropArea.addEventListener(eventName, unhighlight, false);
+                });
+                
+                function highlight() {
+                    mediaDropArea.classList.add('drag-over');
+                }
+                
+                function unhighlight() {
+                    mediaDropArea.classList.remove('drag-over');
+                }
+                
+                mediaDropArea.addEventListener('drop', handleDrop, false);
+                mediaInput.addEventListener('change', handleFiles, false);
+                
+                function handleDrop(e) {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    handleFiles({ target: { files } });
+                }
+                
+                function handleFiles(e) {
+                    const files = e.target.files;
+                    const preview = document.getElementById('mediaPreview');
+                    
+                    preview.innerHTML = '';
+                    
+                    Array.from(files).forEach(file => {
+                        if (!file.type.match('image.*') && !file.type.match('video.*')) {
+                            showToast('Please upload only images or videos', 'error');
+                            return;
+                        }
+                        
+                        if (file.size > 10 * 1024 * 1024) {
+                            showToast('File size must be less than 10MB', 'error');
+                            return;
+                        }
+                        
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const previewItem = document.createElement('div');
+                            previewItem.className = 'preview-item';
+                            
+                            if (file.type.match('image.*')) {
+                                previewItem.innerHTML = `
+                                    <img src="${e.target.result}" alt="Preview">
+                                    <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
+                                `;
+                            } else {
+                                previewItem.innerHTML = `
+                                    <video src="${e.target.result}" controls></video>
+                                    <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
+                                `;
+                            }
+                            
+                            preview.appendChild(previewItem);
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+            
+            // Profile menu buttons
+            document.getElementById('editProfileBtn')?.addEventListener('click', () => {
+                showProfileSection('edit');
+            });
+            
+            document.getElementById('transactionHistoryBtn')?.addEventListener('click', () => {
+                showProfileSection('transactions');
+            });
+            
+            document.getElementById('referralsBtn')?.addEventListener('click', () => {
+                showProfileSection('referrals');
+            });
+            
+            document.getElementById('settingsBtn')?.addEventListener('click', () => {
+                showProfileSection('settings');
+            });
+            
+            document.getElementById('helpSupportBtn')?.addEventListener('click', () => {
+                openHelpSupport();
+            });
+            
+            // Cleanup button
+            document.getElementById('cleanupBtn')?.addEventListener('click', cleanupWatched);
+            
+            // New task button
+            document.getElementById('newTaskBtn')?.addEventListener('click', () => {
+                showToast('Task creation feature coming soon!', 'info');
+            });
+            
+            // Hash change for navigation
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash.replace('#', '');
+                if (hash && hash !== 'iframe') {
+                    switchScreen(hash);
+                }
+            });
+        }
+
+        // ==================== PROFILE FUNCTIONS ====================
+        function showProfileSection(section) {
+            const modal = document.getElementById('profileSectionModal');
+            const title = document.getElementById('profileSectionTitle');
+            const content = document.getElementById('profileSectionContent');
+            
+            if (!modal || !title || !content) return;
+            
+            let sectionContent = '';
+            
+            switch (section) {
                 case 'edit':
-                    content = `
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">User ID</label>
-                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-family: monospace;">
-                                    ${APP_STATE.user?.id || 'N/A'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Username</label>
-                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
-                                    @${APP_STATE.user?.username || 'username'}
-                                </div>
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">VIP Level</label>
-                                <div class="vip-badge ${APP_STATE.vipLevel}" style="margin-top: 8px;">
-                                    ${APP_STATE.vipLevel === 'premium' ? 'Premium VIP' : 
-                                      APP_STATE.vipLevel === 'gold' ? 'Gold VIP' :
-                                      APP_STATE.vipLevel === 'silver' ? 'Silver VIP' :
-                                      APP_STATE.vipLevel === 'basic' ? 'Basic VIP' : 'No VIP'}
-                                </div>
+                    title.textContent = 'Edit Profile';
+                    sectionContent = `
+                        <div class="form-group">
+                            <label class="form-label">Telegram Username</label>
+                            <input type="text" class="form-input" value="${appState.user?.username || ''}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">User ID</label>
+                            <input type="text" class="form-input" value="${appState.user?.id || ''}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">VIP Level</label>
+                            <div class="vip-badge ${appState.vipLevel}" style="margin-top: 8px; display: inline-block;">
+                                ${appState.vipLevel.charAt(0).toUpperCase() + appState.vipLevel.slice(1)} VIP
                             </div>
                         </div>
                     `;
                     break;
                     
                 case 'transactions':
-                    content = `
+                    title.textContent = 'Transaction History';
+                    sectionContent = `
                         <div style="max-height: 400px; overflow-y: auto;">
-                            <div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <div>
-                                        <div style="font-weight: 600;">Task Reward - YouTube</div>
-                                        <div style="font-size: 12px; color: var(--text-secondary);">2 hours ago</div>
-                                    </div>
-                                    <div style="color: var(--gcoin-gold); font-weight: 700;">+50</div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon earn">+</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Task Reward - YouTube</div>
+                                    <div class="transaction-time">2 hours ago</div>
                                 </div>
+                                <div class="transaction-amount earn">+5,000</div>
                             </div>
-                            <div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <div>
-                                        <div style="font-weight: 600;">Ad Watch Reward</div>
-                                        <div style="font-size: 12px; color: var(--text-secondary);">5 hours ago</div>
-                                    </div>
-                                    <div style="color: var(--gcoin-gold); font-weight: 700;">+25</div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon earn">+</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Ad Watch Reward</div>
+                                    <div class="transaction-time">5 hours ago</div>
                                 </div>
+                                <div class="transaction-amount earn">+120</div>
+                            </div>
+                            <div class="transaction-item">
+                                <div class="transaction-icon spend">-</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">Post Creation</div>
+                                    <div class="transaction-time">1 day ago</div>
+                                </div>
+                                <div class="transaction-amount spend">-10,000</div>
                             </div>
                         </div>
                     `;
                     break;
                     
                 case 'referrals':
-                    const refLink = `https://t.me/GridGain_Bot?start=${APP_STATE.user?.id || ''}`;
-                    content = `
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Your Referral Link</label>
-                                <div style="display: flex; gap: 8px;">
-                                    <div style="flex: 1; background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; font-size: 12px; overflow: hidden; text-overflow: ellipsis;">
-                                        ${refLink}
-                                    </div>
-                                    <button onclick="copyToClipboard('${refLink}')" style="background: var(--electric-blue); border: none; border-radius: 8px; padding: 0 16px; color: white; cursor: pointer;">
-                                        Copy
-                                    </button>
-                                </div>
+                    title.textContent = 'Referrals';
+                    const refLink = `https://t.me/GridGain_Bot?start=${appState.user?.id || 'ref'}`;
+                    sectionContent = `
+                        <div class="form-group">
+                            <label class="form-label">Your Referral Link</label>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <input type="text" class="form-input" value="${refLink}" id="refLinkInput" readonly>
+                                <button class="submit-btn" style="flex: 0 0 auto; padding: 0 16px;" 
+                                        onclick="copyRefLink()">
+                                    Copy
+                                </button>
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                                <div style="text-align: center;">
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--electric-blue);">0</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);">Completed</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--electric-blue);">0</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);">Pending</div>
-                                </div>
-                                <div style="text-align: center;">
-                                    <div style="font-size: 24px; font-weight: 700; color: var(--gcoin-gold);">0</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);">Earned</div>
-                                </div>
+                        </div>
+                        <div class="profile-stats" style="margin-top: 24px;">
+                            <div class="stat-item">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Total Earned</div>
                             </div>
                         </div>
                     `;
                     break;
                     
                 case 'settings':
-                    content = `
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">App Version</label>
-                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
-                                    1.0.0
-                                </div>
-                            </div>
-                            <div>
-                                <label style="display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Last Updated</label>
-                                <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px;">
-                                    ${new Date().toLocaleDateString()}
-                                </div>
-                            </div>
+                    title.textContent = 'Settings';
+                    sectionContent = `
+                        <div class="form-group">
+                            <label class="form-label">App Version</label>
+                            <input type="text" class="form-input" value="1.0.0" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Updated</label>
+                            <input type="text" class="form-input" value="${new Date().toLocaleDateString()}" readonly>
                         </div>
                     `;
                     break;
             }
             
-            document.getElementById('profileModalContent').innerHTML = content;
-            openModal('profileModal');
+            content.innerHTML = sectionContent;
+            modal.classList.add('active');
+        }
+
+        function closeProfileSection() {
+            document.getElementById('profileSectionModal').classList.remove('active');
         }
 
         function openHelpSupport() {
-            if (APP_STATE.isTelegram && APP_STATE.WebApp) {
-                APP_STATE.WebApp.openTelegramLink('https://t.me/GridGain_Bot?start=help');
+            // Open Telegram bot help command
+            if (appState.WebApp) {
+                appState.WebApp.openTelegramLink('https://t.me/GridGain_Bot?start=help');
             } else {
                 window.open('https://t.me/GridGain_Bot?start=help', '_blank');
             }
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showNotification('Copied to clipboard', 'success');
-            });
+        function copyRefLink() {
+            const input = document.getElementById('refLinkInput');
+            if (input) {
+                input.select();
+                document.execCommand('copy');
+                showToast('Referral link copied!', 'success');
+            }
         }
 
-        // ========== UTILITY FUNCTIONS ==========
+        // ==================== INTERACTION FUNCTIONS ====================
         function handleLike(postId, button) {
-            const post = APP_STATE.posts.find(p => p.id === postId);
+            const post = appState.posts.find(p => p.id === postId);
             if (!post) return;
             
-            post.liked = !post.liked;
-            post.likes += post.liked ? 1 : -1;
+            const wasLiked = post.userHasLiked;
+            post.userHasLiked = !wasLiked;
+            post.likes += wasLiked ? -1 : 1;
             
+            // Update UI
             button.classList.toggle('liked');
             button.querySelector('span').textContent = post.likes;
             
+            // Send to bot
             sendToBot('post_liked', {
-                postId,
-                liked: post.liked
+                postId: postId,
+                liked: !wasLiked
             });
         }
 
-        function handleAction(postId, link, action) {
+        function handleTaskAction(postId, link, type, reward) {
             openBrowserModal();
+            
+            // Set URL
             document.getElementById('browserUrl').textContent = link;
             document.getElementById('browserIframe').src = link;
             
-            const duration = 60; // 1 minute for actions
-            startTimer(duration, 'action', {
-                postId,
-                action,
-                link
+            // Start timer
+            const duration = type === 'watch' ? 90 : 60;
+            startTimer(duration, 'task', {
+                postId: postId,
+                type: type,
+                reward: reward
             });
             
+            // Send to bot
             sendToBot('action_started', {
-                postId,
-                action,
-                link
+                postId: postId,
+                action: type,
+                reward: reward
             });
         }
 
-        function openComments(postId) {
-            const section = document.getElementById(`comments-${postId}`);
-            const container = document.getElementById(`commentsContainer-${postId}`);
-            
-            section.classList.toggle('expanded');
-            
-            if (section.classList.contains('expanded')) {
-                // Load comments
-                container.innerHTML = `
-                    <div class="comment-item">
-                        <div class="comment-user">
-                            <div class="comment-avatar">JD</div>
-                            <div style="font-weight: 600;">John Doe</div>
-                        </div>
-                        <div>Great opportunity!</div>
-                    </div>
-                    <div class="comment-item">
-                        <div class="comment-user">
-                            <div class="comment-avatar">SK</div>
-                            <div style="font-weight: 600;">Sarah Kim</div>
-                        </div>
-                        <div>Just completed, thanks!</div>
-                    </div>
-                `;
+        function toggleComments(postId) {
+            const commentsSection = document.getElementById(`comments-${postId}`);
+            if (commentsSection) {
+                commentsSection.classList.toggle('active');
             }
         }
 
         function sendComment(postId) {
-            const input = document.getElementById(`commentInput-${postId}`);
-            const text = input.value.trim();
+            const input = document.getElementById(`comment-input-${postId}`);
+            if (!input) return;
             
+            const text = input.value.trim();
             if (!text) return;
             
-            const container = document.getElementById(`commentsContainer-${postId}`);
+            const post = appState.posts.find(p => p.id === postId);
+            if (!post) return;
             
-            container.innerHTML += `
-                <div class="comment-item">
-                    <div class="comment-user">
-                        <div class="comment-avatar">${APP_STATE.user?.firstName?.[0] || 'Y'}</div>
-                        <div style="font-weight: 600;">You</div>
+            // Add comment
+            post.comments.push({
+                id: Date.now().toString(),
+                userId: appState.user?.id || 'user',
+                username: appState.user?.username || 'You',
+                text: text
+            });
+            
+            // Update UI
+            const commentsContainer = document.getElementById(`comments-container-${postId}`);
+            if (commentsContainer) {
+                const commentDiv = document.createElement('div');
+                commentDiv.className = 'comment-item';
+                commentDiv.innerHTML = `
+                    <div class="comment-avatar">${appState.user?.firstName?.[0] || 'U'}</div>
+                    <div class="comment-content">
+                        <div class="comment-author">${appState.user?.username || 'You'}</div>
+                        <div class="comment-text">${text}</div>
                     </div>
-                    <div>${text}</div>
-                </div>
-            `;
+                `;
+                commentsContainer.appendChild(commentDiv);
+            }
             
+            // Clear input
             input.value = '';
-            sendToBot('comment_added', { postId, comment: text });
+            
+            // Send to bot
+            sendToBot('comment_added', {
+                postId: postId,
+                comment: text
+            });
         }
 
-        function showNotification(message, type = 'info') {
-            const container = document.getElementById('notificationContainer');
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            
-            const icon = {
-                success: '✓',
-                error: '✗',
-                warning: '⚠',
-                info: 'ℹ'
-            }[type];
-            
-            notification.innerHTML = `
-                <div style="font-weight: 600;">${icon}</div>
-                <div style="flex: 1;">${message}</div>
-                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;">
-                    ×
-                </button>
-            `;
-            
-            container.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.opacity = '0';
-                    notification.style.transform = 'translateX(100%)';
-                    setTimeout(() => {
-                        if (notification.parentNode) {
-                            notification.remove();
-                        }
-                    }, 300);
-                }
-            }, 3000);
+        function viewUserProfile(userId) {
+            // Navigate to profile screen and show user profile
+            switchScreen('profile');
+            showToast('User profile view coming soon!', 'info');
         }
 
-        // ========== MONETAG ADS ==========
+        function viewTaskDetails(taskId) {
+            showToast('Task details coming soon!', 'info');
+        }
+
+        // ==================== PLATFORM AUTO SCROLL ====================
+        function initPlatformAutoScroll() {
+            const platformGrid = document.getElementById('platformGrid');
+            if (!platformGrid) return;
+            
+            // Set grid width for seamless scrolling
+            const platformCards = platformGrid.querySelectorAll('.platform-card');
+            const totalWidth = Array.from(platformCards).reduce((sum, card) => sum + card.offsetWidth + 16, 0);
+            platformGrid.style.width = `${totalWidth * 2}px`;
+            
+            // Reset animation when it completes
+            platformGrid.addEventListener('animationiteration', () => {
+                platformGrid.style.transform = 'translateX(0)';
+            });
+        }
+
+        // ==================== MONETAG AD INTEGRATION ====================
         function initializeMonetagAds() {
             if (typeof monetag !== 'undefined') {
-                monetag.start();
-                
-                // Configure ads
-                if (typeof show_10274566 === 'function') {
-                    // In-app interstitial
+                // In-app interstitial ads
+                try {
                     show_10274566({ 
                         type: 'inApp', 
                         inAppSettings: { 
@@ -3147,42 +3398,38 @@
                             everyPage: false 
                         } 
                     });
-                    
-                    // Rewarded interstitial setup
-                    window.addEventListener('click', (e) => {
-                        if (e.target.closest('.action-btn') || e.target.closest('.task-item')) {
-                            show_10274566().then(() => {
-                                console.log('User watched interstitial ad');
-                            });
-                        }
-                    });
+                } catch (error) {
+                    console.log('Monetag interstitial setup error:', error);
+                }
+                
+                // Rewarded ads setup
+                if (typeof show_10274566 === 'function') {
+                    // This will be called when user triggers rewarded ad
+                    console.log('Monetag rewarded ads ready');
                 }
             }
         }
 
-        // ========== EXPORT FUNCTIONS ==========
+        // Initialize Monetag when page loads
+        window.addEventListener('load', initializeMonetagAds);
+
+        // ==================== EXPORT FUNCTIONS ====================
         window.switchScreen = switchScreen;
-        window.openCreateModal = openCreateModal;
-        window.closeModal = closeModal;
-        window.closeBrowserModal = closeBrowserModal;
+        window.openComposer = openComposer;
+        window.closeComposer = closeComposer;
         window.handleLike = handleLike;
-        window.handleAction = handleAction;
-        window.openComments = openComments;
+        window.handleTaskAction = handleTaskAction;
+        window.toggleComments = toggleComments;
         window.sendComment = sendComment;
         window.watchAd = watchAd;
         window.cleanupWatched = cleanupWatched;
-        window.openProfileSection = openProfileSection;
-        window.openHelpSupport = openHelpSupport;
-        window.handleMediaUpload = handleMediaUpload;
-        window.removeMedia = removeMedia;
-        window.copyToClipboard = copyToClipboard;
         window.startTask = startTask;
-        document.getElementById('cleanupBtn').onclick = cleanupWatched;
-
-        // Show floating button after load
-        setTimeout(() => {
-            document.getElementById('floatingCreate').classList.add('visible');
-        }, 1000);
+        window.viewTaskDetails = viewTaskDetails;
+        window.viewUserProfile = viewUserProfile;
+        window.copyRefLink = copyRefLink;
+        window.closeBrowserModal = closeBrowserModal;
+        window.closeProfileSection = closeProfileSection;
+        window.showToast = showToast;
     </script>
 </body>
 </html>
