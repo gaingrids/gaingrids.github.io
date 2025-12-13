@@ -1786,8 +1786,8 @@
         // ==================== GLOBAL STATE ====================
         const appState = {
             user: null,
-            balance: 0,
-            vipLevel: 'none',
+            balance: 10000,
+            vipLevel: 'gold',
             dailyCounters: {
                 tasks: 0,
                 ads: 0
@@ -1804,12 +1804,9 @@
             isTelegramWebApp: false,
             WebApp: null,
             lastScrollPosition: 0,
-            incomingPayload: null,
             telegramUserId: null,
             botCallbackUrl: null,
-            autoStartRequested: false,
-            sessionId: Date.now().toString(),
-            lastEventTime: 0
+            sessionId: Date.now().toString()
         };
 
         // ==================== CONSTANTS ====================
@@ -1832,219 +1829,161 @@
             { id: 'website', name: 'Website', color: '#4AA3FF' }
         ];
 
-        // ==================== PAYLOAD PARSING (EXACT SPIN & WIN PATTERN) ====================
-        function parseDeeplinkPayload() {
+        // ==================== TELEGRAM WEB APP INITIALIZATION ====================
+        function initializeTelegramWebApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                try {
+                    appState.WebApp = window.Telegram.WebApp;
+                    appState.isTelegramWebApp = true;
+                    
+                    // Initialize Telegram Web App
+                    appState.WebApp.ready();
+                    appState.WebApp.expand();
+                    
+                    // Get user data from Telegram
+                    const telegramUser = appState.WebApp.initDataUnsafe.user;
+                    
+                    if (telegramUser) {
+                        // Set user data from Telegram
+                        appState.user = {
+                            id: telegramUser.id,
+                            firstName: telegramUser.first_name,
+                            lastName: telegramUser.last_name || '',
+                            username: telegramUser.username || '',
+                            photoUrl: telegramUser.photo_url || null
+                        };
+                        
+                        appState.telegramUserId = telegramUser.id;
+                        
+                        // Also get init data for potential payload
+                        const initData = appState.WebApp.initData;
+                        if (initData) {
+                            try {
+                                const params = new URLSearchParams(initData);
+                                const startParam = params.get('start');
+                                if (startParam) {
+                                    handleStartParam(startParam);
+                                }
+                            } catch (e) {
+                                console.log('Error parsing init data:', e);
+                            }
+                        }
+                        
+                        console.log('Telegram user loaded:', appState.user);
+                        updateUIFromUserData();
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Telegram Web App initialization error:', error);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // ==================== HANDLE START PARAMETER ====================
+        function handleStartParam(startParam) {
             try {
-                const qs = new URLSearchParams(location.search || '');
-                const candidates = [];
-
-                ['payload', 'data', 'start', 's', 'p'].forEach(k => { 
-                    const v = qs.get(k); 
-                    if (v) candidates.push(v); 
-                });
-
-                if (location.hash) {
-                    let rawHash = location.hash.replace(/^#/, '');
-                    if (rawHash.includes('?')) {
-                        const hashQs = rawHash.split('?').slice(1).join('?');
-                        const hparams = new URLSearchParams(hashQs);
-                        ['payload', 'data', 'start', 's', 'p'].forEach(k => { 
-                            const v = hparams.get(k); 
-                            if (v) candidates.push(v); 
-                        });
-                    } else {
-                        candidates.push(rawHash);
+                if (!startParam) return;
+                
+                // Try to parse as JSON or base64
+                let payload = null;
+                
+                // Try as JSON
+                try {
+                    if (startParam.startsWith('{') || startParam.startsWith('[')) {
+                        payload = JSON.parse(startParam);
+                    }
+                } catch (e) {
+                    // Not JSON
+                }
+                
+                // Try as base64
+                if (!payload) {
+                    try {
+                        const decoded = atob(startParam.replace(/-/g, '+').replace(/_/g, '/'));
+                        try {
+                            payload = JSON.parse(decoded);
+                        } catch (e) {
+                            // Not JSON after decoding
+                        }
+                    } catch (e) {
+                        // Not base64
                     }
                 }
-
-                for (const c of candidates) {
-                    if (!c) continue;
-                    const parsed = tryParseJSONorB64(c);
-                    if (parsed && typeof parsed === 'object') {
-                        try { 
-                            sessionStorage.setItem('gainGridDashboardData', JSON.stringify(parsed)); 
-                        } catch(e){}
-                        return parsed;
+                
+                if (payload) {
+                    // Process payload data
+                    if (payload.user_id) {
+                        appState.telegramUserId = payload.user_id;
                     }
+                    
+                    if (payload.balance !== undefined) {
+                        appState.balance = Number(payload.balance);
+                    }
+                    
+                    if (payload.vip_level) {
+                        appState.vipLevel = payload.vip_level.toString().toLowerCase();
+                    }
+                    
+                    if (payload.callback_url) {
+                        appState.botCallbackUrl = payload.callback_url;
+                    }
+                    
+                    console.log('Processed start payload:', payload);
                 }
-
-                const cached = sessionStorage.getItem('gainGridDashboardData');
-                if (cached) {
-                    try { 
-                        return JSON.parse(cached); 
-                    } catch(e){}
-                }
-                return null;
-            } catch(e) { 
-                console.warn('parseDeeplinkPayload err', e); 
-                return null; 
+            } catch (error) {
+                console.error('Error handling start param:', error);
             }
         }
 
-        function tryParseJSONorB64(input) {
-            if (input === undefined || input === null) return null;
-            if (typeof input === 'object') return input;
-            let s = String(input).trim();
-
-            if ((s.startsWith('{') && s.endsWith('}')) || (s.startsWith('[') && s.endsWith(']'))) {
-                try { return JSON.parse(s); } catch(e){}
-            }
-
+        // ==================== URL PARAMETER PARSING ====================
+        function parseUrlParameters() {
             try {
-                const dec = decodeURIComponent(s);
-                if ((dec.startsWith('{') && dec.endsWith('}')) || (dec.startsWith('[') && dec.endsWith(']'))) {
-                    return JSON.parse(dec);
-                }
-            } catch(e){}
-
-            try {
-                if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-                    const unq = s.substring(1, s.length-1);
-                    const tryInner = tryParseJSONorB64(unq);
-                    if (tryInner) return tryInner;
-                }
-            } catch(e){}
-
-            try {
-                let b = s.replace(/-/g,'+').replace(/_/g,'/');
-                try { b = decodeURIComponent(b); } catch(e){}
-                b = b + '='.repeat((4 - (b.length % 4)) % 4);
-                let raw = atob(b);
-                try { raw = decodeURIComponent(escape(raw)); } catch(e){}
-                if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
-                    return JSON.parse(raw);
-                }
-                const nested = tryParseJSONorB64(raw);
-                if (nested) return nested;
-                return raw;
-            } catch(e){}
-
-            try {
-                let raw = atob(s);
-                try { raw = decodeURIComponent(escape(raw)); } catch(e){}
-                const nested = tryParseJSONorB64(raw);
-                if (nested) return nested;
-                if ((raw.startsWith('{') && raw.endsWith('}')) || (raw.startsWith('[') && raw.endsWith(']'))) {
-                    return JSON.parse(raw);
-                }
-                return raw;
-            } catch(e){}
-
-            return null;
-        }
-
-        // ==================== BOT COMMUNICATION (EXACT SPIN & WIN PATTERN) ====================
-        async function postToCallbackOrWebhook(wrapper, callbackUrlCandidate) {
-            try {
-                const candidate = callbackUrlCandidate || 
-                    (appState.incomingPayload && (appState.incomingPayload.callback_url || 
-                     appState.incomingPayload.callbackUrl || 
-                     appState.incomingPayload.webhook || 
-                     appState.incomingPayload.callbackurl)) || 
-                    '<% options.url %>';
+                const urlParams = new URLSearchParams(window.location.search);
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
                 
-                if (!candidate) { 
-                    console.warn('No webhook/callback url to post to.'); 
-                    return { ok:false, error:'no_target' }; 
+                // Check for start parameter in URL
+                let startParam = urlParams.get('start') || hashParams.get('start');
+                
+                if (startParam) {
+                    handleStartParam(startParam);
                 }
                 
-                const resp = await fetch(candidate, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(wrapper),
-                    keepalive: true
-                });
+                // Check for other parameters
+                const userId = urlParams.get('user_id') || hashParams.get('user_id');
+                const balance = urlParams.get('balance') || hashParams.get('balance');
+                const vipLevel = urlParams.get('vip_level') || hashParams.get('vip_level');
+                const callbackUrl = urlParams.get('callback_url') || hashParams.get('callback_url');
                 
-                return { 
-                    ok: resp && resp.ok, 
-                    status: resp && resp.status, 
-                    text: resp ? await resp.text() : null 
-                };
-            } catch(e){
-                console.error('postToCallbackOrWebhook err', e);
-                return { ok:false, error:String(e) };
+                if (userId) appState.telegramUserId = userId;
+                if (balance) appState.balance = Number(balance);
+                if (vipLevel) appState.vipLevel = vipLevel.toLowerCase();
+                if (callbackUrl) appState.botCallbackUrl = callbackUrl;
+                
+            } catch (error) {
+                console.error('Error parsing URL parameters:', error);
             }
         }
 
-        async function postToBotWebhook(wrapper) {
-            return postToCallbackOrWebhook(wrapper, null);
-        }
-
-        // ==================== HANDLE INCOMING PAYLOAD ====================
-        function handleIncomingPayload(payload) {
-            if (!payload) return;
-            
-            appState.incomingPayload = payload;
-            window.__gaingrid_incoming = payload;
-            
-            const userId = payload.user_id || 
-                          (payload.user && payload.user.user_id) || 
-                          payload.userid || 
-                          payload.userId ||
-                          (payload.user && payload.user.telegramid);
-            
-            appState.telegramUserId = userId;
-            appState.botCallbackUrl = payload.callback_url || 
-                                     payload.callbackUrl || 
-                                     payload.webhook || 
-                                     payload.callbackurl;
-            
-            if (payload.balance !== undefined) {
-                appState.balance = Number(payload.balance);
-            } else if (payload.gcoin !== undefined) {
-                appState.balance = Number(payload.gcoin);
-            } else if (payload.coins !== undefined) {
-                appState.balance = Number(payload.coins);
-            }
-            
-            if (payload.vip_level) {
-                appState.vipLevel = payload.vip_level.toString().toLowerCase();
-            } else if (payload.vipLevel) {
-                appState.vipLevel = payload.vipLevel.toString().toLowerCase();
-            }
-            
-            if (payload.user) {
-                appState.user = payload.user;
-            } else {
-                appState.user = {
-                    id: userId,
-                    firstName: payload.first_name || payload.firstName || 'User',
-                    lastName: payload.last_name || payload.lastName || '',
-                    username: payload.username || (payload.user && payload.user.username) || '',
-                    photoUrl: payload.photo_url || (payload.user && payload.user.photo_url)
-                };
-            }
-            
-            if (payload.ads_viewed) {
-                appState.dailyCounters.ads = Number(payload.ads_viewed);
-            }
-            
-            if (payload.tasks_done) {
-                appState.dailyCounters.tasks = Number(payload.tasks_done);
-            }
-            
-            if (payload.start === true || payload.start === 'true' || payload.start_immediately === true) {
-                appState.autoStartRequested = true;
-            }
-            
-            setupSkipOnClose(payload);
-            updateUIFromPayload();
-            sendDashboardLoadedEvent();
-        }
-
-        function updateUIFromPayload() {
+        // ==================== UPDATE UI WITH USER DATA ====================
+        function updateUIFromUserData() {
+            // Update balance
             document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
             document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
             
+            // Update VIP badge
             updateVipBadge();
             
+            // Update profile section if user exists
             if (appState.user) {
                 const profileName = document.getElementById('profileName');
                 const profileUsername = document.getElementById('profileUsername');
                 const profileAvatar = document.getElementById('profileAvatar');
                 
                 if (profileName) {
-                    profileName.textContent = `${appState.user.firstName || ''} ${appState.user.lastName || ''}`.trim() || 'User';
+                    const fullName = `${appState.user.firstName || ''} ${appState.user.lastName || ''}`.trim();
+                    profileName.textContent = fullName || 'Telegram User';
                 }
                 
                 if (profileUsername) {
@@ -2054,14 +1993,21 @@
                 
                 if (profileAvatar) {
                     if (appState.user.photoUrl) {
-                        profileAvatar.innerHTML = `<img src="${appState.user.photoUrl}" alt="Profile">`;
+                        profileAvatar.innerHTML = `<img src="${appState.user.photoUrl}" alt="Profile" onerror="this.style.display='none'; this.parentElement.textContent='${getInitials(appState.user.firstName, appState.user.lastName)}'">`;
                     } else {
-                        const initials = (appState.user.firstName?.[0] || '') + (appState.user.lastName?.[0] || '') || 'U';
+                        const initials = getInitials(appState.user.firstName, appState.user.lastName);
                         profileAvatar.textContent = initials;
                     }
                 }
+            } else {
+                // Use Telegram ID or default
+                const profileName = document.getElementById('profileName');
+                if (profileName && appState.telegramUserId) {
+                    profileName.textContent = `User ${appState.telegramUserId.substring(0, 8)}`;
+                }
             }
             
+            // Update counters
             updateCounters();
         }
 
@@ -2069,8 +2015,13 @@
             const vipBadge = document.getElementById('vipBadge');
             if (!vipBadge) return;
             
-            vipBadge.className = `vip-badge ${appState.vipLevel}`;
+            // Remove all VIP classes
+            vipBadge.className = 'vip-badge';
             
+            // Add the current VIP level class
+            vipBadge.classList.add(appState.vipLevel);
+            
+            // Set badge text
             const badgeText = {
                 none: 'No VIP',
                 basic: 'Basic VIP',
@@ -2083,186 +2034,74 @@
             vipBadge.textContent = badgeText;
         }
 
-        // ==================== SEND EVENTS TO BOT ====================
-        async function sendDashboardLoadedEvent() {
-            const wrapper = {
-                action: 'dashboard_loaded',
-                payload: {
-                    user_id: appState.telegramUserId,
-                    balance: appState.balance,
-                    vip_level: appState.vipLevel,
-                    timestamp: new Date().toISOString(),
-                    session_id: appState.sessionId,
-                    screen: window.location.hash.replace('#', '') || 'home',
-                    user_agent: navigator.userAgent.substring(0, 100)
-                },
-                meta: {
-                    from_hosted: true,
-                    app_type: 'dashboard'
-                }
-            };
-            
-            await postToBotWebhook(wrapper);
-        }
-
-        async function sendTaskEvent(eventType, taskData) {
-            const wrapper = {
-                action: eventType,
-                payload: {
-                    user_id: appState.telegramUserId,
-                    task_id: taskData.id,
-                    task_type: taskData.platform,
-                    task_title: taskData.title,
-                    reward_amount: taskData.reward,
-                    timestamp: new Date().toISOString(),
-                    current_balance: appState.balance,
-                    vip_level: appState.vipLevel
-                },
-                meta: {
-                    from_hosted: true,
-                    app_type: 'dashboard'
-                }
-            };
-            
-            await postToBotWebhook(wrapper);
-        }
-
-        async function sendAdEvent(eventType, adData) {
-            const wrapper = {
-                action: eventType,
-                payload: {
-                    user_id: appState.telegramUserId,
-                    ad_id: adData.id,
-                    ad_title: adData.title,
-                    reward_amount: adData.reward,
-                    duration: adData.duration,
-                    timestamp: new Date().toISOString(),
-                    current_balance: appState.balance,
-                    vip_level: appState.vipLevel
-                },
-                meta: {
-                    from_hosted: true,
-                    app_type: 'dashboard'
-                }
-            };
-            
-            await postToBotWebhook(wrapper);
-        }
-
-        async function sendPostEvent(eventType, postData) {
-            const wrapper = {
-                action: eventType,
-                payload: {
-                    user_id: appState.telegramUserId,
-                    post_id: postData.id,
-                    content_preview: postData.content.substring(0, 200),
-                    link: postData.link,
-                    link_type: postData.linkType,
-                    reward_amount: postData.reward,
-                    timestamp: new Date().toISOString(),
-                    current_balance: appState.balance,
-                    vip_level: appState.vipLevel
-                },
-                meta: {
-                    from_hosted: true,
-                    app_type: 'dashboard'
-                }
-            };
-            
-            await postToBotWebhook(wrapper);
-        }
-
-        // ==================== SETUP SKIP ON CLOSE ====================
-        function setupSkipOnClose(payload) {
-            let alreadySent = false;
-            const callback = payload && (payload.callback_url || payload.callbackUrl || payload.webhook || payload.callbackurl);
-
-            function handler(e) {
-                try {
-                    if (alreadySent) return;
-                    alreadySent = true;
-                    
-                    const wrapper = {
-                        action: 'dashboard_closed',
-                        payload: {
-                            user_id: appState.telegramUserId,
-                            balance: appState.balance,
-                            vip_level: appState.vipLevel,
-                            timestamp: new Date().toISOString(),
-                            session_id: appState.sessionId,
-                            reason: 'closed'
-                        },
-                        meta: { from_hosted: true, reason: 'closed' }
-                    };
-
-                    try {
-                        const target = callback || (appState.incomingPayload && (appState.incomingPayload.callback_url || appState.incomingPayload.webhook)) || '<% options.url %>';
-                        const blob = new Blob([JSON.stringify(wrapper)], { type: 'application/json' });
-                        if (navigator && navigator.sendBeacon) navigator.sendBeacon(target, blob);
-                        else fetch(target, { 
-                            method:'POST', 
-                            headers:{'Content-Type':'application/json'}, 
-                            body:JSON.stringify(wrapper), 
-                            keepalive:true 
-                        });
-                    } catch(err){ console.warn('skip-on-close post failed', err); }
-
-                } catch(e){}
-            }
-
-            window.addEventListener('beforeunload', handler);
-            window.addEventListener('pagehide', handler);
-        }
-
         // ==================== INITIALIZATION ====================
         async function initializeApp() {
             try {
-                const incoming = parseDeeplinkPayload();
-                if (incoming) {
-                    handleIncomingPayload(incoming);
+                // Parse URL parameters first
+                parseUrlParameters();
+                
+                // Initialize Telegram Web App
+                const telegramLoaded = initializeTelegramWebApp();
+                
+                // If not in Telegram, check for demo mode or local testing
+                if (!telegramLoaded) {
+                    console.log('Not in Telegram Web App, using demo mode');
+                    setupDemoUser();
                 }
                 
-                if (window.Telegram && window.Telegram.WebApp) {
-                    appState.WebApp = window.Telegram.WebApp;
-                    appState.isTelegramWebApp = true;
-                    appState.WebApp.ready();
-                    appState.WebApp.expand();
-                    
-                    const telegramUser = appState.WebApp.initDataUnsafe.user;
-                    if (telegramUser && !appState.user) {
-                        appState.user = {
-                            id: telegramUser.id,
-                            firstName: telegramUser.first_name,
-                            lastName: telegramUser.last_name || '',
-                            username: telegramUser.username,
-                            photoUrl: telegramUser.photo_url
-                        };
-                    }
-                }
-                
+                // Load data
                 loadPlatforms();
+                await loadDemoPosts();
+                await loadTasks();
+                await loadAds();
                 
-                if (appState.posts.length === 0) {
-                    await loadDemoPosts();
-                }
-                if (appState.tasks.length === 0) {
-                    await loadTasks();
-                }
-                if (appState.ads.length === 0) {
-                    await loadAds();
-                }
-                
+                // Setup event listeners
                 setupEventListeners();
                 initPlatformAutoScroll();
                 
+                // Hide loading overlay
                 setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 500);
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                    
+                    // Show welcome message
+                    if (appState.user) {
+                        showToast(`Welcome, ${appState.user.firstName || 'User'}!`, 'success');
+                    }
+                }, 800);
                 
             } catch (error) {
                 console.error('Initialization error:', error);
                 showToast('Failed to initialize app', 'error');
+                
+                // Still hide loading overlay
+                setTimeout(() => {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }, 500);
             }
+        }
+
+        // ==================== DEMO MODE ====================
+        function setupDemoUser() {
+            // Create a demo user for testing outside Telegram
+            appState.user = {
+                id: 'demo_user_123456',
+                firstName: 'Demo',
+                lastName: 'User',
+                username: 'demo_user',
+                photoUrl: null
+            };
+            
+            appState.telegramUserId = 'demo_user_123456';
+            appState.balance = 15000;
+            appState.vipLevel = 'gold';
+            
+            updateUIFromUserData();
         }
 
         // ==================== LOAD DEMO POSTS ====================
@@ -2331,6 +2170,16 @@
                     reward: 3500,
                     link: getRandomSmartLink(),
                     completed: false
+                },
+                {
+                    id: 't3',
+                    platform: 'instagram',
+                    title: 'Follow Instagram Account',
+                    description: 'Follow account and like 3 posts.',
+                    duration: 120,
+                    reward: 4000,
+                    link: getRandomSmartLink(),
+                    completed: false
                 }
             ];
             
@@ -2340,7 +2189,7 @@
 
         async function loadAds() {
             appState.ads = [];
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 8; i++) {
                 appState.ads.push({
                     id: `ad${i + 1}`,
                     title: getRandomAdTitle(),
@@ -2348,7 +2197,7 @@
                     reward: Math.floor(Math.random() * 61) + 60,
                     source: getRandomAdSource(),
                     link: getRandomSmartLink(),
-                    watched: i < 5
+                    watched: i < 2
                 });
             }
             updateAds();
@@ -2624,10 +2473,9 @@
             updateTaskCounter();
             updateAdsCounter();
             
-            document.getElementById('statTotalEarned').textContent = 
-                localStorage.getItem('gaingrid_total_earned') || '0';
-            document.getElementById('statTasksDone').textContent = 
-                appState.dailyCounters.tasks.toString();
+            const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0');
+            document.getElementById('statTotalEarned').textContent = totalEarned.toLocaleString();
+            document.getElementById('statTasksDone').textContent = appState.dailyCounters.tasks.toString();
         }
 
         function updateTaskCounter() {
@@ -2643,7 +2491,7 @@
         // ==================== TASK FUNCTIONS ====================
         function generateRandomTasks() {
             appState.randomTasks = [];
-            const taskCount = Math.min(10, 20 - appState.tasks.length);
+            const taskCount = Math.min(5, 20 - appState.tasks.length);
             
             for (let i = 0; i < taskCount; i++) {
                 appState.randomTasks.push({
@@ -2698,8 +2546,6 @@
             
             appState.currentTask = task;
             
-            await sendTaskEvent('task_started', task);
-            
             openBrowserModal();
             document.getElementById('browserUrl').textContent = task.link;
             document.getElementById('browserIframe').src = task.link;
@@ -2732,14 +2578,6 @@
                 updateTasks();
                 updateCounters();
                 
-                await sendTaskEvent('task_completed', {
-                    ...data,
-                    base_reward: baseReward,
-                    vip_bonus: vipBonus,
-                    total_reward: totalReward,
-                    new_balance: appState.balance
-                });
-                
                 closeBrowserModal();
                 showToast(`Task completed! +${totalReward.toLocaleString()} G-Coins`, 'success');
                 
@@ -2761,24 +2599,6 @@
             
             appState.currentAd = ad;
             
-            await sendAdEvent('ad_started', ad);
-            
-            if (typeof show_10274566 === 'function') {
-                try {
-                    show_10274566('pop').then(async () => {
-                        await completeAd(ad);
-                    }).catch((error) => {
-                        openAdFallback(ad);
-                    });
-                } catch (error) {
-                    openAdFallback(ad);
-                }
-            } else {
-                openAdFallback(ad);
-            }
-        }
-
-        function openAdFallback(ad) {
             openBrowserModal();
             document.getElementById('browserUrl').textContent = ad.link;
             document.getElementById('browserIframe').src = ad.link;
@@ -2807,18 +2627,7 @@
                 updateAds();
                 updateCounters();
                 
-                await sendAdEvent('ad_completed', {
-                    ...data,
-                    base_reward: baseReward,
-                    vip_bonus: vipBonus,
-                    total_reward: totalReward,
-                    new_balance: appState.balance
-                });
-                
-                if (document.getElementById('browserModal').classList.contains('active')) {
-                    closeBrowserModal();
-                }
-                
+                closeBrowserModal();
                 showToast(`Ad watched! +${totalReward} G-Coins`, 'success');
                 
             } catch (error) {
@@ -2911,8 +2720,6 @@
                 
                 appState.posts.unshift(newPost);
                 updateFeed();
-                
-                await sendPostEvent('post_created', newPost);
                 
                 closeComposer();
                 showToast('Post created successfully!', 'success');
@@ -3007,23 +2814,6 @@
             }
             
             window.location.hash = screenName;
-            
-            sendScreenChangeEvent(screenName);
-        }
-
-        async function sendScreenChangeEvent(screenName) {
-            const wrapper = {
-                action: 'screen_changed',
-                payload: {
-                    user_id: appState.telegramUserId,
-                    screen: screenName,
-                    timestamp: new Date().toISOString(),
-                    session_id: appState.sessionId
-                },
-                meta: { from_hosted: true }
-            };
-            
-            await postToBotWebhook(wrapper);
         }
 
         // ==================== UTILITY FUNCTIONS ====================
@@ -3441,19 +3231,6 @@
             
             button.classList.toggle('liked');
             button.querySelector('span').textContent = post.likes;
-            
-            const wrapper = {
-                action: 'post_liked',
-                payload: {
-                    user_id: appState.telegramUserId,
-                    post_id: postId,
-                    liked: !wasLiked,
-                    timestamp: new Date().toISOString()
-                },
-                meta: { from_hosted: true }
-            };
-            
-            await postToBotWebhook(wrapper);
         }
 
         async function handleTaskAction(postId, link, type, reward) {
@@ -3468,20 +3245,6 @@
                 platform: 'website',
                 reward: reward
             });
-            
-            const wrapper = {
-                action: 'post_action_started',
-                payload: {
-                    user_id: appState.telegramUserId,
-                    post_id: postId,
-                    action: type,
-                    reward: reward,
-                    timestamp: new Date().toISOString()
-                },
-                meta: { from_hosted: true }
-            };
-            
-            await postToBotWebhook(wrapper);
         }
 
         function toggleComments(postId) {
@@ -3523,19 +3286,6 @@
             }
             
             input.value = '';
-            
-            const wrapper = {
-                action: 'comment_added',
-                payload: {
-                    user_id: appState.telegramUserId,
-                    post_id: postId,
-                    comment: text,
-                    timestamp: new Date().toISOString()
-                },
-                meta: { from_hosted: true }
-            };
-            
-            await postToBotWebhook(wrapper);
         }
 
         function viewUserProfile(userId) {
@@ -3565,18 +3315,9 @@
         function initializeMonetagAds() {
             if (typeof monetag !== 'undefined') {
                 try {
-                    show_10274566({ 
-                        type: 'inApp', 
-                        inAppSettings: { 
-                            frequency: 2, 
-                            capping: 0.1, 
-                            interval: 30, 
-                            timeout: 5, 
-                            everyPage: false 
-                        } 
-                    });
+                    monetag('start');
                 } catch (error) {
-                    console.log('Monetag interstitial setup error:', error);
+                    console.log('Monetag setup error:', error);
                 }
             }
         }
@@ -3600,7 +3341,7 @@
         window.showToast = showToast;
         window.submitPost = submitPost;
 
-        // Start initialization
+        // Start initialization when DOM is loaded
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
