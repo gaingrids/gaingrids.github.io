@@ -522,7 +522,7 @@
         }
 
         .task-card.completed::before {
-            content: '✓ COMPLETED';
+            content: 'COMPLETED';
             position: absolute;
             top: 10px;
             right: 10px;
@@ -1583,7 +1583,7 @@
                         </button>
                         <button class="menu-item" id="settingsBtn">
                             <span>Settings</span>
-                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org2000/svg">
+                            <svg class="menu-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M8 16L14 10L8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                             </svg>
                         </button>
@@ -1752,10 +1752,7 @@
             user: null,
             balance: 0,
             vipLevel: 'none',
-            dailyCounters: {
-                tasks: 0,
-                ads: 0
-            },
+            dailyCounters: { tasks: 0, ads: 0 },
             posts: [],
             tasks: [],
             ads: [],
@@ -1767,16 +1764,22 @@
             timerInterval: null,
             isTelegramWebApp: false,
             WebApp: null,
-            lastScrollPosition: 0
+            lastScrollPosition: 0,
+            // BOT COMMUNICATION STATE
+            botWebhook: null,
+            botCallbackUrl: null,
+            botUserId: null,
+            sessionId: Date.now().toString(),
+            lastPayloadHash: null,
+            pendingEvents: [],
+            // SMARTLINKS
+            SMART_LINKS: [
+                'https://otieu.com/4/10176113',
+                'https://otieu.com/4/10176184',
+                'https://otieu.com/4/10176114',
+                'https://otieu.com/4/10176185'
+            ]
         };
-
-        // ==================== SMART LINKS ====================
-        const SMART_LINKS = [
-            'https://otieu.com/4/10176113',
-            'https://otieu.com/4/10176184',
-            'https://otieu.com/4/10176114',
-            'https://otieu.com/4/10176185'
-        ];
 
         // ==================== PLATFORM CONFIG ====================
         const PLATFORMS = [
@@ -1794,197 +1797,556 @@
         // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                // Initialize Telegram WebApp
-                await initializeTelegram();
+                // STEP 1: Parse incoming payload from Telegram bot
+                await parseIncomingPayload();
                 
-                // Parse URL parameters
-                await parseURLParameters();
+                // STEP 2: Initialize Telegram WebApp
+                initializeTelegramWebApp();
                 
-                // Load initial data
+                // STEP 3: Load initial data (platforms, demo posts, tasks, ads)
                 await loadInitialData();
                 
-                // Setup event listeners
-                setupEventListeners();
+                // STEP 4: Setup all event listeners
+                setupAllEventListeners();
                 
-                // Initialize auto-scroll for platforms
+                // STEP 5: Initialize platform auto-scroll
                 initPlatformAutoScroll();
                 
-                // Hide loading overlay
+                // STEP 6: Hide loading overlay
                 setTimeout(() => {
                     document.getElementById('loadingOverlay').classList.add('hidden');
                 }, 500);
                 
+                // STEP 7: Send "app_loaded" event to bot
+                await sendToBot('app_loaded', {
+                    screen: getCurrentScreen(),
+                    session_id: appState.sessionId,
+                    platform: navigator.platform,
+                    user_agent: navigator.userAgent.substring(0, 100)
+                });
+                
             } catch (error) {
                 console.error('Initialization error:', error);
-                showToast('Failed to initialize app', 'error');
+                showToast('Failed to initialize application', 'error');
+                document.getElementById('loadingOverlay').classList.add('hidden');
             }
         });
 
-        // ==================== TELEGRAM INITIALIZATION ====================
-        async function initializeTelegram() {
+        // ==================== PAYLOAD PARSING & BOT COMMUNICATION ====================
+        async function parseIncomingPayload() {
             try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    appState.WebApp = window.Telegram.WebApp;
-                    appState.isTelegramWebApp = true;
-                    appState.WebApp.ready();
-                    appState.WebApp.expand();
-                    
-                    // Get user data from Telegram
-                    const telegramUser = appState.WebApp.initDataUnsafe.user;
-                    if (telegramUser) {
-                        appState.user = {
-                            id: telegramUser.id,
-                            firstName: telegramUser.first_name,
-                            lastName: telegramUser.last_name || '',
-                            username: telegramUser.username,
-                            photoUrl: telegramUser.photo_url
-                        };
-                        
-                        // Update UI with Telegram user data
-                        updateUserInfo();
+                console.log('🔍 Parsing incoming payload...');
+                
+                // Method 1: Check URL parameters (Telegram WebApp style)
+                const urlParams = new URLSearchParams(window.location.search);
+                const payloadParam = urlParams.get('payload') || urlParams.get('data') || urlParams.get('start');
+                
+                // Method 2: Check hash parameters
+                const hashParams = window.location.hash ? new URLSearchParams(window.location.hash.replace('#', '')) : null;
+                const hashPayload = hashParams ? hashParams.get('payload') : null;
+                
+                // Method 3: Check localStorage for previous session
+                const savedSession = localStorage.getItem('gaingrid_session');
+                
+                let payload = null;
+                
+                // Try to parse payload from URL
+                if (payloadParam) {
+                    payload = await decodePayload(payloadParam);
+                } else if (hashPayload) {
+                    payload = await decodePayload(hashPayload);
+                }
+                
+                // If no URL payload, check saved session
+                if (!payload && savedSession) {
+                    try {
+                        const saved = JSON.parse(savedSession);
+                        payload = saved.lastPayload;
+                        console.log('📂 Using saved session:', saved.userId);
+                    } catch (e) {
+                        console.warn('Failed to parse saved session:', e);
+                    }
+                }
+                
+                // If we have payload, process it
+                if (payload) {
+                    await handleBotPayload(payload);
+                } else {
+                    console.log('⚠️ No payload found, using demo mode');
+                    setupDemoUser();
+                }
+                
+            } catch (error) {
+                console.error('Payload parsing error:', error);
+                setupDemoUser();
+            }
+        }
+
+        async function decodePayload(payloadString) {
+            try {
+                // Try Base64 decode
+                try {
+                    const decoded = atob(payloadString);
+                    const parsed = JSON.parse(decoded);
+                    return parsed;
+                } catch (e1) {
+                    // Try URL decode then JSON
+                    try {
+                        const urlDecoded = decodeURIComponent(payloadString);
+                        const parsed = JSON.parse(urlDecoded);
+                        return parsed;
+                    } catch (e2) {
+                        // Try direct JSON
+                        try {
+                            const parsed = JSON.parse(payloadString);
+                            return parsed;
+                        } catch (e3) {
+                            console.warn('All decode attempts failed:', e3);
+                            return null;
+                        }
                     }
                 }
             } catch (error) {
-                console.error('Telegram initialization error:', error);
+                console.error('Decode error:', error);
+                return null;
             }
         }
 
-        // ==================== URL PARSING ====================
-        async function parseURLParameters() {
+        async function handleBotPayload(payload) {
             try {
-                // Check for payload in URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const payload = urlParams.get('payload');
+                console.log('🤖 Processing bot payload:', payload);
                 
-                if (payload) {
-                    await handlePayload(payload);
+                // Calculate payload hash for continuity check
+                const payloadHash = JSON.stringify(payload);
+                
+                // Check if this is same as last payload
+                if (appState.lastPayloadHash === payloadHash) {
+                    console.log('🔄 Same payload detected, continuing session');
+                } else {
+                    console.log('🆕 New payload detected, resetting session');
+                    appState.lastPayloadHash = payloadHash;
                 }
                 
-                // Check for hash navigation
-                const hash = window.location.hash.replace('#', '');
-                if (hash && hash !== 'iframe') {
-                    switchScreen(hash);
-                } else if (hash === 'iframe') {
-                    // Direct iframe call from bot
-                    openBrowserModal();
-                    startDirectAd();
+                // Extract bot communication endpoints
+                appState.botWebhook = payload.webhook || payload.callback_url || payload.callbackUrl || null;
+                appState.botCallbackUrl = payload.callback_url || payload.webhook || null;
+                appState.botUserId = payload.user_id || payload.userId || payload.user?.id || null;
+                
+                // Extract user balance (G-coin balance from bot)
+                if (payload.balance !== undefined) {
+                    appState.balance = Number(payload.balance);
+                    console.log('💰 Updated balance from bot:', appState.balance);
+                }
+                
+                // Extract VIP level
+                if (payload.vip_level || payload.vipLevel) {
+                    appState.vipLevel = (payload.vip_level || payload.vipLevel || 'none').toString().toLowerCase();
+                    console.log('👑 Updated VIP level:', appState.vipLevel);
+                }
+                
+                // Extract user info
+                if (payload.user) {
+                    appState.user = { ...appState.user, ...payload.user };
+                } else if (payload.first_name || payload.username) {
+                    appState.user = {
+                        id: appState.botUserId || 'unknown',
+                        firstName: payload.first_name || 'User',
+                        lastName: payload.last_name || '',
+                        username: payload.username || `user_${Date.now()}`
+                    };
+                }
+                
+                // Extract tasks if provided
+                if (payload.tasks && Array.isArray(payload.tasks)) {
+                    appState.tasks = payload.tasks.map(task => ({
+                        ...task,
+                        completed: task.completed || false,
+                        link: task.link || getRandomSmartLink()
+                    }));
+                }
+                
+                // Extract posts if provided
+                if (payload.posts && Array.isArray(payload.posts)) {
+                    appState.posts = payload.posts;
+                }
+                
+                // Save session for continuity
+                saveSessionToStorage();
+                
+                // Update UI immediately
+                updateUIFromState();
+                
+                // Send acknowledgment back to bot
+                if (appState.botWebhook) {
+                    setTimeout(() => {
+                        sendToBot('payload_received', {
+                            user_id: appState.botUserId,
+                            balance: appState.balance,
+                            vip_level: appState.vipLevel,
+                            session_id: appState.sessionId
+                        });
+                    }, 1000);
                 }
                 
             } catch (error) {
-                console.error('URL parsing error:', error);
+                console.error('Bot payload handling error:', error);
             }
         }
 
-        // ==================== PAYLOAD HANDLING ====================
-        async function handlePayload(payload) {
+        function saveSessionToStorage() {
             try {
-                // Decode Base64 payload
-                const decoded = atob(payload);
-                const data = JSON.parse(decoded);
-                
-                console.log('Received payload:', data);
-                
-                // Update app state with payload data
-                if (data.user) {
-                    appState.user = { ...appState.user, ...data.user };
-                }
-                
-                if (data.balance !== undefined) {
-                    appState.balance = data.balance;
-                    document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
-                }
-                
-                if (data.vipLevel) {
-                    appState.vipLevel = data.vipLevel;
-                    updateVipBadge();
-                }
-                
-                if (data.posts) {
-                    appState.posts = data.posts;
-                    updateFeed();
-                }
-                
-                if (data.tasks) {
-                    appState.tasks = data.tasks;
-                    updateTasks();
-                }
-                
-                if (data.ads) {
-                    appState.ads = data.ads;
-                    updateAds();
-                }
-                
-                // Update UI
-                updateUserInfo();
-                
+                const sessionData = {
+                    userId: appState.botUserId,
+                    balance: appState.balance,
+                    vipLevel: appState.vipLevel,
+                    user: appState.user,
+                    lastPayloadHash: appState.lastPayloadHash,
+                    timestamp: Date.now(),
+                    sessionId: appState.sessionId
+                };
+                localStorage.setItem('gaingrid_session', JSON.stringify(sessionData));
             } catch (error) {
-                console.error('Payload handling error:', error);
+                console.warn('Failed to save session:', error);
             }
         }
 
-        // ==================== SEND DATA TO BOT ====================
-        async function sendToBot(eventType, data = {}) {
+        function setupDemoUser() {
+            appState.user = {
+                id: 'demo_user_' + Date.now(),
+                firstName: 'Demo',
+                lastName: 'User',
+                username: 'demo_user'
+            };
+            appState.balance = 50000;
+            appState.vipLevel = 'gold';
+            updateUIFromState();
+        }
+
+        // ==================== BOT COMMUNICATION FUNCTIONS ====================
+        async function sendToBot(eventType, eventData = {}) {
             try {
-                // Prepare payload
+                // If no webhook configured, queue event
+                if (!appState.botWebhook) {
+                    appState.pendingEvents.push({
+                        type: eventType,
+                        data: eventData,
+                        timestamp: Date.now()
+                    });
+                    console.log('📭 No webhook, queued event:', eventType);
+                    return false;
+                }
+                
+                // Prepare payload for bot
                 const payload = {
                     event: eventType,
-                    userId: appState.user?.id || 'unknown',
+                    user_id: appState.botUserId || appState.user?.id || 'unknown',
                     timestamp: new Date().toISOString(),
-                    vipLevel: appState.vipLevel,
-                    balance: appState.balance,
-                    ...data
+                    session_id: appState.sessionId,
+                    data: {
+                        ...eventData,
+                        current_balance: appState.balance,
+                        current_vip: appState.vipLevel,
+                        screen: getCurrentScreen()
+                    }
                 };
                 
-                console.log('Sending to bot:', payload);
+                console.log('📤 Sending to bot webhook:', payload);
                 
-                // In Bots.Business, we don't use fetch, we use their callback system
-                // The bot will listen for onWebhook events
+                // Try fetch with keepalive for reliability
+                try {
+                    const response = await fetch(appState.botWebhook, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Session-ID': appState.sessionId,
+                            'X-User-ID': appState.botUserId || 'unknown'
+                        },
+                        body: JSON.stringify(payload),
+                        keepalive: true
+                    }).catch(fetchError => {
+                        console.warn('Fetch failed, trying beacon:', fetchError);
+                        return null;
+                    });
+                    
+                    if (response && response.ok) {
+                        console.log('✅ Bot response received');
+                        return true;
+                    }
+                } catch (fetchError) {
+                    console.warn('Fetch error:', fetchError);
+                }
                 
-                // Show success message
-                showToast('Data sent to bot successfully', 'success');
+                // Fallback to Beacon API
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                    const beaconSent = navigator.sendBeacon(appState.botWebhook, blob);
+                    console.log('📡 Beacon sent:', beaconSent);
+                    return beaconSent;
+                }
                 
-                return true;
+                return false;
                 
             } catch (error) {
-                console.error('Error sending to bot:', error);
-                showToast('Failed to send data to bot', 'error');
+                console.error('❌ Error sending to bot:', error);
+                appState.pendingEvents.push({
+                    type: eventType,
+                    data: eventData,
+                    timestamp: Date.now()
+                });
                 return false;
             }
         }
 
-        // ==================== LOAD INITIAL DATA ====================
+        function sendPendingEvents() {
+            if (appState.pendingEvents.length === 0 || !appState.botWebhook) return;
+            
+            const events = [...appState.pendingEvents];
+            appState.pendingEvents = [];
+            
+            events.forEach(event => {
+                setTimeout(() => {
+                    sendToBot(event.type, event.data);
+                }, 100);
+            });
+        }
+
+        // ==================== TELEGRAM WEBAPP ====================
+        function initializeTelegramWebApp() {
+            try {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    appState.WebApp = window.Telegram.WebApp;
+                    appState.isTelegramWebApp = true;
+                    
+                    // Expand to full height
+                    appState.WebApp.expand();
+                    
+                    // Set background color
+                    appState.WebApp.setBackgroundColor('#0F0F14');
+                    
+                    // Get Telegram user data
+                    const tgUser = appState.WebApp.initDataUnsafe?.user;
+                    if (tgUser) {
+                        appState.user = {
+                            id: tgUser.id.toString(),
+                            firstName: tgUser.first_name,
+                            lastName: tgUser.last_name || '',
+                            username: tgUser.username,
+                            photoUrl: tgUser.photo_url
+                        };
+                        
+                        // If no bot user ID, use Telegram ID
+                        if (!appState.botUserId) {
+                            appState.botUserId = tgUser.id.toString();
+                        }
+                        
+                        updateUIFromState();
+                    }
+                    
+                    // Ready the WebApp
+                    appState.WebApp.ready();
+                    
+                    console.log('✅ Telegram WebApp initialized');
+                }
+            } catch (error) {
+                console.warn('Telegram WebApp init error:', error);
+            }
+        }
+
+        // ==================== UI UPDATE FUNCTIONS ====================
+        function updateUIFromState() {
+            // Update balance display
+            updateBalanceDisplay();
+            
+            // Update VIP badge
+            updateVipBadge();
+            
+            // Update user info
+            updateUserInfo();
+            
+            // Update counters
+            updateAllCounters();
+        }
+
+        function updateBalanceDisplay() {
+            const balanceText = document.getElementById('balanceText');
+            const statGcoins = document.getElementById('statGcoins');
+            
+            const formattedBalance = appState.balance.toLocaleString();
+            
+            if (balanceText) {
+                balanceText.textContent = formattedBalance;
+            }
+            if (statGcoins) {
+                statGcoins.textContent = formattedBalance;
+            }
+        }
+
+        function updateVipBadge() {
+            const vipBadge = document.getElementById('vipBadge');
+            if (!vipBadge) return;
+            
+            // Reset classes
+            vipBadge.className = 'vip-badge';
+            
+            // Add level class
+            vipBadge.classList.add(appState.vipLevel);
+            
+            // Set text
+            const levelNames = {
+                none: 'No VIP',
+                basic: 'Basic VIP',
+                silver: 'Silver VIP',
+                gold: 'Gold VIP',
+                premium: 'Premium VIP'
+            };
+            
+            vipBadge.textContent = levelNames[appState.vipLevel] || 'No VIP';
+            
+            // Update colors
+            const colors = {
+                none: { bg: 'rgba(255,255,255,0.1)', text: '#9AA0A6' },
+                basic: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8b5cf6' },
+                silver: { bg: 'rgba(156, 163, 175, 0.2)', text: '#9ca3af' },
+                gold: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b' },
+                premium: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444' }
+            };
+            
+            const color = colors[appState.vipLevel] || colors.none;
+            vipBadge.style.background = color.bg;
+            vipBadge.style.color = color.text;
+        }
+
+        function updateUserInfo() {
+            if (!appState.user) return;
+            
+            const profileName = document.getElementById('profileName');
+            const profileUsername = document.getElementById('profileUsername');
+            const profileAvatar = document.getElementById('profileAvatar');
+            
+            if (profileName) {
+                const fullName = `${appState.user.firstName || ''} ${appState.user.lastName || ''}`.trim();
+                profileName.textContent = fullName || 'User';
+            }
+            
+            if (profileUsername) {
+                profileUsername.textContent = appState.user.username ? `@${appState.user.username}` : '@username';
+            }
+            
+            if (profileAvatar) {
+                if (appState.user.photoUrl) {
+                    profileAvatar.innerHTML = `<img src="${appState.user.photoUrl}" alt="Profile">`;
+                } else {
+                    const initials = (appState.user.firstName?.[0] || 'U') + (appState.user.lastName?.[0] || '');
+                    profileAvatar.textContent = initials;
+                }
+            }
+        }
+
+        function updateAllCounters() {
+            // Task counter
+            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
+            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
+            
+            // Ads counter
+            const watchedAds = appState.ads.filter(a => a.watched).length;
+            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
+            
+            // Profile stats
+            document.getElementById('statTotalEarned').textContent = calculateTotalEarned().toLocaleString();
+            document.getElementById('statTasksDone').textContent = appState.dailyCounters.tasks.toString();
+        }
+
+        function calculateTotalEarned() {
+            // This would normally come from bot or local history
+            const savedTotal = localStorage.getItem('gaingrid_total_earned');
+            return savedTotal ? parseInt(savedTotal) : appState.balance * 2;
+        }
+
+        // ==================== DATA LOADING ====================
         async function loadInitialData() {
             try {
                 // Load platforms
                 loadPlatforms();
                 
-                // Load demo posts
-                await loadDemoPosts();
+                // Load demo posts if no posts from bot
+                if (appState.posts.length === 0) {
+                    await loadDemoPosts();
+                }
                 
-                // Load tasks
-                await loadTasks();
+                // Load tasks if no tasks from bot
+                if (appState.tasks.length === 0) {
+                    await loadTasks();
+                }
                 
                 // Load ads
                 await loadAds();
                 
-                // Update counters
-                updateCounters();
+                // Update UI
+                updateFeed();
+                updateTasks();
+                updateAds();
                 
             } catch (error) {
                 console.error('Data loading error:', error);
             }
         }
 
-        // ==================== LOAD DEMO POSTS ====================
+        function loadPlatforms() {
+            const platformGrid = document.getElementById('platformGrid');
+            if (!platformGrid) return;
+            
+            platformGrid.innerHTML = '';
+            
+            PLATFORMS.forEach(platform => {
+                const platformElement = createPlatformElement(platform);
+                platformGrid.appendChild(platformElement);
+                
+                // Add duplicate for seamless scrolling
+                const duplicate = createPlatformElement(platform);
+                platformGrid.appendChild(duplicate);
+            });
+        }
+
+        function createPlatformElement(platform) {
+            const div = document.createElement('div');
+            div.className = `platform-card ${platform.id}`;
+            div.onclick = () => filterTasksByPlatform(platform.id);
+            
+            let svgIcon = '';
+            
+            switch (platform.id) {
+                case 'youtube':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>';
+                    break;
+                case 'telegram':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>';
+                    break;
+                case 'instagram':
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+                    break;
+                default:
+                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+            }
+            
+            div.innerHTML = `
+                <div class="platform-icon" style="color: ${platform.color}">
+                    ${svgIcon}
+                </div>
+                <div class="platform-name">${platform.name}</div>
+                <div class="platform-count">${getRandomCount()} tasks</div>
+            `;
+            
+            return div;
+        }
+
         async function loadDemoPosts() {
-            // Demo posts with images
             appState.posts = [
                 {
                     id: '1',
                     userId: '123456',
                     username: 'johndoe',
                     userAvatar: 'JD',
-                    content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available! 🚀',
+                    content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available!',
                     media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/join',
                     linkType: 'join',
@@ -2003,7 +2365,7 @@
                     userId: '789012',
                     username: 'sarahkim',
                     userAvatar: 'SK',
-                    content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes! 📋',
+                    content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes!',
                     media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/survey',
                     linkType: 'visit',
@@ -2021,7 +2383,7 @@
                     userId: '345678',
                     username: 'mikepeters',
                     userAvatar: 'MP',
-                    content: 'Watch this short video and get rewarded! No sign-up required. Just watch and earn! 🎥',
+                    content: 'Watch this short video and get rewarded! No sign-up required. Just watch and earn!',
                     media: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
                     link: 'https://example.com/watch',
                     linkType: 'watch',
@@ -2033,13 +2395,9 @@
                     userHasLiked: false
                 }
             ];
-            
-            updateFeed();
         }
 
-        // ==================== LOAD TASKS ====================
         async function loadTasks() {
-            // Demo tasks
             appState.tasks = [
                 {
                     id: 't1',
@@ -2073,94 +2431,44 @@
                 }
             ];
             
-            // Generate random tasks
             generateRandomTasks();
-            
-            updateTasks();
         }
 
-        // ==================== LOAD ADS ====================
         async function loadAds() {
-            // Generate 20 random ads for the day
             appState.ads = [];
             for (let i = 0; i < 20; i++) {
                 appState.ads.push({
                     id: `ad${i + 1}`,
                     title: getRandomAdTitle(),
-                    duration: Math.floor(Math.random() * 30) + 30, // 30-60 seconds
-                    reward: Math.floor(Math.random() * 61) + 60, // 60-120 coins
+                    duration: Math.floor(Math.random() * 30) + 30,
+                    reward: Math.floor(Math.random() * 61) + 60,
                     source: getRandomAdSource(),
                     link: getRandomSmartLink(),
-                    watched: i < 5 // Mark first 5 as watched for demo
+                    watched: i < 5
                 });
             }
-            
-            updateAds();
         }
 
-        // ==================== UPDATE UI FUNCTIONS ====================
-        function updateUserInfo() {
-            const user = appState.user;
-            if (!user) return;
-            
-            const profileName = document.getElementById('profileName');
-            const profileUsername = document.getElementById('profileUsername');
-            const profileAvatar = document.getElementById('profileAvatar');
-            
-            if (profileName) {
-                profileName.textContent = `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
-            }
-            
-            if (profileUsername) {
-                profileUsername.textContent = user.username ? `@${user.username}` : '@username';
-            }
-            
-            if (profileAvatar) {
-                if (user.photoUrl) {
-                    profileAvatar.innerHTML = `<img src="${user.photoUrl}" alt="Profile">`;
-                } else {
-                    const initials = (user.firstName?.[0] || '') + (user.lastName?.[0] || '') || 'U';
-                    profileAvatar.textContent = initials;
-                }
-            }
-        }
-
-        function updateVipBadge() {
-            const vipBadge = document.getElementById('vipBadge');
-            if (!vipBadge) return;
-            
-            vipBadge.className = `vip-badge ${appState.vipLevel}`;
-            
-            const badgeText = {
-                none: 'No VIP',
-                basic: 'Basic VIP',
-                silver: 'Silver VIP',
-                gold: 'Gold VIP',
-                premium: 'Premium VIP'
-            }[appState.vipLevel] || 'No VIP';
-            
-            vipBadge.textContent = badgeText;
-        }
-
+        // ==================== UI RENDERING ====================
         function updateFeed() {
             const feedContainer = document.getElementById('feedContainer');
             if (!feedContainer) return;
             
             feedContainer.innerHTML = '';
             
-            appState.posts.forEach(post => {
-                const postElement = createPostElement(post);
-                feedContainer.appendChild(postElement);
-            });
-            
-            // If no posts, show message
             if (appState.posts.length === 0) {
                 feedContainer.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
                         No posts yet. Be the first to create a post!
                     </div>
                 `;
+                return;
             }
+            
+            appState.posts.forEach(post => {
+                const postElement = createPostElement(post);
+                feedContainer.appendChild(postElement);
+            });
         }
 
         function createPostElement(post) {
@@ -2189,7 +2497,7 @@
                 <div class="post-content">${post.content}</div>
                 ${mediaHtml}
                 <div class="earnings-bar">
-                    <span class="earnings-label">💰 Earn up to ${post.reward.toLocaleString()} G-coins</span>
+                    <span class="earnings-label">Earn up to ${post.reward.toLocaleString()} G-coins</span>
                 </div>
                 <div class="post-actions">
                     <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
@@ -2237,62 +2545,12 @@
             return div;
         }
 
-        function loadPlatforms() {
-            const platformGrid = document.getElementById('platformGrid');
-            if (!platformGrid) return;
-            
-            platformGrid.innerHTML = '';
-            
-            PLATFORMS.forEach(platform => {
-                const platformElement = createPlatformElement(platform);
-                platformGrid.appendChild(platformElement);
-                
-                // Add duplicate for seamless scrolling
-                const platformElement2 = createPlatformElement(platform);
-                platformGrid.appendChild(platformElement2);
-            });
-        }
-
-        function createPlatformElement(platform) {
-            const div = document.createElement('div');
-            div.className = `platform-card ${platform.id}`;
-            div.onclick = () => filterTasksByPlatform(platform.id);
-            
-            let svgIcon = '';
-            
-            // Platform-specific SVG icons
-            switch (platform.id) {
-                case 'youtube':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/></svg>';
-                    break;
-                case 'telegram':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>';
-                    break;
-                case 'instagram':
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
-                    break;
-                default:
-                    svgIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
-            }
-            
-            div.innerHTML = `
-                <div class="platform-icon" style="color: ${platform.color}">
-                    ${svgIcon}
-                </div>
-                <div class="platform-name">${platform.name}</div>
-                <div class="platform-count">${getRandomCount()} tasks</div>
-            `;
-            
-            return div;
-        }
-
         function updateTasks() {
             const taskList = document.getElementById('taskList');
             if (!taskList) return;
             
             taskList.innerHTML = '';
             
-            // Combine regular tasks and random tasks
             const allTasks = [...appState.tasks, ...appState.randomTasks];
             
             if (allTasks.length === 0) {
@@ -2308,8 +2566,6 @@
                 const taskElement = createTaskElement(task);
                 taskList.appendChild(taskElement);
             });
-            
-            updateTaskCounter();
         }
 
         function createTaskElement(task) {
@@ -2322,7 +2578,6 @@
             div.innerHTML = `
                 <div class="task-header">
                     <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;">
-                        <!-- Platform icon will be added via CSS -->
                     </div>
                     <div class="task-info">
                         <h3 class="task-title">${task.title}</h3>
@@ -2368,8 +2623,6 @@
                 const adElement = createAdElement(ad);
                 watchGrid.appendChild(adElement);
             });
-            
-            updateAdsCounter();
         }
 
         function createAdElement(ad) {
@@ -2404,7 +2657,7 @@
                     <h3 class="video-title">${ad.title}</h3>
                     <div class="video-meta">
                         ${ad.watched ? `
-                            <span class="collected-badge">✓ Collected</span>
+                            <span class="collected-badge">Collected</span>
                         ` : `
                             <span>Watch 0:${ad.duration.toString().padStart(2, '0')} · Earn</span>
                         `}
@@ -2414,26 +2667,6 @@
             `;
             
             return div;
-        }
-
-        function updateCounters() {
-            updateTaskCounter();
-            updateAdsCounter();
-            
-            // Update profile stats
-            document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
-            document.getElementById('statTotalEarned').textContent = '0'; // Would be calculated from history
-            document.getElementById('statTasksDone').textContent = appState.dailyCounters.tasks.toString();
-        }
-
-        function updateTaskCounter() {
-            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
-            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
-        }
-
-        function updateAdsCounter() {
-            const watchedAds = appState.ads.filter(a => a.watched).length;
-            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
         }
 
         // ==================== TASK FUNCTIONS ====================
@@ -2447,8 +2680,8 @@
                     platform: 'website',
                     title: getRandomTaskTitle(),
                     description: getRandomTaskDescription(),
-                    duration: Math.floor(Math.random() * 120) + 60, // 60-180 seconds
-                    reward: Math.floor(Math.random() * 201) + 100, // 100-300 coins
+                    duration: Math.floor(Math.random() * 120) + 60,
+                    reward: Math.floor(Math.random() * 201) + 100,
                     link: getRandomSmartLink(),
                     completed: false,
                     isRandom: true
@@ -2481,7 +2714,7 @@
             });
         }
 
-        function startTask(taskId) {
+        async function startTask(taskId) {
             const allTasks = [...appState.tasks, ...appState.randomTasks];
             const task = allTasks.find(t => t.id === taskId);
             
@@ -2493,29 +2726,28 @@
             }
             
             appState.currentTask = task;
-            openBrowserModal();
             
-            // First show smartlink
+            // Send event to bot
+            await sendToBot('task_started', {
+                task_id: task.id,
+                task_type: task.platform,
+                reward_amount: task.reward,
+                task_title: task.title
+            });
+            
+            openBrowserModal();
             document.getElementById('browserUrl').textContent = task.link;
             document.getElementById('browserIframe').src = task.link;
             
-            // Start timer
             startTimer(task.duration, 'task', task);
-            
-            // Send to bot
-            sendToBot('task_started', {
-                taskId: task.id,
-                platform: task.platform,
-                reward: task.reward
-            });
         }
 
         async function completeTask(data) {
             try {
                 // Find and mark task as completed
-                let task = appState.tasks.find(t => t.id === data.taskId);
+                let task = appState.tasks.find(t => t.id === data.id);
                 if (!task) {
-                    task = appState.randomTasks.find(t => t.id === data.taskId);
+                    task = appState.randomTasks.find(t => t.id === data.id);
                 }
                 
                 if (task) {
@@ -2532,21 +2764,28 @@
                 
                 // Update balance
                 appState.balance += totalReward;
-                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+                updateBalanceDisplay();
+                
+                // Save total earned
+                const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
+                localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
                 
                 // Update UI
                 updateTasks();
-                updateCounters();
+                updateAllCounters();
                 
-                // Send to bot
+                // Send completion event to bot
                 await sendToBot('task_completed', {
-                    taskId: data.taskId,
-                    platform: data.platform,
-                    baseReward: baseReward,
-                    vipBonus: vipBonus,
-                    totalReward: totalReward,
-                    newBalance: appState.balance
+                    task_id: data.id,
+                    base_reward: baseReward,
+                    vip_bonus: vipBonus,
+                    total_reward: totalReward,
+                    new_balance: appState.balance,
+                    task_type: data.platform
                 });
+                
+                // Save session
+                saveSessionToStorage();
                 
                 // Close modal and show success
                 closeBrowserModal();
@@ -2559,7 +2798,7 @@
         }
 
         // ==================== AD FUNCTIONS ====================
-        function watchAd(adId) {
+        async function watchAd(adId) {
             const ad = appState.ads.find(a => a.id === adId);
             if (!ad || ad.watched) return;
             
@@ -2570,12 +2809,19 @@
             
             appState.currentAd = ad;
             
+            // Send start event to bot
+            await sendToBot('ad_started', {
+                ad_id: ad.id,
+                ad_title: ad.title,
+                reward_amount: ad.reward,
+                duration: ad.duration
+            });
+            
             // Try Monetag ad first
             if (typeof show_10274566 === 'function') {
                 try {
-                    show_10274566('pop').then(() => {
-                        // User watched the ad
-                        completeAd(ad);
+                    show_10274566('pop').then(async () => {
+                        await completeAd(ad);
                     }).catch((error) => {
                         console.log('Monetag ad failed, using fallback:', error);
                         openAdFallback(ad);
@@ -2590,12 +2836,8 @@
 
         function openAdFallback(ad) {
             openBrowserModal();
-            
-            // Use smartlink
             document.getElementById('browserUrl').textContent = ad.link;
             document.getElementById('browserIframe').src = ad.link;
-            
-            // Start timer
             startTimer(ad.duration, 'ad', ad);
         }
 
@@ -2617,20 +2859,28 @@
                 
                 // Update balance
                 appState.balance += totalReward;
-                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+                updateBalanceDisplay();
+                
+                // Save total earned
+                const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
+                localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
                 
                 // Update UI
                 updateAds();
-                updateCounters();
+                updateAllCounters();
                 
-                // Send to bot
-                await sendToBot('ad_watched', {
-                    adId: data.id,
-                    baseReward: baseReward,
-                    vipBonus: vipBonus,
-                    totalReward: totalReward,
-                    newBalance: appState.balance
+                // Send completion event to bot
+                await sendToBot('ad_completed', {
+                    ad_id: data.id,
+                    base_reward: baseReward,
+                    vip_bonus: vipBonus,
+                    total_reward: totalReward,
+                    new_balance: appState.balance,
+                    ad_title: data.title
                 });
+                
+                // Save session
+                saveSessionToStorage();
                 
                 // Close modal if open
                 if (document.getElementById('browserModal').classList.contains('active')) {
@@ -2646,29 +2896,22 @@
         }
 
         function cleanupWatched() {
-            // Remove watched ads
             appState.ads = appState.ads.filter(ad => !ad.watched);
-            
-            // Remove completed tasks
             appState.tasks = appState.tasks.filter(task => !task.completed);
             appState.randomTasks = appState.randomTasks.filter(task => !task.completed);
             
-            // Update UI
             updateAds();
             updateTasks();
-            
             showToast('Cleaned up completed items', 'success');
         }
 
         // ==================== POST FUNCTIONS ====================
         function openComposer() {
-            // Check VIP level
             if (!['gold', 'premium', 'silver'].includes(appState.vipLevel)) {
                 showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
                 return;
             }
             
-            // Check balance
             if (appState.balance < 10000) {
                 showToast('Minimum 10,000 G-Coins required to create a post', 'error');
                 return;
@@ -2697,7 +2940,6 @@
                 const linkType = document.getElementById('postLinkType').value;
                 const reward = parseInt(document.getElementById('postReward').value);
                 
-                // Validation
                 if (reward < 10000) {
                     throw new Error('Minimum reward is 10,000 G-Coins');
                 }
@@ -2706,14 +2948,18 @@
                     throw new Error('Insufficient balance');
                 }
                 
+                // Deduct balance for post creation
+                appState.balance -= reward;
+                updateBalanceDisplay();
+                
                 // Create post object
                 const newPost = {
                     id: Date.now().toString(),
-                    userId: appState.user?.id || 'unknown',
+                    userId: appState.botUserId || appState.user?.id || 'unknown',
                     username: appState.user?.username || 'user',
                     userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
                     content: content,
-                    media: null, // Would be set if media uploaded
+                    media: null,
                     link: link,
                     linkType: linkType,
                     reward: reward,
@@ -2724,20 +2970,25 @@
                     userHasLiked: false
                 };
                 
-                // Send to bot for processing
-                await sendToBot('post_created', {
-                    post: newPost,
-                    vipLevel: appState.vipLevel,
-                    balanceBefore: appState.balance
-                });
-                
                 // Add to feed
                 appState.posts.unshift(newPost);
                 updateFeed();
                 
+                // Send event to bot
+                await sendToBot('post_created', {
+                    post_id: newPost.id,
+                    content_preview: content.substring(0, 100),
+                    link: link,
+                    link_type: linkType,
+                    reward_amount: reward,
+                    new_balance: appState.balance
+                });
+                
+                // Save session
+                saveSessionToStorage();
+                
                 // Close modal
                 closeComposer();
-                
                 showToast('Post created successfully!', 'success');
                 
             } catch (error) {
@@ -2757,19 +3008,16 @@
             document.getElementById('browserModal').classList.remove('active');
             document.getElementById('browserIframe').src = '';
             
-            // Clear timer
             if (appState.timerInterval) {
                 clearInterval(appState.timerInterval);
                 appState.timerInterval = null;
             }
             
-            // Reset timer UI
             document.getElementById('timerDisplay').textContent = '00:00';
             document.getElementById('timerProgressBar').style.width = '0%';
         }
 
         function startDirectAd() {
-            // Called when bot opens iframe directly
             const ad = {
                 id: 'direct-ad',
                 title: 'Special Offer',
@@ -2777,7 +3025,6 @@
                 reward: 100,
                 source: 'GridGain'
             };
-            
             startTimer(ad.duration, 'ad', ad);
         }
 
@@ -2788,18 +3035,13 @@
             const progressBar = document.getElementById('timerProgressBar');
             const timerLabel = document.getElementById('timerLabel');
             
-            // Show appropriate label
             timerLabel.textContent = type === 'task' 
                 ? 'Complete the task to earn rewards' 
                 : 'Watch the ad to earn rewards';
             
-            // Show timer overlay
             document.getElementById('timerOverlay').style.display = 'flex';
-            
-            // Update display immediately
             updateTimerDisplay();
             
-            // Start interval
             appState.timerInterval = setInterval(() => {
                 remaining--;
                 updateTimerDisplay();
@@ -2808,7 +3050,6 @@
                     clearInterval(appState.timerInterval);
                     appState.timerInterval = null;
                     
-                    // Handle completion
                     if (type === 'task') {
                         completeTask(data);
                     } else if (type === 'ad') {
@@ -2829,23 +3070,19 @@
 
         // ==================== SCREEN NAVIGATION ====================
         function switchScreen(screenName) {
-            // Hide all screens
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.remove('active');
             });
             
-            // Remove active from all nav items
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             
-            // Show selected screen
             const screen = document.getElementById(`${screenName}Screen`);
             if (screen) {
                 screen.classList.add('active');
             }
             
-            // Update active nav item
             const navItem = Array.from(document.querySelectorAll('.nav-item')).find(item => 
                 item.textContent.includes(screenName.charAt(0).toUpperCase() + screenName.slice(1).replace('Screen', ''))
             );
@@ -2854,13 +3091,23 @@
                 navItem.classList.add('active');
             }
             
-            // Update URL hash
             window.location.hash = screenName;
+            
+            // Send screen change event to bot
+            sendToBot('screen_changed', {
+                screen: screenName,
+                timestamp: Date.now()
+            });
+        }
+
+        function getCurrentScreen() {
+            const activeScreen = document.querySelector('.screen.active');
+            return activeScreen ? activeScreen.id.replace('Screen', '') : 'gridhome';
         }
 
         // ==================== UTILITY FUNCTIONS ====================
         function getRandomSmartLink() {
-            return SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
+            return appState.SMART_LINKS[Math.floor(Math.random() * appState.SMART_LINKS.length)];
         }
 
         function getRandomAdTitle() {
@@ -2978,7 +3225,6 @@
             
             container.appendChild(toast);
             
-            // Auto remove after 5 seconds
             setTimeout(() => {
                 if (toast.parentNode) {
                     toast.remove();
@@ -2987,7 +3233,7 @@
         }
 
         // ==================== EVENT LISTENERS ====================
-        function setupEventListeners() {
+        function setupAllEventListeners() {
             // FAB scroll behavior
             const mainContent = document.getElementById('mainContent');
             const fab = document.getElementById('fabPost');
@@ -2997,10 +3243,8 @@
                     const currentScroll = mainContent.scrollTop;
                     
                     if (currentScroll > appState.lastScrollPosition && currentScroll > 100) {
-                        // Scrolling down
                         fab.classList.add('hidden');
                     } else {
-                        // Scrolling up
                         fab.classList.remove('hidden');
                     }
                     
@@ -3127,7 +3371,46 @@
                     switchScreen(hash);
                 }
             });
+            
+            // Send pending events every 10 seconds
+            setInterval(sendPendingEvents, 10000);
         }
+
+        // ==================== PLATFORM AUTO SCROLL ====================
+        function initPlatformAutoScroll() {
+            const platformGrid = document.getElementById('platformGrid');
+            if (!platformGrid) return;
+            
+            const platformCards = platformGrid.querySelectorAll('.platform-card');
+            const totalWidth = Array.from(platformCards).reduce((sum, card) => sum + card.offsetWidth + 16, 0);
+            platformGrid.style.width = `${totalWidth * 2}px`;
+            
+            platformGrid.addEventListener('animationiteration', () => {
+                platformGrid.style.transform = 'translateX(0)';
+            });
+        }
+
+        // ==================== MONETAG AD INTEGRATION ====================
+        function initializeMonetagAds() {
+            if (typeof monetag !== 'undefined') {
+                try {
+                    show_10274566({ 
+                        type: 'inApp', 
+                        inAppSettings: { 
+                            frequency: 2, 
+                            capping: 0.1, 
+                            interval: 30, 
+                            timeout: 5, 
+                            everyPage: false 
+                        } 
+                    });
+                } catch (error) {
+                    console.log('Monetag interstitial setup error:', error);
+                }
+            }
+        }
+
+        window.addEventListener('load', initializeMonetagAds);
 
         // ==================== PROFILE FUNCTIONS ====================
         function showProfileSection(section) {
@@ -3149,7 +3432,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">User ID</label>
-                            <input type="text" class="form-input" value="${appState.user?.id || ''}" readonly>
+                            <input type="text" class="form-input" value="${appState.botUserId || ''}" readonly>
                         </div>
                         <div class="form-group">
                             <label class="form-label">VIP Level</label>
@@ -3194,7 +3477,7 @@
                     
                 case 'referrals':
                     title.textContent = 'Referrals';
-                    const refLink = `https://t.me/GridGain_Bot?start=${appState.user?.id || 'ref'}`;
+                    const refLink = `https://t.me/GridGain_Bot?start=${appState.botUserId || 'ref'}`;
                     sectionContent = `
                         <div class="form-group">
                             <label class="form-label">Your Referral Link</label>
@@ -3247,7 +3530,6 @@
         }
 
         function openHelpSupport() {
-            // Open Telegram bot help command
             if (appState.WebApp) {
                 appState.WebApp.openTelegramLink('https://t.me/GridGain_Bot?start=help');
             } else {
@@ -3265,7 +3547,7 @@
         }
 
         // ==================== INTERACTION FUNCTIONS ====================
-        function handleLike(postId, button) {
+        async function handleLike(postId, button) {
             const post = appState.posts.find(p => p.id === postId);
             if (!post) return;
             
@@ -3273,25 +3555,22 @@
             post.userHasLiked = !wasLiked;
             post.likes += wasLiked ? -1 : 1;
             
-            // Update UI
             button.classList.toggle('liked');
             button.querySelector('span').textContent = post.likes;
             
-            // Send to bot
-            sendToBot('post_liked', {
-                postId: postId,
-                liked: !wasLiked
+            await sendToBot('post_liked', {
+                post_id: postId,
+                liked: !wasLiked,
+                new_like_count: post.likes
             });
         }
 
-        function handleTaskAction(postId, link, type, reward) {
+        async function handleTaskAction(postId, link, type, reward) {
             openBrowserModal();
             
-            // Set URL
             document.getElementById('browserUrl').textContent = link;
             document.getElementById('browserIframe').src = link;
             
-            // Start timer
             const duration = type === 'watch' ? 90 : 60;
             startTimer(duration, 'task', {
                 postId: postId,
@@ -3299,9 +3578,8 @@
                 reward: reward
             });
             
-            // Send to bot
-            sendToBot('action_started', {
-                postId: postId,
+            await sendToBot('action_started', {
+                post_id: postId,
                 action: type,
                 reward: reward
             });
@@ -3314,7 +3592,7 @@
             }
         }
 
-        function sendComment(postId) {
+        async function sendComment(postId) {
             const input = document.getElementById(`comment-input-${postId}`);
             if (!input) return;
             
@@ -3324,15 +3602,13 @@
             const post = appState.posts.find(p => p.id === postId);
             if (!post) return;
             
-            // Add comment
             post.comments.push({
                 id: Date.now().toString(),
-                userId: appState.user?.id || 'user',
+                userId: appState.botUserId || 'user',
                 username: appState.user?.username || 'You',
                 text: text
             });
             
-            // Update UI
             const commentsContainer = document.getElementById(`comments-container-${postId}`);
             if (commentsContainer) {
                 const commentDiv = document.createElement('div');
@@ -3347,18 +3623,15 @@
                 commentsContainer.appendChild(commentDiv);
             }
             
-            // Clear input
             input.value = '';
             
-            // Send to bot
-            sendToBot('comment_added', {
-                postId: postId,
+            await sendToBot('comment_added', {
+                post_id: postId,
                 comment: text
             });
         }
 
         function viewUserProfile(userId) {
-            // Navigate to profile screen and show user profile
             switchScreen('profile');
             showToast('User profile view coming soon!', 'info');
         }
@@ -3366,52 +3639,6 @@
         function viewTaskDetails(taskId) {
             showToast('Task details coming soon!', 'info');
         }
-
-        // ==================== PLATFORM AUTO SCROLL ====================
-        function initPlatformAutoScroll() {
-            const platformGrid = document.getElementById('platformGrid');
-            if (!platformGrid) return;
-            
-            // Set grid width for seamless scrolling
-            const platformCards = platformGrid.querySelectorAll('.platform-card');
-            const totalWidth = Array.from(platformCards).reduce((sum, card) => sum + card.offsetWidth + 16, 0);
-            platformGrid.style.width = `${totalWidth * 2}px`;
-            
-            // Reset animation when it completes
-            platformGrid.addEventListener('animationiteration', () => {
-                platformGrid.style.transform = 'translateX(0)';
-            });
-        }
-
-        // ==================== MONETAG AD INTEGRATION ====================
-        function initializeMonetagAds() {
-            if (typeof monetag !== 'undefined') {
-                // In-app interstitial ads
-                try {
-                    show_10274566({ 
-                        type: 'inApp', 
-                        inAppSettings: { 
-                            frequency: 2, 
-                            capping: 0.1, 
-                            interval: 30, 
-                            timeout: 5, 
-                            everyPage: false 
-                        } 
-                    });
-                } catch (error) {
-                    console.log('Monetag interstitial setup error:', error);
-                }
-                
-                // Rewarded ads setup
-                if (typeof show_10274566 === 'function') {
-                    // This will be called when user triggers rewarded ad
-                    console.log('Monetag rewarded ads ready');
-                }
-            }
-        }
-
-        // Initialize Monetag when page loads
-        window.addEventListener('load', initializeMonetagAds);
 
         // ==================== EXPORT FUNCTIONS ====================
         window.switchScreen = switchScreen;
