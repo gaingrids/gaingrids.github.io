@@ -1457,36 +1457,9 @@
         .transaction-amount.spend {
             color: #e74c3c;
         }
-        
-        .video-advertiser {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 8px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
-        .watched-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.5);
-        }
-        
-        .loading-text {
-            color: var(--electric-blue);
-            font-weight: 600;
-            margin-top: 16px;
-            animation: pulse 1.5s infinite;
-        }
     </style>
     
+    <!-- Monetag Ad SDK -->
     <script>
         (function(m,o,n,e,t,a,g){
             m['MonetagObject']=t;m[t]=m[t]||function(){
@@ -1499,14 +1472,18 @@
     </script>
 </head>
 <body>
+    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Loading GainGrid</div>
+        <div class="loading-text">Loading GainGrid...</div>
     </div>
 
+    <!-- Toast Container -->
     <div id="toastContainer"></div>
 
+    <!-- Main App -->
     <div class="app-container">
+        <!-- Header -->
         <header class="app-header">
             <div class="logo-section">
                 <div class="logo-icon">
@@ -1534,11 +1511,16 @@
             </div>
         </header>
 
+        <!-- Main Content -->
         <main class="main-content" id="mainContent">
+            <!-- GridHome Screen -->
             <section class="screen active" id="gridhomeScreen">
-                <div class="feed-container" id="feedContainer"></div>
+                <div class="feed-container" id="feedContainer">
+                    <!-- Posts loaded dynamically -->
+                </div>
             </section>
 
+            <!-- Task Board Screen -->
             <section class="screen" id="tasksScreen">
                 <div class="task-board-header">
                     <div class="task-counter">
@@ -1553,13 +1535,20 @@
                     </button>
                 </div>
 
+                <!-- Platform Grid -->
                 <div class="platform-grid-container">
-                    <div class="platform-grid auto-scroll" id="platformGrid"></div>
+                    <div class="platform-grid auto-scroll" id="platformGrid">
+                        <!-- Platforms loaded dynamically -->
+                    </div>
                 </div>
 
-                <div class="task-list" id="taskList"></div>
+                <!-- Task List -->
+                <div class="task-list" id="taskList">
+                    <!-- Tasks loaded dynamically -->
+                </div>
             </section>
 
+            <!-- Watch & Earn Screen -->
             <section class="screen" id="watchScreen">
                 <div class="watch-header">
                     <div class="daily-limit">
@@ -1577,16 +1566,21 @@
                     </button>
                 </div>
 
-                <div class="watch-grid" id="watchGrid"></div>
+                <div class="watch-grid" id="watchGrid">
+                    <!-- Ads loaded dynamically -->
+                </div>
             </section>
 
+            <!-- Profile Screen -->
             <section class="screen" id="profileScreen">
                 <div class="profile-section">
                     <div class="profile-header">
-                        <div class="profile-avatar" id="profileAvatar"></div>
-                        <h2 class="profile-name" id="profileName">Loading</h2>
+                        <div class="profile-avatar" id="profileAvatar">
+                            <!-- Avatar loaded dynamically -->
+                        </div>
+                        <h2 class="profile-name" id="profileName">Loading...</h2>
                         <p class="profile-username" id="profileUsername">@username</p>
-                        <div class="vip-badge none" id="vipBadge">No VIP</div>
+                        <div class="vip-badge gold" id="vipBadge">VIP Level</div>
                     </div>
 
                     <div class="profile-stats">
@@ -1640,28 +1634,29 @@
             </section>
         </main>
 
+        <!-- Bottom Navigation -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="window.switchScreen('gridhome')">
+            <button class="nav-item active" onclick="switchScreen('gridhome')">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <span>GridHome</span>
             </button>
-            <button class="nav-item" onclick="window.switchScreen('tasks')">
+            <button class="nav-item" onclick="switchScreen('tasks')">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9 11L12 14L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <span>Tasks</span>
             </button>
-            <button class="nav-item" onclick="window.switchScreen('watch')">
+            <button class="nav-item" onclick="switchScreen('watch')">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5 3L19 12L5 21V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <span>Watch</span>
             </button>
-            <button class="nav-item" onclick="window.switchScreen('profile')">
+            <button class="nav-item" onclick="switchScreen('profile')">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                     <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -1670,24 +1665,27 @@
             </button>
         </nav>
 
-        <button class="fab" id="fabPost" onclick="window.openComposer()">
+        <!-- Floating Action Button (Post) -->
+        <button class="fab" id="fabPost" onclick="openComposer()">
             <svg class="fab-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 20H21" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                 <path d="M16.5 3.49998C16.8978 3.10216 17.4374 2.87866 18 2.87866C18.2786 2.87866 18.5544 2.93353 18.8118 3.04014C19.0692 3.14674 19.303 3.303 19.5 3.49998C19.697 3.69697 19.8532 3.93082 19.9598 4.18819C20.0665 4.44556 20.1213 4.72141 20.1213 4.99998C20.1213 5.27856 20.0665 5.55441 19.9598 5.81178C19.8532 6.06915 19.697 6.303 19.5 6.49998L7 19L3 20L4 16L16.5 3.49998Z" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </button>
 
+        <!-- Modals -->
+        <!-- Composer Modal -->
         <div class="modal-overlay" id="composerModal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">Create Post</h2>
-                    <button class="close-btn" onclick="window.closeComposer()">
+                    <button class="close-btn" onclick="closeComposer()">
                         <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
-                <form class="composer-form" id="postForm" onsubmit="window.submitPost(event)">
+                <form class="composer-form" id="postForm" onsubmit="submitPost(event)">
                     <div class="form-group">
                         <label class="form-label" for="postContent">Post Content</label>
                         <textarea class="form-textarea" id="postContent" placeholder="What do you want to share? Use # for hashtags and @ for mentions" required></textarea>
@@ -1727,7 +1725,7 @@
                             </svg>
                             <div class="file-drop-text">Drag & drop photos/videos or click to upload</div>
                             <div class="file-drop-hint">Max size: 10MB</div>
-                            <input type="file" id="mediaInput" accept="image/*,video/*,image/gif" multiple style="display: none;">
+                            <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display: none;">
                         </div>
                         <div class="media-preview" id="mediaPreview"></div>
                     </div>
@@ -1737,6 +1735,7 @@
             </div>
         </div>
 
+        <!-- Browser Modal -->
         <div class="modal-overlay" id="browserModal">
             <div class="browser-frame">
                 <div class="browser-header">
@@ -1746,7 +1745,7 @@
                         <div class="browser-dot"></div>
                     </div>
                     <div class="browser-url" id="browserUrl">https://gaingrid.com</div>
-                    <button class="close-btn" onclick="window.closeBrowserModal()">
+                    <button class="close-btn" onclick="closeBrowserModal()">
                         <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
@@ -1765,28 +1764,34 @@
             </div>
         </div>
 
+        <!-- Profile Section Modal -->
         <div class="modal-overlay" id="profileSectionModal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title" id="profileSectionTitle">Profile Section</h2>
-                    <button class="close-btn" onclick="window.closeProfileSection()">
+                    <button class="close-btn" onclick="closeProfileSection()">
                         <svg class="close-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
-                <div class="modal-body" id="profileSectionContent"></div>
+                <div class="modal-body" id="profileSectionContent">
+                    <!-- Content loaded dynamically -->
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // ==================== GLOBAL STATE & CONSTANTS ====================
+        // ==================== GLOBAL STATE ====================
         const appState = {
             user: null,
             balance: 0,
             vipLevel: 'none',
-            dailyCounters: { tasks: 0, ads: 0 },
+            dailyCounters: {
+                tasks: 0,
+                ads: 0
+            },
             posts: [],
             tasks: [],
             ads: [],
@@ -1794,18 +1799,20 @@
             platforms: [],
             currentTask: null,
             currentAd: null,
+            currentPostId: null,
             timerInterval: null,
+            isTelegramWebApp: false,
             WebApp: null,
             lastScrollPosition: 0,
-            
-            // Bot communication properties
             incomingPayload: null,
             telegramUserId: null,
             botCallbackUrl: null,
+            autoStartRequested: false,
             sessionId: Date.now().toString(),
-            isInitialized: false
+            lastEventTime: 0
         };
 
+        // ==================== CONSTANTS ====================
         const SMART_LINKS = [
             'https://otieu.com/4/10176113',
             'https://otieu.com/4/10176184',
@@ -1825,13 +1832,13 @@
             { id: 'website', name: 'Website', color: '#4AA3FF' }
         ];
 
-        // ==================== PAYLOAD PARSING (SPIN & WIN PATTERN) ====================
+        // ==================== PAYLOAD PARSING (EXACT SPIN & WIN PATTERN) ====================
         function parseDeeplinkPayload() {
             try {
                 const qs = new URLSearchParams(location.search || '');
                 const candidates = [];
 
-                ['start', 'data', 's', 'p', 'payload'].forEach(k => { 
+                ['payload', 'data', 'start', 's', 'p'].forEach(k => { 
                     const v = qs.get(k); 
                     if (v) candidates.push(v); 
                 });
@@ -1841,17 +1848,13 @@
                     if (rawHash.includes('?')) {
                         const hashQs = rawHash.split('?').slice(1).join('?');
                         const hparams = new URLSearchParams(hashQs);
-                        ['start', 'data', 's', 'p', 'payload'].forEach(k => { 
+                        ['payload', 'data', 'start', 's', 'p'].forEach(k => { 
                             const v = hparams.get(k); 
                             if (v) candidates.push(v); 
                         });
                     } else {
                         candidates.push(rawHash);
                     }
-                }
-
-                if (location.search && location.search.length > 1) {
-                    candidates.push(location.search.replace(/^\?/, ''));
                 }
 
                 for (const c of candidates) {
@@ -1930,7 +1933,7 @@
             return null;
         }
 
-        // ==================== BOT COMMUNICATION ====================
+        // ==================== BOT COMMUNICATION (EXACT SPIN & WIN PATTERN) ====================
         async function postToCallbackOrWebhook(wrapper, callbackUrlCandidate) {
             try {
                 const candidate = callbackUrlCandidate || 
@@ -1967,21 +1970,6 @@
             return postToCallbackOrWebhook(wrapper, null);
         }
 
-        async function sendToBot(action, data = {}) {
-            const wrapper = {
-                action: action,
-                payload: {
-                    user_id: appState.telegramUserId,
-                    timestamp: new Date().toISOString(),
-                    session_id: appState.sessionId,
-                    ...data
-                },
-                meta: { from_hosted: true, app_type: 'dashboard' }
-            };
-            
-            return await postToBotWebhook(wrapper);
-        }
-
         // ==================== HANDLE INCOMING PAYLOAD ====================
         function handleIncomingPayload(payload) {
             if (!payload) return;
@@ -1989,7 +1977,6 @@
             appState.incomingPayload = payload;
             window.__gaingrid_incoming = payload;
             
-            // Extract user_id from payload
             const userId = payload.user_id || 
                           (payload.user && payload.user.user_id) || 
                           payload.userid || 
@@ -2002,7 +1989,6 @@
                                      payload.webhook || 
                                      payload.callbackurl;
             
-            // Map bot properties to app state
             if (payload.balance !== undefined) {
                 appState.balance = Number(payload.balance);
             } else if (payload.gcoin !== undefined) {
@@ -2011,19 +1997,21 @@
                 appState.balance = Number(payload.coins);
             }
             
-            if (payload.vip_level || payload.vipLevel) {
-                appState.vipLevel = (payload.vip_level || payload.vipLevel || 'none').toString().toLowerCase();
+            if (payload.vip_level) {
+                appState.vipLevel = payload.vip_level.toString().toLowerCase();
+            } else if (payload.vipLevel) {
+                appState.vipLevel = payload.vipLevel.toString().toLowerCase();
             }
             
             if (payload.user) {
                 appState.user = payload.user;
-            } else if (payload.first_name || payload.username) {
+            } else {
                 appState.user = {
                     id: userId,
-                    firstName: payload.first_name || 'User',
-                    lastName: payload.last_name || '',
-                    username: payload.username || '',
-                    photoUrl: payload.photo_url
+                    firstName: payload.first_name || payload.firstName || 'User',
+                    lastName: payload.last_name || payload.lastName || '',
+                    username: payload.username || (payload.user && payload.user.username) || '',
+                    photoUrl: payload.photo_url || (payload.user && payload.user.photo_url)
                 };
             }
             
@@ -2035,23 +2023,15 @@
                 appState.dailyCounters.tasks = Number(payload.tasks_done);
             }
             
-            if (payload.posts && Array.isArray(payload.posts)) {
-                appState.posts = payload.posts;
+            if (payload.start === true || payload.start === 'true' || payload.start_immediately === true) {
+                appState.autoStartRequested = true;
             }
             
-            if (payload.tasks && Array.isArray(payload.tasks)) {
-                appState.tasks = payload.tasks;
-            }
-            
+            setupSkipOnClose(payload);
             updateUIFromPayload();
-            sendToBot('dashboard_loaded', {
-                balance: appState.balance,
-                vip_level: appState.vipLevel,
-                screen: window.location.hash.replace('#', '') || 'gridhome'
-            });
+            sendDashboardLoadedEvent();
         }
 
-        // ==================== UI UPDATE FUNCTIONS ====================
         function updateUIFromPayload() {
             document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
             document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
@@ -2096,30 +2076,142 @@
                 basic: 'Basic VIP',
                 silver: 'Silver VIP',
                 gold: 'Gold VIP',
-                premium: 'Premium VIP'
+                premium: 'Premium VIP',
+                free: 'Free VIP'
             }[appState.vipLevel] || 'No VIP';
             
             vipBadge.textContent = badgeText;
         }
 
-        function updateCounters() {
-            updateTaskCounter();
-            updateAdsCounter();
+        // ==================== SEND EVENTS TO BOT ====================
+        async function sendDashboardLoadedEvent() {
+            const wrapper = {
+                action: 'dashboard_loaded',
+                payload: {
+                    user_id: appState.telegramUserId,
+                    balance: appState.balance,
+                    vip_level: appState.vipLevel,
+                    timestamp: new Date().toISOString(),
+                    session_id: appState.sessionId,
+                    screen: window.location.hash.replace('#', '') || 'home',
+                    user_agent: navigator.userAgent.substring(0, 100)
+                },
+                meta: {
+                    from_hosted: true,
+                    app_type: 'dashboard'
+                }
+            };
             
-            document.getElementById('statTotalEarned').textContent = 
-                localStorage.getItem('gaingrid_total_earned') || '0';
-            document.getElementById('statTasksDone').textContent = 
-                appState.dailyCounters.tasks.toString();
+            await postToBotWebhook(wrapper);
         }
 
-        function updateTaskCounter() {
-            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
-            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
+        async function sendTaskEvent(eventType, taskData) {
+            const wrapper = {
+                action: eventType,
+                payload: {
+                    user_id: appState.telegramUserId,
+                    task_id: taskData.id,
+                    task_type: taskData.platform,
+                    task_title: taskData.title,
+                    reward_amount: taskData.reward,
+                    timestamp: new Date().toISOString(),
+                    current_balance: appState.balance,
+                    vip_level: appState.vipLevel
+                },
+                meta: {
+                    from_hosted: true,
+                    app_type: 'dashboard'
+                }
+            };
+            
+            await postToBotWebhook(wrapper);
         }
 
-        function updateAdsCounter() {
-            const watchedAds = appState.ads.filter(a => a.watched).length;
-            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
+        async function sendAdEvent(eventType, adData) {
+            const wrapper = {
+                action: eventType,
+                payload: {
+                    user_id: appState.telegramUserId,
+                    ad_id: adData.id,
+                    ad_title: adData.title,
+                    reward_amount: adData.reward,
+                    duration: adData.duration,
+                    timestamp: new Date().toISOString(),
+                    current_balance: appState.balance,
+                    vip_level: appState.vipLevel
+                },
+                meta: {
+                    from_hosted: true,
+                    app_type: 'dashboard'
+                }
+            };
+            
+            await postToBotWebhook(wrapper);
+        }
+
+        async function sendPostEvent(eventType, postData) {
+            const wrapper = {
+                action: eventType,
+                payload: {
+                    user_id: appState.telegramUserId,
+                    post_id: postData.id,
+                    content_preview: postData.content.substring(0, 200),
+                    link: postData.link,
+                    link_type: postData.linkType,
+                    reward_amount: postData.reward,
+                    timestamp: new Date().toISOString(),
+                    current_balance: appState.balance,
+                    vip_level: appState.vipLevel
+                },
+                meta: {
+                    from_hosted: true,
+                    app_type: 'dashboard'
+                }
+            };
+            
+            await postToBotWebhook(wrapper);
+        }
+
+        // ==================== SETUP SKIP ON CLOSE ====================
+        function setupSkipOnClose(payload) {
+            let alreadySent = false;
+            const callback = payload && (payload.callback_url || payload.callbackUrl || payload.webhook || payload.callbackurl);
+
+            function handler(e) {
+                try {
+                    if (alreadySent) return;
+                    alreadySent = true;
+                    
+                    const wrapper = {
+                        action: 'dashboard_closed',
+                        payload: {
+                            user_id: appState.telegramUserId,
+                            balance: appState.balance,
+                            vip_level: appState.vipLevel,
+                            timestamp: new Date().toISOString(),
+                            session_id: appState.sessionId,
+                            reason: 'closed'
+                        },
+                        meta: { from_hosted: true, reason: 'closed' }
+                    };
+
+                    try {
+                        const target = callback || (appState.incomingPayload && (appState.incomingPayload.callback_url || appState.incomingPayload.webhook)) || '<% options.url %>';
+                        const blob = new Blob([JSON.stringify(wrapper)], { type: 'application/json' });
+                        if (navigator && navigator.sendBeacon) navigator.sendBeacon(target, blob);
+                        else fetch(target, { 
+                            method:'POST', 
+                            headers:{'Content-Type':'application/json'}, 
+                            body:JSON.stringify(wrapper), 
+                            keepalive:true 
+                        });
+                    } catch(err){ console.warn('skip-on-close post failed', err); }
+
+                } catch(e){}
+            }
+
+            window.addEventListener('beforeunload', handler);
+            window.addEventListener('pagehide', handler);
         }
 
         // ==================== INITIALIZATION ====================
@@ -2132,6 +2224,7 @@
                 
                 if (window.Telegram && window.Telegram.WebApp) {
                     appState.WebApp = window.Telegram.WebApp;
+                    appState.isTelegramWebApp = true;
                     appState.WebApp.ready();
                     appState.WebApp.expand();
                     
@@ -2150,18 +2243,15 @@
                 loadPlatforms();
                 
                 if (appState.posts.length === 0) {
-                    loadDemoPosts();
+                    await loadDemoPosts();
                 }
                 if (appState.tasks.length === 0) {
-                    loadTasks();
+                    await loadTasks();
                 }
                 if (appState.ads.length === 0) {
-                    loadAds();
+                    await loadAds();
                 }
                 
-                updateFeed();
-                updateTasks();
-                updateAds();
                 setupEventListeners();
                 initPlatformAutoScroll();
                 
@@ -2169,19 +2259,14 @@
                     document.getElementById('loadingOverlay').classList.add('hidden');
                 }, 500);
                 
-                appState.isInitialized = true;
-                
             } catch (error) {
                 console.error('Initialization error:', error);
                 showToast('Failed to initialize app', 'error');
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 1000);
             }
         }
 
-        // ==================== DATA LOADING ====================
-        function loadDemoPosts() {
+        // ==================== LOAD DEMO POSTS ====================
+        async function loadDemoPosts() {
             appState.posts = [
                 {
                     id: '1',
@@ -2221,9 +2306,11 @@
                     userHasLiked: true
                 }
             ];
+            
+            updateFeed();
         }
 
-        function loadTasks() {
+        async function loadTasks() {
             appState.tasks = [
                 {
                     id: 't1',
@@ -2248,9 +2335,10 @@
             ];
             
             generateRandomTasks();
+            updateTasks();
         }
 
-        function loadAds() {
+        async function loadAds() {
             appState.ads = [];
             for (let i = 0; i < 20; i++) {
                 appState.ads.push({
@@ -2263,9 +2351,10 @@
                     watched: i < 5
                 });
             }
+            updateAds();
         }
 
-        // ==================== UI RENDERING ====================
+        // ==================== UI UPDATE FUNCTIONS ====================
         function updateFeed() {
             const feedContainer = document.getElementById('feedContainer');
             if (!feedContainer) return;
@@ -2300,7 +2389,7 @@
             const actionText = getActionText(post.linkType);
             
             div.innerHTML = `
-                <div class="post-header" onclick="window.viewUserProfile('${post.userId}')">
+                <div class="post-header" onclick="viewUserProfile('${post.userId}')">
                     <div class="avatar">
                         ${post.userAvatar}
                     </div>
@@ -2315,7 +2404,7 @@
                     <span class="earnings-label">Earn up to ${post.reward.toLocaleString()} G-coins</span>
                 </div>
                 <div class="post-actions">
-                    <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="window.handleLike('${post.id}', this)">
+                    <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
                         <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
                                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
@@ -2323,14 +2412,14 @@
                         </svg>
                         <span>${post.likes}</span>
                     </button>
-                    <button class="action-btn" onclick="window.handleTaskAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
+                    <button class="action-btn" onclick="handleTaskAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
                         <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
                                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <span>${actionText}</span>
                     </button>
-                    <button class="action-btn" onclick="window.toggleComments('${post.id}')">
+                    <button class="action-btn" onclick="toggleComments('${post.id}')">
                         <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
                                   stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2352,7 +2441,7 @@
                     </div>
                     <div class="comment-input-container">
                         <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
-                        <button class="send-comment-btn" onclick="window.sendComment('${post.id}')">Send</button>
+                        <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
                     </div>
                 </div>
             `;
@@ -2437,7 +2526,8 @@
             
             div.innerHTML = `
                 <div class="task-header">
-                    <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;"></div>
+                    <div class="platform-icon ${platform.id}" style="color: ${platform.color}; width: 40px; height: 40px;">
+                    </div>
                     <div class="task-info">
                         <h3 class="task-title">${task.title}</h3>
                         <p class="task-description">${task.description}</p>
@@ -2451,10 +2541,10 @@
                     </div>
                 </div>
                 <div class="task-footer">
-                    <button class="task-btn primary" onclick="window.startTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
+                    <button class="task-btn primary" onclick="startTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
                         ${task.completed ? 'Completed' : 'Start Task'}
                     </button>
-                    <button class="task-btn secondary" onclick="window.viewTaskDetails('${task.id}')">
+                    <button class="task-btn secondary" onclick="viewTaskDetails('${task.id}')">
                         Details
                     </button>
                 </div>
@@ -2492,7 +2582,7 @@
             div.dataset.adId = ad.id;
             
             div.innerHTML = `
-                <div class="video-thumbnail" onclick="window.watchAd('${ad.id}')">
+                <div class="video-thumbnail" onclick="watchAd('${ad.id}')">
                     ${ad.watched ? `
                         <div class="watched-overlay">
                             <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2528,6 +2618,26 @@
             `;
             
             return div;
+        }
+
+        function updateCounters() {
+            updateTaskCounter();
+            updateAdsCounter();
+            
+            document.getElementById('statTotalEarned').textContent = 
+                localStorage.getItem('gaingrid_total_earned') || '0';
+            document.getElementById('statTasksDone').textContent = 
+                appState.dailyCounters.tasks.toString();
+        }
+
+        function updateTaskCounter() {
+            const completedTasks = [...appState.tasks, ...appState.randomTasks].filter(t => t.completed).length;
+            document.getElementById('taskCounter').textContent = `${completedTasks}/20`;
+        }
+
+        function updateAdsCounter() {
+            const watchedAds = appState.ads.filter(a => a.watched).length;
+            document.getElementById('adsCounter').textContent = `${watchedAds}/20`;
         }
 
         // ==================== TASK FUNCTIONS ====================
@@ -2588,12 +2698,7 @@
             
             appState.currentTask = task;
             
-            await sendToBot('task_started', {
-                task_id: task.id,
-                task_type: task.platform,
-                reward_amount: task.reward,
-                task_title: task.title
-            });
+            await sendTaskEvent('task_started', task);
             
             openBrowserModal();
             document.getElementById('browserUrl').textContent = task.link;
@@ -2620,7 +2725,6 @@
                 
                 appState.balance += totalReward;
                 document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
-                document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
                 
                 const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
                 localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
@@ -2628,13 +2732,12 @@
                 updateTasks();
                 updateCounters();
                 
-                await sendToBot('task_completed', {
-                    task_id: data.id,
+                await sendTaskEvent('task_completed', {
+                    ...data,
                     base_reward: baseReward,
                     vip_bonus: vipBonus,
                     total_reward: totalReward,
-                    new_balance: appState.balance,
-                    task_type: data.platform
+                    new_balance: appState.balance
                 });
                 
                 closeBrowserModal();
@@ -2658,12 +2761,7 @@
             
             appState.currentAd = ad;
             
-            await sendToBot('ad_started', {
-                ad_id: ad.id,
-                ad_title: ad.title,
-                reward_amount: ad.reward,
-                duration: ad.duration
-            });
+            await sendAdEvent('ad_started', ad);
             
             if (typeof show_10274566 === 'function') {
                 try {
@@ -2702,7 +2800,6 @@
                 
                 appState.balance += totalReward;
                 document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
-                document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
                 
                 const totalEarned = parseInt(localStorage.getItem('gaingrid_total_earned') || '0') + totalReward;
                 localStorage.setItem('gaingrid_total_earned', totalEarned.toString());
@@ -2710,13 +2807,12 @@
                 updateAds();
                 updateCounters();
                 
-                await sendToBot('ad_completed', {
-                    ad_id: data.id,
+                await sendAdEvent('ad_completed', {
+                    ...data,
                     base_reward: baseReward,
                     vip_bonus: vipBonus,
                     total_reward: totalReward,
-                    new_balance: appState.balance,
-                    ad_title: data.title
+                    new_balance: appState.balance
                 });
                 
                 if (document.getElementById('browserModal').classList.contains('active')) {
@@ -2786,7 +2882,6 @@
                 
                 appState.balance -= reward;
                 document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
-                document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
                 
                 const mediaPreview = document.getElementById('mediaPreview');
                 let mediaUrl = null;
@@ -2817,14 +2912,7 @@
                 appState.posts.unshift(newPost);
                 updateFeed();
                 
-                await sendToBot('post_created', {
-                    post_id: newPost.id,
-                    content_preview: content.substring(0, 200),
-                    link: link,
-                    link_type: linkType,
-                    reward_amount: reward,
-                    new_balance: appState.balance
-                });
+                await sendPostEvent('post_created', newPost);
                 
                 closeComposer();
                 showToast('Post created successfully!', 'success');
@@ -2920,9 +3008,22 @@
             
             window.location.hash = screenName;
             
-            sendToBot('screen_changed', {
-                screen: screenName
-            });
+            sendScreenChangeEvent(screenName);
+        }
+
+        async function sendScreenChangeEvent(screenName) {
+            const wrapper = {
+                action: 'screen_changed',
+                payload: {
+                    user_id: appState.telegramUserId,
+                    screen: screenName,
+                    timestamp: new Date().toISOString(),
+                    session_id: appState.sessionId
+                },
+                meta: { from_hosted: true }
+            };
+            
+            await postToBotWebhook(wrapper);
         }
 
         // ==================== UTILITY FUNCTIONS ====================
@@ -3000,7 +3101,8 @@
                 basic: 20,
                 silver: 40,
                 gold: 60,
-                premium: 100
+                premium: 100,
+                free: 0
             };
             return bonuses[level] || 0;
         }
@@ -3262,7 +3364,7 @@
                             <div style="display: flex; gap: 8px; margin-top: 8px;">
                                 <input type="text" class="form-input" value="${refLink}" id="refLinkInput" readonly>
                                 <button class="submit-btn" style="flex: 0 0 auto; padding: 0 16px;" 
-                                        onclick="window.copyRefLink()">
+                                        onclick="copyRefLink()">
                                     Copy
                                 </button>
                             </div>
@@ -3340,10 +3442,18 @@
             button.classList.toggle('liked');
             button.querySelector('span').textContent = post.likes;
             
-            await sendToBot('post_liked', {
-                post_id: postId,
-                liked: !wasLiked
-            });
+            const wrapper = {
+                action: 'post_liked',
+                payload: {
+                    user_id: appState.telegramUserId,
+                    post_id: postId,
+                    liked: !wasLiked,
+                    timestamp: new Date().toISOString()
+                },
+                meta: { from_hosted: true }
+            };
+            
+            await postToBotWebhook(wrapper);
         }
 
         async function handleTaskAction(postId, link, type, reward) {
@@ -3359,11 +3469,19 @@
                 reward: reward
             });
             
-            await sendToBot('post_action_started', {
-                post_id: postId,
-                action: type,
-                reward: reward
-            });
+            const wrapper = {
+                action: 'post_action_started',
+                payload: {
+                    user_id: appState.telegramUserId,
+                    post_id: postId,
+                    action: type,
+                    reward: reward,
+                    timestamp: new Date().toISOString()
+                },
+                meta: { from_hosted: true }
+            };
+            
+            await postToBotWebhook(wrapper);
         }
 
         function toggleComments(postId) {
@@ -3406,10 +3524,18 @@
             
             input.value = '';
             
-            await sendToBot('comment_added', {
-                post_id: postId,
-                comment: text
-            });
+            const wrapper = {
+                action: 'comment_added',
+                payload: {
+                    user_id: appState.telegramUserId,
+                    post_id: postId,
+                    comment: text,
+                    timestamp: new Date().toISOString()
+                },
+                meta: { from_hosted: true }
+            };
+            
+            await postToBotWebhook(wrapper);
         }
 
         function viewUserProfile(userId) {
