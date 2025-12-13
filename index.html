@@ -1421,6 +1421,63 @@
         
         .platform-card.website { border-color: rgba(74, 163, 255, 0.3); }
         .platform-card.website:hover { border-color: #4AA3FF; }
+/* Add this to your existing CSS */
+.transaction-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.transaction-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 12px;
+    font-size: 18px;
+}
+
+.transaction-icon.earn {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.transaction-icon.spend {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.transaction-details {
+    flex: 1;
+}
+
+.transaction-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.transaction-time {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.transaction-amount {
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.transaction-amount.earn {
+    color: #2ecc71;
+}
+
+.transaction-amount.spend {
+    color: #e74c3c;
+}
     </style>
     
     <!-- Monetag Ad SDK -->
