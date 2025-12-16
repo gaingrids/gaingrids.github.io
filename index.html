@@ -3266,105 +3266,117 @@
             }
         }
 
-        // ==================== POST FUNCTIONS ====================
-        function openComposer() {
-            if (!['silver', 'gold', 'premium'].includes(appState.vipLevel)) {
-                showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
-                return;
-            }
-            
-            if (appState.balance < 10000) {
-                showToast('Minimum 10,000 G-Coins required to create a post', 'error');
-                return;
-            }
-            
-            document.getElementById('composerModal').classList.add('active');
+// ==================== POST FUNCTIONS ====================
+function openComposer() {
+    if (!['silver', 'gold', 'premium'].includes(appState.vipLevel)) {
+        showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
+        return;
+    }
+    
+    if (appState.balance < 10000) {
+        showToast('Minimum 10,000 G-Coins required to create a post', 'error');
+        return;
+    }
+    
+    document.getElementById('composerModal').classList.add('active');
+}
+
+function closeComposer() {
+    document.getElementById('composerModal').classList.remove('active');
+    document.getElementById('postForm').reset();
+    document.getElementById('mediaPreview').innerHTML = '';
+}
+
+async function submitPost(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('postSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Publishing...';
+    submitBtn.disabled = true;
+    
+    try {
+        const content = document.getElementById('postContent').value;
+        const link = document.getElementById('postLink').value;
+        const linkType = document.getElementById('postLinkType').value;
+        const reward = parseInt(document.getElementById('postReward').value);
+        
+        if (reward < 10000) {
+            throw new Error('Minimum reward is 10,000 G-Coins');
         }
-
-        function closeComposer() {
-            document.getElementById('composerModal').classList.remove('active');
-            document.getElementById('postForm').reset();
-            document.getElementById('mediaPreview').innerHTML = '';
+        
+        if (reward > appState.balance) {
+            throw new Error('Insufficient balance');
         }
-
-        async function submitPost(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('postSubmitBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Publishing...';
-            submitBtn.disabled = true;
-            
-            try {
-                const content = document.getElementById('postContent').value;
-                const link = document.getElementById('postLink').value;
-                const linkType = document.getElementById('postLinkType').value;
-                const reward = parseInt(document.getElementById('postReward').value);
-                
-                if (reward < 10000) {
-                    throw new Error('Minimum reward is 10,000 G-Coins');
-                }
-                
-                if (reward > appState.balance) {
-                    throw new Error('Insufficient balance');
-                }
-                
-                // Deduct balance (bot will update later)
-                const newBalance = appState.balance - reward;
-                
-                // Send to bot for approval and balance update
-                const botResult = await sendToBot('post_created', {
-                    content: content,
-                    link: link,
-                    link_type: linkType,
-                    reward: reward,
-                    current_balance: appState.balance,
-                    new_balance: newBalance
-                });
-                
-                if (botResult && botResult.success) {
-                    // Update balance from bot response
-                    if (botResult.new_balance !== undefined) {
-                        appState.balance = Number(botResult.new_balance);
-                    }
-                    
-                    // Create viral post
-                    const newPost = {
-                        userId: appState.telegramUserId || 'user_' + Date.now(),
-                        username: appState.user?.username || 'Anonymous',
-                        userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
-                        content: content,
-                        media: null,
-                        link: link,
-                        linkType: linkType,
-                        reward: reward
-                    };
-                    
-                    const mediaPreview = document.getElementById('mediaPreview');
-                    if (mediaPreview.children.length > 0) {
-                        const img = mediaPreview.querySelector('img');
-                        if (img) {
-                            newPost.media = img.src;
-                        }
-                    }
-                    
-                    viralPosts.addPost(newPost);
-                    
-                    closeComposer();
-                    showToast('Post created and going viral!', 'success');
-                    
-                    // Switch to feed
-                    switchScreen('gridhome');
-
-                }
-                
-            } catch (error) {
-                showToast(error.message, 'error');
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
+        
+        // Deduct balance immediately for instant feedback
+        appState.balance -= reward;
+        
+        // Update UI immediately
+        document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+        document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
+        
+        // Create viral post immediately
+        const newPost = {
+            userId: appState.telegramUserId || 'user_' + Date.now(),
+            username: appState.user?.username || 'Anonymous',
+            userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'U',
+            content: content,
+            media: null,
+            link: link,
+            linkType: linkType,
+            reward: reward
+        };
+        
+        // Handle media if uploaded
+        const mediaPreview = document.getElementById('mediaPreview');
+        if (mediaPreview.children.length > 0) {
+            const img = mediaPreview.querySelector('img');
+            if (img) {
+                newPost.media = img.src;
             }
         }
+        
+        // Add post to viral system immediately
+        viralPosts.addPost(newPost);
+        
+        // Close composer and show success immediately
+        closeComposer();
+        showToast('Post created and going viral!', 'success');
+        
+        // Switch to feed Gridhome section immediately
+        switchScreen('gridhome');
+        
+        // Send to bot in background (fire and forget, no waiting)
+        sendToBot('post_created', {
+            content: content,
+            link: link,
+            link_type: linkType,
+            reward: reward,
+            user_id: appState.telegramUserId,
+            username: appState.user?.username || 'Anonymous',
+            current_balance: appState.balance + reward, // Original balance before deduction
+            new_balance: appState.balance, // Balance after deduction
+            timestamp: new Date().toISOString()
+        }).then(result => {
+            // If bot responds with updated balance, sync it
+            if (result && result.balance !== undefined) {
+                appState.balance = Number(result.balance);
+                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+                document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
+            }
+        }).catch(error => {
+            // Just log error, don't show to user
+            console.log('Bot notification failed:', error);
+        });
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
 
         // ==================== BROWSER MODAL FUNCTIONS ====================
         function openBrowserModal() {
