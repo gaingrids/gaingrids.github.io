@@ -7,7 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* ===== YOUR EXACT ORIGINAL CSS - 100% UNCHANGED ===== */
+        /* ===== EXACT SAME CSS AS YOUR ORIGINAL ===== */
         * {
             margin: 0;
             padding: 0;
@@ -1517,7 +1517,7 @@
             <!-- GridHome Screen -->
             <section class="screen active" id="gridhomeScreen">
                 <div class="feed-container" id="feedContainer">
-                    <!-- Posts loaded dynamically -->
+                    <!-- Posts loaded from localStorage -->
                 </div>
             </section>
 
@@ -1545,7 +1545,7 @@
 
                 <!-- Task List -->
                 <div class="task-list" id="taskList">
-                    <!-- Tasks loaded dynamically -->
+                    <!-- Tasks from bot payload + random tasks -->
                 </div>
             </section>
 
@@ -1581,7 +1581,7 @@
                         </div>
                         <h2 class="profile-name" id="profileName">Loading...</h2>
                         <p class="profile-username" id="profileUsername">@username</p>
-                        <div class="vip-badge gold" id="vipBadge">VIP Level</div>
+                        <div class="vip-badge" id="vipBadge">VIP Level</div>
                     </div>
 
                     <div class="profile-stats">
@@ -1693,13 +1693,13 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="postLink">Link URL</label>
-                        <input type="url" class="form-input" id="postLink" placeholder="https://example.com" required>
+                        <label class="form-label" for="postLink">Link URL (Optional)</label>
+                        <input type="url" class="form-input" id="postLink" placeholder="https://example.com">
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="postLinkType">Link Type</label>
-                        <select class="form-input" id="postLinkType" required>
+                        <label class="form-label" for="postLinkType">Link Type (If URL provided)</label>
+                        <select class="form-input" id="postLinkType">
                             <option value="visit">Visit Website</option>
                             <option value="join">Join Group/Channel</option>
                             <option value="watch">Watch Video</option>
@@ -1717,7 +1717,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Media (Optional)</label>
+                        <label class="form-label">Media (Optional - Images or Videos)</label>
                         <div class="media-attach-area" id="mediaDropArea">
                             <svg class="attach-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <rect x="2" y="2" width="16" height="16" rx="2" stroke="currentColor" stroke-width="1.5" />
@@ -1725,7 +1725,7 @@
                                 <path d="M2 14L7 9L12 14M10 12L13 9L18 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
                             </svg>
                             <div class="file-drop-text">Drag & drop photos/videos or click to upload</div>
-                            <div class="file-drop-hint">Max size: 10MB</div>
+                            <div class="file-drop-hint">Max size: 10MB per file</div>
                             <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display: none;">
                         </div>
                         <div class="media-preview" id="mediaPreview"></div>
@@ -1753,7 +1753,7 @@
                     </button>
                 </div>
                 <div class="browser-content">
-                    <iframe class="browser-iframe" id="browserIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                    <iframe class="browser-iframe" id="browserIframe" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
                     <div class="timer-overlay" id="timerOverlay">
                         <div class="timer-display" id="timerDisplay">00:00</div>
                         <div class="timer-label" id="timerLabel">Please wait while we verify completion</div>
@@ -1784,11 +1784,12 @@
     </div>
 
     <script>
-        // ==================== YOUR EXACT ORIGINAL GLOBAL STATE ====================
+        // ==================== GLOBAL STATE ====================
         const appState = {
             user: null,
             balance: 0,
             vipLevel: 'none',
+            referrals: 0,
             dailyCounters: {
                 tasks: 0,
                 ads: 0
@@ -1805,18 +1806,15 @@
             isTelegramWebApp: false,
             WebApp: null,
             lastScrollPosition: 0,
-            incomingPayload: null,
             telegramUserId: null,
             botCallbackUrl: null,
-            autoStartRequested: false,
+            botPayload: null,
             sessionId: Date.now().toString(),
-            lastEventTime: 0,
-            // NEW: Added for viral posts
-            allPostsKey: 'gaingrid_all_posts_viral',
-            userSessionKey: 'gaingrid_session_data'
+            isDirectTaskOpen: false,
+            directTaskData: null
         };
 
-        // ==================== YOUR EXACT ORIGINAL CONSTANTS ====================
+        // ==================== CONSTANTS ====================
         const SMART_LINKS = [
             'https://otieu.com/4/10176113',
             'https://otieu.com/4/10176184',
@@ -1836,239 +1834,123 @@
             { id: 'website', name: 'Website', color: '#4AA3FF' }
         ];
 
-        // ==================== FIXED: VIRAL POSTS SYSTEM ====================
-        function saveViralPostsToStorage() {
-            try {
-                localStorage.setItem(appState.allPostsKey, JSON.stringify(appState.posts));
-                console.log('Viral posts saved:', appState.posts.length);
-            } catch (e) {
-                console.error('Failed to save viral posts:', e);
-            }
-        }
-
-        function loadViralPostsFromStorage() {
-            try {
-                const saved = localStorage.getItem(appState.allPostsKey);
-                if (saved) {
-                    appState.posts = JSON.parse(saved);
-                    console.log('Viral posts loaded:', appState.posts.length);
-                    updateFeed();
-                } else {
-                    loadDefaultViralPosts();
+        // ==================== TELEGRAM INTEGRATION ====================
+        function initializeTelegram() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                try {
+                    appState.WebApp = window.Telegram.WebApp;
+                    appState.isTelegramWebApp = true;
+                    
+                    // Initialize Telegram Web App
+                    appState.WebApp.ready();
+                    appState.WebApp.expand();
+                    
+                    // Get Telegram user data
+                    const tgUser = appState.WebApp.initDataUnsafe.user;
+                    if (tgUser) {
+                        appState.user = {
+                            id: tgUser.id,
+                            firstName: tgUser.first_name,
+                            lastName: tgUser.last_name || '',
+                            username: tgUser.username || '',
+                            photoUrl: tgUser.photo_url || null,
+                            languageCode: tgUser.language_code || 'en'
+                        };
+                        appState.telegramUserId = tgUser.id;
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Telegram initialization error:', error);
+                    return false;
                 }
-            } catch (e) {
-                console.error('Failed to load viral posts:', e);
-                loadDefaultViralPosts();
             }
+            return false;
         }
 
-        function loadDefaultViralPosts() {
-            appState.posts = [
-                {
-                    id: 'post_viral_1',
-                    userId: 'admin_001',
-                    username: 'GainGrid Team',
-                    userAvatar: 'GG',
-                    content: '🚀 Welcome to GainGrid! Start earning G-Coins by completing tasks, watching ads, and creating viral posts. The more active you are, the more you earn!',
-                    media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://t.me/gaingrid',
-                    linkType: 'join',
-                    reward: 10000,
-                    likes: 245,
-                    comments: [
-                        { id: 'c1', userId: 'user1', username: 'Alex', text: 'Amazing platform!' },
-                        { id: 'c2', userId: 'user2', username: 'Sarah', text: 'Already earned 5000 G-Coins!' }
-                    ],
-                    shares: 89,
-                    views: 1250,
-                    timestamp: '2 days ago',
-                    userHasLiked: false,
-                    isVideo: false
-                },
-                {
-                    id: 'post_viral_2',
-                    userId: 'task_master',
-                    username: 'TaskMaster Pro',
-                    userAvatar: 'TM',
-                    content: '📢 NEW TASK ALERT: Join our Telegram channel and get 5000 G-Coins instantly! Limited time offer for first 100 users.',
-                    media: 'https://images.unsplash.com/photo-1611605698335-8b1569810432?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://t.me/gaingrid',
-                    linkType: 'join',
-                    reward: 5000,
-                    likes: 189,
-                    comments: [
-                        { id: 'c3', userId: 'user3', username: 'Mike', text: 'Just completed!' },
-                        { id: 'c4', userId: 'user4', username: 'Lisa', text: 'Easy money!' }
-                    ],
-                    shares: 45,
-                    views: 890,
-                    timestamp: '1 day ago',
-                    userHasLiked: false,
-                    isVideo: false
-                },
-                {
-                    id: 'post_viral_3',
-                    userId: 'crypto_guru',
-                    username: 'Crypto Guru',
-                    userAvatar: 'CG',
-                    content: '💰 Crypto Market Update: Big movements happening! Complete our survey about crypto trends and earn 3000 G-Coins.',
-                    media: null,
-                    link: 'https://survey.gaingrid.com/crypto',
-                    linkType: 'visit',
-                    reward: 3000,
-                    likes: 156,
-                    comments: [
-                        { id: 'c5', userId: 'user5', username: 'John', text: 'Interesting survey!' }
-                    ],
-                    shares: 23,
-                    views: 670,
-                    timestamp: '5 hours ago',
-                    userHasLiked: true,
-                    isVideo: false
-                },
-                {
-                    id: 'post_viral_4',
-                    userId: 'video_creator',
-                    username: 'Video Master',
-                    userAvatar: 'VM',
-                    content: '🎬 Check out this tutorial video on how to maximize your earnings on GainGrid! Like and share for extra rewards.',
-                    media: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                    link: null,
-                    linkType: null,
-                    reward: 8000,
-                    likes: 312,
-                    comments: [
-                        { id: 'c6', userId: 'user6', username: 'Tom', text: 'Great tutorial!' },
-                        { id: 'c7', userId: 'user7', username: 'Emma', text: 'Very helpful!' }
-                    ],
-                    shares: 67,
-                    views: 2100,
-                    timestamp: '3 hours ago',
-                    userHasLiked: false,
-                    isVideo: true
-                },
-                {
-                    id: 'post_viral_5',
-                    userId: 'social_influencer',
-                    username: 'Social Influencer',
-                    userAvatar: 'SI',
-                    content: '🔥 HOT DEAL: Install our mobile app and get 10,000 G-Coins bonus! Limited time only for first 50 installs.',
-                    media: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                    link: 'https://play.google.com/store/apps',
-                    linkType: 'install',
-                    reward: 10000,
-                    likes: 278,
-                    comments: [
-                        { id: 'c8', userId: 'user8', username: 'David', text: 'Installed and got bonus!' }
-                    ],
-                    shares: 92,
-                    views: 1850,
-                    timestamp: '8 hours ago',
-                    userHasLiked: false,
-                    isVideo: false
-                }
-            ];
-            saveViralPostsToStorage();
-            updateFeed();
-        }
-
-        // ==================== FIXED: BASE64 PAYLOAD DECODING ====================
-        function decodeBase64Payload(encodedString) {
+        // ==================== BASE64 PAYLOAD HANDLING ====================
+        function safeBase64Decode(encodedString) {
             try {
-                // Clean the string
-                let cleanString = encodedString.trim();
-                
-                // Try URL-safe base64 first
-                cleanString = cleanString.replace(/-/g, '+').replace(/_/g, '/');
+                // Replace URL-safe characters
+                let safeString = encodedString.replace(/-/g, '+').replace(/_/g, '/');
                 
                 // Add padding if needed
-                const pad = cleanString.length % 4;
+                const pad = safeString.length % 4;
                 if (pad) {
-                    cleanString += '==='.slice(0, 4 - pad);
+                    safeString += '==='.slice(0, 4 - pad);
                 }
                 
-                // Decode base64
-                let decoded = atob(cleanString);
+                // Decode
+                const decoded = atob(safeString);
                 
-                // Try to decode URI component
+                // Try to parse as JSON
                 try {
-                    decoded = decodeURIComponent(decoded);
+                    return JSON.parse(decoded);
                 } catch (e) {
-                    // Not URI encoded, continue
+                    // If not JSON, try URI decode then JSON
+                    const uriDecoded = decodeURIComponent(decoded);
+                    return JSON.parse(uriDecoded);
                 }
-                
-                // Parse JSON
-                const payload = JSON.parse(decoded);
-                
-                // Validate it's from your bot
-                if (payload.type === 'gaingrid_dashboard' || payload.user_id) {
-                    return payload;
-                }
-                
-                return null;
             } catch (error) {
                 console.error('Base64 decode error:', error);
-                
-                // Try alternative method
-                try {
-                    const decoded = atob(encodedString);
-                    const payload = JSON.parse(decoded);
-                    return payload;
-                } catch (e2) {
-                    console.error('Alternative decode failed:', e2);
-                    return null;
-                }
-            }
-        }
-
-        // ==================== FIXED: BOT PAYLOAD PARSING ====================
-        function parseBotPayloadFromURL() {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                let startParam = urlParams.get('start');
-                
-                // Also check hash
-                if (!startParam && window.location.hash) {
-                    const hash = window.location.hash.substring(1);
-                    const hashParams = new URLSearchParams(hash);
-                    startParam = hashParams.get('start') || hash;
-                }
-                
-                if (!startParam) return null;
-                
-                const payload = decodeBase64Payload(startParam);
-                return payload;
-            } catch (error) {
-                console.error('URL parse error:', error);
                 return null;
             }
         }
 
-        // ==================== FIXED: APPLY BOT PAYLOAD CORRECTLY ====================
-        function applyBotPayloadToUI(payload) {
+        function parseBotPayload() {
+            try {
+                // Check URL parameters for start param
+                const urlParams = new URLSearchParams(window.location.search);
+                const startParam = urlParams.get('start');
+                
+                if (!startParam) {
+                    // Check hash parameters
+                    const hash = window.location.hash.substring(1);
+                    if (hash.includes('start=')) {
+                        const hashParams = new URLSearchParams(hash);
+                        const hashStart = hashParams.get('start');
+                        if (hashStart) {
+                            return safeBase64Decode(hashStart);
+                        }
+                    }
+                    return null;
+                }
+                
+                // Decode the payload
+                const payload = safeBase64Decode(startParam);
+                
+                if (payload && payload.type === 'gaingrid_dashboard') {
+                    appState.botPayload = payload;
+                    return payload;
+                }
+                
+                return null;
+            } catch (error) {
+                console.error('Payload parse error:', error);
+                return null;
+            }
+        }
+
+        function applyBotPayload(payload) {
             if (!payload) return;
             
             console.log('Applying bot payload:', payload);
             
-            // Store payload
-            appState.botPayload = payload;
+            // Set user ID from bot
+            appState.telegramUserId = payload.user_id;
             
-            // Set telegram user ID from bot
-            if (payload.user_id) {
-                appState.telegramUserId = payload.user_id;
-            }
-            
-            // FIXED: Set balance from bot payload (NOT from localStorage)
+            // Set balance from bot (CORRECT - NOT from localStorage)
             if (payload.gcoin !== undefined) {
                 appState.balance = Number(payload.gcoin);
-                console.log('Balance from bot:', appState.balance);
+                console.log('Setting balance from bot:', appState.balance);
             }
             
-            // FIXED: Set VIP level from bot payload
+            // Set VIP level from bot (CORRECT mapping)
             if (payload.vip_level) {
                 let vip = payload.vip_level.toString().toLowerCase();
+                console.log('Raw VIP from bot:', vip);
                 
-                // Map various VIP formats from bot
+                // Map VIP levels correctly
                 if (vip.includes('premium') || vip.includes('plat') || vip.includes('♨️')) {
                     appState.vipLevel = 'premium';
                 } else if (vip.includes('gold')) {
@@ -2080,7 +1962,7 @@
                 } else {
                     appState.vipLevel = 'none';
                 }
-                console.log('VIP from bot:', vip, '->', appState.vipLevel);
+                console.log('Mapped VIP level:', appState.vipLevel);
             }
             
             // Set referrals from bot
@@ -2088,105 +1970,53 @@
                 appState.referrals = Number(payload.referrals);
             }
             
-            // Set callback URL for sending data back to bot
+            // Set callback URL from bot
             if (payload.callback_url) {
                 appState.botCallbackUrl = payload.callback_url;
                 console.log('Bot callback URL:', appState.botCallbackUrl);
             }
             
             // Update UI with bot data
-            updateUIFromBotPayload();
+            updateUIFromBotData();
         }
 
-        // ==================== FIXED: UPDATE UI FROM BOT PAYLOAD ====================
-        function updateUIFromBotPayload() {
-            // Update balance from bot (NOT from localStorage)
-            const balanceText = document.getElementById('balanceText');
-            const statGcoins = document.getElementById('statGcoins');
-            
-            if (balanceText) balanceText.textContent = appState.balance.toLocaleString();
-            if (statGcoins) statGcoins.textContent = appState.balance.toLocaleString();
-            
-            // Update VIP badge from bot
-            updateVipBadgeFromBot();
-            
-            // Update Telegram user info if available
-            updateTelegramUserInfo();
-        }
+        // ==================== LOCALSTORAGE FOR VIRAL POSTS ====================
+        const STORAGE_KEYS = {
+            POSTS: 'gaingrid_posts',
+            DAILY_COUNTERS: 'gaingrid_daily_counters',
+            TOTAL_EARNED: 'gaingrid_total_earned'
+        };
 
-        function updateVipBadgeFromBot() {
-            const vipBadge = document.getElementById('vipBadge');
-            if (!vipBadge) return;
-            
-            // Clear all classes
-            vipBadge.className = 'vip-badge';
-            
-            // Add the correct VIP class from bot
-            vipBadge.classList.add(appState.vipLevel);
-            
-            // Set correct text based on VIP level
-            const badgeText = {
-                none: 'No VIP',
-                basic: 'Basic VIP',
-                silver: 'Silver VIP',
-                gold: 'Gold VIP',
-                premium: 'Premium VIP'
-            }[appState.vipLevel] || 'VIP Level';
-            
-            vipBadge.textContent = badgeText;
-        }
-
-        // ==================== FIXED: TELEGRAM USER INFO ====================
-        function updateTelegramUserInfo() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                try {
-                    const tg = window.Telegram.WebApp;
-                    tg.ready();
-                    tg.expand();
-                    
-                    const tgUser = tg.initDataUnsafe.user;
-                    if (tgUser) {
-                        appState.user = {
-                            id: tgUser.id,
-                            firstName: tgUser.first_name,
-                            lastName: tgUser.last_name || '',
-                            username: tgUser.username,
-                            photoUrl: tgUser.photo_url
-                        };
-                        
-                        // Update profile UI
-                        const profileName = document.getElementById('profileName');
-                        const profileUsername = document.getElementById('profileUsername');
-                        const profileAvatar = document.getElementById('profileAvatar');
-                        
-                        if (profileName) {
-                            profileName.textContent = `${tgUser.first_name} ${tgUser.last_name || ''}`.trim();
-                        }
-                        
-                        if (profileUsername) {
-                            const username = tgUser.username || '';
-                            profileUsername.textContent = username.startsWith('@') ? username : `@${username}`;
-                        }
-                        
-                        if (profileAvatar) {
-                            if (tgUser.photo_url) {
-                                profileAvatar.innerHTML = `<img src="${tgUser.photo_url}" alt="Profile" onerror="this.style.display='none'; this.parentElement.textContent='${getInitials(tgUser.first_name, tgUser.last_name)}'">`;
-                            } else {
-                                const initials = getInitials(tgUser.first_name, tgUser.last_name);
-                                profileAvatar.textContent = initials;
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Telegram WebApp error:', error);
-                }
+        function savePostsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(appState.posts));
+                return true;
+            } catch (e) {
+                console.error('Save posts error:', e);
+                return false;
             }
         }
 
-        // ==================== FIXED: SEND DATA TO BOT ====================
-        async function sendDataToBot(action, data) {
+        function loadPostsFromStorage() {
+            try {
+                const savedPosts = localStorage.getItem(STORAGE_KEYS.POSTS);
+                if (savedPosts) {
+                    appState.posts = JSON.parse(savedPosts);
+                    if (appState.posts.length > 0) {
+                        updateFeed();
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.error('Load posts error:', e);
+            }
+            return false;
+        }
+
+        // ==================== WEBHOOK/BOT COMMUNICATION ====================
+        async function sendToBotWebhook(action, data) {
             if (!appState.botCallbackUrl) {
-                console.warn('No bot callback URL available');
+                console.warn('No callback URL available');
                 return { success: false, error: 'No callback URL' };
             }
             
@@ -2197,12 +2027,10 @@
                     user_id: appState.telegramUserId,
                     timestamp: new Date().toISOString(),
                     session_id: appState.sessionId,
-                    source: 'gainGrid_web'
+                    source: 'gaingrid_webapp'
                 };
                 
-                console.log('Sending to bot:', payload);
-                
-                // Use fetch with no-cors mode for cross-domain
+                // Use fetch with no-cors for cross-origin
                 const response = await fetch(appState.botCallbackUrl, {
                     method: 'POST',
                     headers: {
@@ -2212,16 +2040,80 @@
                     mode: 'no-cors'
                 });
                 
-                console.log('Bot response status:', response);
                 return { success: true };
             } catch (error) {
-                console.error('Bot communication error:', error);
+                console.error('Webhook send error:', error);
                 return { success: false, error: error.message };
             }
         }
 
-        // ==================== FIXED: IFRAME BROWSER FIX ====================
-        function openBrowserModal(url, linkType = 'visit', reward = 0, data = null) {
+        // ==================== UI UPDATE FUNCTIONS ====================
+        function updateUIFromBotData() {
+            // Update balance from bot payload
+            document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
+            document.getElementById('statGcoins').textContent = appState.balance.toLocaleString();
+            
+            // Update VIP badge from bot payload
+            updateVipBadge();
+            
+            // Update profile if Telegram user available
+            if (appState.user) {
+                updateProfileFromTelegram();
+            }
+            
+            // Update counters
+            updateCounters();
+        }
+
+        function updateVipBadge() {
+            const vipBadge = document.getElementById('vipBadge');
+            if (!vipBadge) return;
+            
+            // Clear all classes
+            vipBadge.className = 'vip-badge';
+            
+            // Add current VIP level class
+            vipBadge.classList.add(appState.vipLevel);
+            
+            // Set badge text
+            const badgeText = {
+                none: 'No VIP',
+                basic: 'Basic VIP',
+                silver: 'Silver VIP',
+                gold: 'Gold VIP',
+                premium: 'Premium VIP'
+            }[appState.vipLevel] || 'No VIP';
+            
+            vipBadge.textContent = badgeText;
+        }
+
+        function updateProfileFromTelegram() {
+            const profileName = document.getElementById('profileName');
+            const profileUsername = document.getElementById('profileUsername');
+            const profileAvatar = document.getElementById('profileAvatar');
+            
+            if (profileName && appState.user) {
+                const fullName = `${appState.user.firstName || ''} ${appState.user.lastName || ''}`.trim();
+                profileName.textContent = fullName || 'Telegram User';
+            }
+            
+            if (profileUsername && appState.user) {
+                const username = appState.user.username || '';
+                profileUsername.textContent = username.startsWith('@') ? username : `@${username}`;
+            }
+            
+            if (profileAvatar && appState.user) {
+                if (appState.user.photoUrl) {
+                    profileAvatar.innerHTML = `<img src="${appState.user.photoUrl}" alt="Profile" onerror="this.style.display='none'; this.parentElement.textContent='${getInitials(appState.user.firstName, appState.user.lastName)}'">`;
+                } else {
+                    const initials = getInitials(appState.user.firstName, appState.user.lastName);
+                    profileAvatar.textContent = initials;
+                }
+            }
+        }
+
+        // ==================== IFRAME & BROWSER FIXES ====================
+        function openBrowserModal(url, linkType = 'visit') {
             const modal = document.getElementById('browserModal');
             const iframe = document.getElementById('browserIframe');
             const browserUrl = document.getElementById('browserUrl');
@@ -2231,16 +2123,12 @@
             // Set URL
             browserUrl.textContent = url;
             
-            // Handle different link types
+            // Configure iframe based on link type
             if (linkType === 'join' || linkType === 'install') {
-                // For Telegram/App links, open directly
-                if (url.includes('t.me') || url.includes('telegram.me')) {
-                    if (appState.WebApp) {
-                        appState.WebApp.openTelegramLink(url);
-                        showToast('Opening in Telegram...', 'info');
-                    } else {
-                        window.open(url, '_blank');
-                    }
+                // For Telegram/App links, try to open directly
+                if (appState.WebApp && (url.includes('t.me') || url.includes('telegram.me'))) {
+                    appState.WebApp.openTelegramLink(url);
+                    showToast('Opening in Telegram...', 'info');
                     return;
                 } else if (url.includes('market://') || url.includes('itms-apps://')) {
                     // App store links
@@ -2251,25 +2139,32 @@
             }
             
             // Set enhanced sandbox permissions for iframe
-            iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals';
+            iframe.sandbox = 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads';
             
-            // Load the URL with timeout
+            // Add error handling
+            iframe.onload = function() {
+                console.log('Iframe loaded successfully');
+            };
+            
+            iframe.onerror = function() {
+                console.error('Iframe loading error');
+                showToast('Could not load content. Opening in new tab...', 'warning');
+                
+                // Fallback: Open in new tab
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                    closeBrowserModal();
+                }, 1000);
+            };
+            
+            // Load URL with timeout
             setTimeout(() => {
                 try {
                     iframe.src = url;
-                    
-                    // Start timer based on link type
-                    let duration = 60;
-                    if (linkType === 'watch') duration = 90;
-                    if (linkType === 'install') duration = 120;
-                    
-                    startTimer(duration, 'browser_task', { url, linkType, reward, data });
-                    
                 } catch (error) {
-                    console.error('Iframe error:', error);
-                    // Fallback to new tab
+                    console.error('Iframe src set error:', error);
                     window.open(url, '_blank');
-                    showToast('Opening in new tab...', 'info');
+                    closeBrowserModal();
                 }
             }, 100);
             
@@ -2293,219 +2188,97 @@
             
             document.getElementById('timerDisplay').textContent = '00:00';
             document.getElementById('timerProgressBar').style.width = '0%';
+            document.getElementById('timerOverlay').style.display = 'none';
         }
 
-        // ==================== FIXED: TIMER SYSTEM ====================
-        function startTimer(seconds, type, data) {
-            let remaining = seconds;
-            const display = document.getElementById('timerDisplay');
-            const progressBar = document.getElementById('timerProgressBar');
-            const timerLabel = document.getElementById('timerLabel');
-            
-            // Set label
-            timerLabel.textContent = 'Please wait while we verify completion';
-            
-            // Show timer
-            document.getElementById('timerOverlay').style.display = 'flex';
-            updateTimerDisplay();
-            
-            // Start interval
-            appState.timerInterval = setInterval(() => {
-                remaining--;
-                updateTimerDisplay();
-                
-                if (remaining <= 0) {
-                    clearInterval(appState.timerInterval);
-                    appState.timerInterval = null;
-                    
-                    // Complete based on type
-                    handleTimerComplete(type, data);
-                }
-            }, 1000);
-            
-            function updateTimerDisplay() {
-                const mins = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-                
-                const progress = ((seconds - remaining) / seconds) * 100;
-                progressBar.style.width = `${progress}%`;
-            }
-        }
-
-        async function handleTimerComplete(type, data) {
-            switch(type) {
-                case 'browser_task':
-                    await completeBrowserTask(data);
-                    break;
-                case 'task':
-                    await completeTask(data);
-                    break;
-                case 'ad':
-                    await completeAd(data);
-                    break;
-            }
-            
-            // Close browser after delay
-            setTimeout(() => {
-                closeBrowserModal();
-            }, 2000);
-        }
-
-        async function completeBrowserTask(data) {
-            try {
-                // Send completion to bot
-                await sendDataToBot('task_completed', {
-                    url: data.url,
-                    link_type: data.linkType,
-                    reward: data.reward,
-                    timestamp: new Date().toISOString(),
-                    duration: 60
-                });
-                
-                showToast(`Task completed! Data sent to bot.`, 'success');
-                
-            } catch (error) {
-                console.error('Task completion error:', error);
-                showToast('Task completed locally.', 'info');
-            }
-        }
-
-        // ==================== FIXED: POST SYSTEM WITH VIRAL FEATURE ====================
-        function openComposer() {
-            if (!['gold', 'premium', 'silver'].includes(appState.vipLevel)) {
-                showToast('Only Silver, Gold, and Premium VIP can create posts', 'error');
-                return;
-            }
-            
-            if (appState.balance < 10000) {
-                showToast('Minimum 10,000 G-Coins required to create a post', 'error');
-                return;
-            }
-            
-            document.getElementById('composerModal').classList.add('active');
-        }
-
-        function closeComposer() {
-            document.getElementById('composerModal').classList.remove('active');
-            document.getElementById('postForm').reset();
-            document.getElementById('mediaPreview').innerHTML = '';
-        }
-
-        async function submitPost(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('postSubmitBtn');
-            const originalText = submitBtn.textContent;
-            submitBtn.textContent = 'Publishing...';
-            submitBtn.disabled = true;
-            
-            try {
-                const content = document.getElementById('postContent').value;
-                const link = document.getElementById('postLink').value;
-                const linkType = document.getElementById('postLinkType').value;
-                const reward = parseInt(document.getElementById('postReward').value);
-                
-                // Validation
-                if (reward < 10000) {
-                    throw new Error('Minimum reward is 10,000 G-Coins');
-                }
-                
-                if (reward > appState.balance) {
-                    throw new Error('Insufficient balance');
-                }
-                
-                // Process media (images or videos)
-                const mediaPreview = document.getElementById('mediaPreview');
-                let mediaUrl = null;
-                let isVideo = false;
-                
-                if (mediaPreview.children.length > 0) {
-                    const mediaElement = mediaPreview.querySelector('img, video');
-                    if (mediaElement) {
-                        if (mediaElement.tagName === 'VIDEO') {
-                            isVideo = true;
-                            mediaUrl = mediaElement.src;
-                        } else {
-                            mediaUrl = mediaElement.src;
-                        }
-                    }
-                }
-                
-                // Create new viral post
-                const newPost = {
-                    id: 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    userId: appState.telegramUserId || 'user_' + Date.now(),
-                    username: appState.user?.username || 'Anonymous',
-                    userAvatar: getInitials(appState.user?.firstName, appState.user?.lastName) || 'A',
-                    content: content,
-                    media: mediaUrl,
-                    link: link || null,
-                    linkType: linkType || null,
-                    reward: reward,
-                    likes: 0,
-                    comments: [],
-                    shares: 0,
-                    views: Math.floor(Math.random() * 100) + 50, // Random views
-                    timestamp: 'Just now',
+        // ==================== POST SYSTEM ====================
+        function loadDefaultPosts() {
+            appState.posts = [
+                {
+                    id: '1',
+                    userId: '123456',
+                    username: 'johndoe',
+                    userAvatar: 'JD',
+                    content: 'Check out this amazing opportunity to earn G-coins! Join our community and start earning today. Limited spots available!',
+                    media: 'https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                    link: 'https://example.com/join',
+                    linkType: 'join',
+                    reward: 5000,
+                    likes: 24,
+                    comments: [
+                        { id: 'c1', userId: 'user1', username: 'Alice', text: 'Great opportunity!' },
+                        { id: 'c2', userId: 'user2', username: 'Bob', text: 'Just completed!' }
+                    ],
+                    shares: 12,
+                    views: 245,
+                    timestamp: '2 hours ago',
                     userHasLiked: false,
-                    isVideo: isVideo
-                };
-                
-                // Deduct balance locally (bot will update on next payload)
-                appState.balance -= reward;
-                document.getElementById('balanceText').textContent = appState.balance.toLocaleString();
-                
-                // Add to viral posts array
-                appState.posts.unshift(newPost);
-                
-                // Save to storage for all users
-                saveViralPostsToStorage();
-                
-                // Update feed immediately
-                updateFeed();
-                
-                // Send to bot
-                await sendDataToBot('post_created', {
-                    post_id: newPost.id,
-                    content_preview: content.substring(0, 200),
-                    reward: reward,
-                    has_media: !!mediaUrl,
-                    is_video: isVideo,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Success
-                closeComposer();
-                showToast('Post created! Visible to ALL users.', 'success');
-                
-            } catch (error) {
-                showToast(error.message, 'error');
-            } finally {
-                submitBtn.textContent = originalText;
-                submitBtn.disabled = false;
-            }
+                    isVideo: false
+                },
+                {
+                    id: '2',
+                    userId: '789012',
+                    username: 'sarahkim',
+                    userAvatar: 'SK',
+                    content: 'New task alert! Complete this survey and earn instant rewards. Takes only 5 minutes!',
+                    media: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+                    link: 'https://example.com/survey',
+                    linkType: 'visit',
+                    reward: 3000,
+                    likes: 18,
+                    comments: [
+                        { id: 'c3', userId: 'user3', username: 'Charlie', text: 'Easy money!' }
+                    ],
+                    shares: 3,
+                    views: 189,
+                    timestamp: '5 hours ago',
+                    userHasLiked: true,
+                    isVideo: false
+                },
+                {
+                    id: '3',
+                    userId: 'video_creator',
+                    username: 'Video Master',
+                    userAvatar: 'VM',
+                    content: '🎬 Check out this tutorial video on how to maximize your earnings on GainGrid! Like and share for extra rewards.',
+                    media: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                    link: null,
+                    linkType: null,
+                    reward: 8000,
+                    likes: 45,
+                    comments: [
+                        { id: 'c4', userId: 'user4', username: 'David', text: 'Great video tutorial!' }
+                    ],
+                    shares: 12,
+                    views: 312,
+                    timestamp: '1 hour ago',
+                    userHasLiked: false,
+                    isVideo: true
+                }
+            ];
+            savePostsToStorage();
+            updateFeed();
         }
 
-        // ==================== YOUR ORIGINAL FEED FUNCTIONS (UPDATED) ====================
         function updateFeed() {
             const feedContainer = document.getElementById('feedContainer');
             if (!feedContainer) return;
             
             feedContainer.innerHTML = '';
             
+            if (appState.posts.length === 0) {
+                feedContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                        No posts yet. Be the first to create a post!
+                    </div>
+                `;
+                return;
+            }
+            
             appState.posts.forEach(post => {
                 const postElement = createPostElement(post);
                 feedContainer.appendChild(postElement);
             });
-            
-            if (appState.posts.length === 0) {
-                feedContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-                        No posts yet. Be the first to create a viral post!
-                    </div>
-                `;
-            }
         }
 
         function createPostElement(post) {
@@ -2513,20 +2286,41 @@
             div.className = 'post-card';
             div.dataset.postId = post.id;
             
-            const mediaHtml = post.media ? `
-                <div class="post-media">
-                    ${post.isVideo ? `
-                        <video controls>
-                            <source src="${post.media}" type="video/mp4">
-                            Your browser does not support videos.
-                        </video>
-                    ` : `
-                        <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
-                    `}
-                </div>
-            ` : '';
+            // Media HTML
+            let mediaHtml = '';
+            if (post.media) {
+                if (post.isVideo) {
+                    mediaHtml = `
+                        <div class="post-media">
+                            <video controls>
+                                <source src="${post.media}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                    `;
+                } else {
+                    mediaHtml = `
+                        <div class="post-media">
+                            <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
+                        </div>
+                    `;
+                }
+            }
             
+            // Action button text
             const actionText = getActionText(post.linkType);
+            const showActionButton = post.link && post.linkType;
+            
+            // Action button HTML
+            const actionButtonHtml = showActionButton ? `
+                <button class="action-btn" onclick="handlePostAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
+                    <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
+                              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>${actionText}</span>
+                </button>
+            ` : '';
             
             div.innerHTML = `
                 <div class="post-header" onclick="viewUserProfile('${post.userId}')">
@@ -2552,13 +2346,7 @@
                         </svg>
                         <span>${post.likes}</span>
                     </button>
-                    <button class="action-btn" onclick="handlePostAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward})">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>${actionText}</span>
-                    </button>
+                    ${actionButtonHtml}
                     <button class="action-btn" onclick="toggleComments('${post.id}')">
                         <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
@@ -2589,15 +2377,9 @@
             return div;
         }
 
-        function handlePostAction(postId, link, linkType, reward) {
-            if (!link) return;
-            
-            // Open browser with proper handling
-            openBrowserModal(link, linkType, reward, { postId, linkType });
-        }
-
-        // ==================== YOUR ORIGINAL TASK AND AD FUNCTIONS ====================
+        // ==================== TASKS & ADS ====================
         async function loadTasks() {
+            // Default tasks
             appState.tasks = [
                 {
                     id: 't1',
@@ -2631,17 +2413,20 @@
                 }
             ];
             
+            // Generate random tasks
             generateRandomTasks();
+            
+            // Update UI
             updateTasks();
         }
 
         function generateRandomTasks() {
             appState.randomTasks = [];
-            const taskCount = Math.min(10, 20 - appState.tasks.length);
+            const taskCount = Math.min(5, 20 - appState.tasks.length);
             
             for (let i = 0; i < taskCount; i++) {
                 appState.randomTasks.push({
-                    id: `random${i + 1}`,
+                    id: `random_${Date.now()}_${i}`,
                     platform: 'website',
                     title: getRandomTaskTitle(),
                     description: getRandomTaskDescription(),
@@ -2656,21 +2441,80 @@
 
         async function loadAds() {
             appState.ads = [];
-            for (let i = 0; i < 20; i++) {
+            const adCount = 8;
+            
+            for (let i = 0; i < adCount; i++) {
                 appState.ads.push({
-                    id: `ad${i + 1}`,
+                    id: `ad_${Date.now()}_${i}`,
                     title: getRandomAdTitle(),
                     duration: Math.floor(Math.random() * 30) + 30,
                     reward: Math.floor(Math.random() * 61) + 60,
                     source: getRandomAdSource(),
                     link: getRandomSmartLink(),
-                    watched: i < 5
+                    watched: false
                 });
             }
+            
             updateAds();
         }
 
-        // ==================== YOUR ORIGINAL UTILITY FUNCTIONS ====================
+        // ==================== INITIALIZATION ====================
+        async function initializeApp() {
+            try {
+                console.log('Initializing GainGrid...');
+                
+                // Initialize Telegram FIRST
+                initializeTelegram();
+                
+                // Parse bot payload SECOND
+                const botPayload = parseBotPayload();
+                if (botPayload) {
+                    console.log('Bot payload found:', botPayload);
+                    applyBotPayload(botPayload);
+                } else {
+                    console.log('No bot payload found');
+                }
+                
+                // Load persistent posts
+                if (!loadPostsFromStorage()) {
+                    loadDefaultPosts();
+                }
+                
+                // Load platforms
+                loadPlatforms();
+                
+                // Load tasks and ads
+                await loadTasks();
+                await loadAds();
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+                // Initialize platform auto-scroll
+                initPlatformAutoScroll();
+                
+                // Hide loading overlay PROPERLY
+                setTimeout(() => {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }, 800);
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                
+                // Still hide loading
+                setTimeout(() => {
+                    const loadingOverlay = document.getElementById('loadingOverlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.add('hidden');
+                    }
+                }, 500);
+            }
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
         function getRandomSmartLink() {
             return SMART_LINKS[Math.floor(Math.random() * SMART_LINKS.length)];
         }
@@ -2719,15 +2563,6 @@
             return descriptions[Math.floor(Math.random() * descriptions.length)];
         }
 
-        function getRandomCount() {
-            return Math.floor(Math.random() * 10) + 1;
-        }
-
-        function getRandomColor() {
-            const colors = ['#4AA3FF', '#E33D7A', '#5B2E8A', '#FF98BD', '#FFC857'];
-            return colors[Math.floor(Math.random() * colors.length)];
-        }
-
         function getActionText(type) {
             const actions = {
                 visit: 'Visit',
@@ -2737,18 +2572,6 @@
                 signup: 'Sign Up'
             };
             return actions[type] || 'Open';
-        }
-
-        function getVipBonus(level) {
-            const bonuses = {
-                none: 0,
-                basic: 20,
-                silver: 40,
-                gold: 60,
-                premium: 100,
-                free: 0
-            };
-            return bonuses[level] || 0;
         }
 
         function getInitials(firstName, lastName) {
@@ -2784,205 +2607,12 @@
             }, 5000);
         }
 
-        // ==================== FIXED: INITIALIZATION ====================
-        async function initializeApp() {
-            try {
-                // 1. Parse bot payload FIRST
-                const botPayload = parseBotPayloadFromURL();
-                if (botPayload) {
-                    applyBotPayloadToUI(botPayload);
-                }
-                
-                // 2. Initialize Telegram WebApp
-                if (window.Telegram && window.Telegram.WebApp) {
-                    appState.WebApp = window.Telegram.WebApp;
-                    appState.isTelegramWebApp = true;
-                    appState.WebApp.ready();
-                    appState.WebApp.expand();
-                    
-                    updateTelegramUserInfo();
-                }
-                
-                // 3. Load viral posts for ALL users
-                loadViralPostsFromStorage();
-                
-                // 4. Load platforms
-                loadPlatforms();
-                
-                // 5. Load tasks and ads
-                await loadTasks();
-                await loadAds();
-                
-                // 6. Setup event listeners
-                setupEventListeners();
-                initPlatformAutoScroll();
-                
-                // 7. Hide loading overlay
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 800);
-                
-                // 8. Check for direct section opening
-                const hash = window.location.hash.replace('#', '');
-                if (hash) {
-                    switchScreen(hash);
-                }
-                
-            } catch (error) {
-                console.error('Initialization error:', error);
-                showToast('App loaded successfully', 'info');
-                
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }, 500);
-            }
-        }
-
-        // ==================== YOUR ORIGINAL EVENT LISTENERS ====================
-        function setupEventListeners() {
-            const mediaDropArea = document.getElementById('mediaDropArea');
-            const mediaInput = document.getElementById('mediaInput');
-            
-            if (mediaDropArea && mediaInput) {
-                setupMediaUpload(mediaDropArea, mediaInput);
-            }
-            
-            document.getElementById('editProfileBtn')?.addEventListener('click', () => {
-                showProfileSection('edit');
-            });
-            
-            document.getElementById('transactionHistoryBtn')?.addEventListener('click', () => {
-                showProfileSection('transactions');
-            });
-            
-            document.getElementById('referralsBtn')?.addEventListener('click', () => {
-                showProfileSection('referrals');
-            });
-            
-            document.getElementById('settingsBtn')?.addEventListener('click', () => {
-                showProfileSection('settings');
-            });
-            
-            document.getElementById('helpSupportBtn')?.addEventListener('click', () => {
-                openHelpSupport();
-            });
-            
-            document.getElementById('cleanupBtn')?.addEventListener('click', cleanupWatched);
-            
-            document.getElementById('newTaskBtn')?.addEventListener('click', () => {
-                showToast('Task creation feature coming soon!', 'info');
-            });
-            
-            window.addEventListener('hashchange', () => {
-                const hash = window.location.hash.replace('#', '');
-                if (hash && hash !== 'iframe') {
-                    switchScreen(hash);
-                }
-            });
-            
-            const mainContent = document.getElementById('mainContent');
-            const fab = document.getElementById('fabPost');
-            
-            if (mainContent && fab) {
-                mainContent.addEventListener('scroll', () => {
-                    const currentScroll = mainContent.scrollTop;
-                    
-                    if (currentScroll > appStat
-                    e.lastScrollPosition && currentScroll > 100) {
-                        fab.classList.add('hidden');
-                    } else {
-                        fab.classList.remove('hidden');
-                    }
-                    
-                    appState.lastScrollPosition = currentScroll;
-                });
-            }
-        }
-
-        function setupMediaUpload(dropArea, input) {
-            dropArea.addEventListener('click', (e) => {
-                if (e.target.closest('.remove-preview')) return;
-                input.click();
-            });
-            
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, preventDefaults, false);
-            });
-            
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => {
-                    dropArea.classList.add('drag-over');
-                });
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => {
-                    dropArea.classList.remove('drag-over');
-                });
-            });
-            
-            dropArea.addEventListener('drop', handleDrop);
-            input.addEventListener('change', handleFiles);
-            
-            function handleDrop(e) {
-                const files = e.dataTransfer.files;
-                handleFiles({ target: { files } });
-            }
-            
-            function handleFiles(e) {
-                const files = e.target.files;
-                const preview = document.getElementById('mediaPreview');
-                preview.innerHTML = '';
-                
-                Array.from(files).slice(0, 4).forEach(file => {
-                    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-                        showToast(`File type ${file.type} not supported`, 'error');
-                        return;
-                    }
-                    
-                    if (file.size > 10 * 1024 * 1024) {
-                        showToast(`File too large (max 10MB)`, 'error');
-                        return;
-                    }
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'preview-item';
-                        
-                        if (file.type.startsWith('image/')) {
-                            previewItem.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview">
-                                <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
-                            `;
-                        } else if (file.type.startsWith('video/')) {
-                            previewItem.innerHTML = `
-                                <video controls>
-                                    <source src="${e.target.result}" type="${file.type}">
-                                </video>
-                                <button class="remove-preview" onclick="this.parentElement.remove()">×</button>
-                            `;
-                        }
-                        
-                        preview.appendChild(previewItem);
-                    };
-                    
-                    reader.readAsDataURL(file);
-                });
-            }
-        }
-
-        // ==================== YOUR ORIGINAL FUNCTIONS ====================
+        // ==================== EXPORT FUNCTIONS ====================
         window.switchScreen = switchScreen;
         window.openComposer = openComposer;
         window.closeComposer = closeComposer;
         window.handleLike = handleLike;
-        window.handleTaskAction = handleTaskAction;
+        window.handleTaskAction = handlePostAction;
         window.toggleComments = toggleComments;
         window.sendComment = sendComment;
         window.watchAd = watchAd;
@@ -2995,9 +2625,8 @@
         window.closeProfileSection = closeProfileSection;
         window.showToast = showToast;
         window.submitPost = submitPost;
-        window.handlePostAction = handlePostAction;
 
-        // Start initialization
+        // Start initialization when DOM is loaded
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
