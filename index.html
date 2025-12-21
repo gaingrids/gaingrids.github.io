@@ -2381,127 +2381,269 @@ function handleBotPayload(payload) {
         }
 
         // ==================== POSTS DISPLAY ====================
-        function loadViralPosts() {
-            const viralPosts = JSON.parse(localStorage.getItem(STORAGE_KEYS.VIRAL_POSTS) || '[]');
-            appState.viralPosts = viralPosts;
-            updateFeed();
+function loadViralPosts() {
+    try {
+        // Load posts from localStorage
+        const savedPosts = localStorage.getItem(STORAGE_KEYS.VIRAL_POSTS);
+        if (savedPosts) {
+            appState.posts = JSON.parse(savedPosts);
+        } else {
+            // If no saved posts, load demo posts
+            loadDemoPosts();
         }
+        updateFeed();
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        loadDemoPosts();
+        updateFeed();
+    }
+}
 
-        function updateFeed() {
-            const feedContainer = document.getElementById('feedContainer');
-            if (!feedContainer) return;
-            
-            feedContainer.innerHTML = '';
-            
-            // Combine viral posts and user posts
-            const allPosts = [...appState.viralPosts];
-            
-            if (allPosts.length === 0) {
-                // Load demo posts if no viral posts
-                loadDemoPosts();
-                updateFeed();
-                return;
-            }
-            
-            // Display posts
-            allPosts.forEach(post => {
-                const postElement = createPostElement(post);
-                feedContainer.appendChild(postElement);
-            });
-        }
+function saveViralPosts() {
+    try {
+        localStorage.setItem(STORAGE_KEYS.VIRAL_POSTS, JSON.stringify(appState.posts));
+    } catch (error) {
+        console.error('Error saving posts:', error);
+    }
+}
 
-        function createPostElement(post) {
-            const div = document.createElement('div');
-            div.className = 'post-card';
-            div.dataset.postId = post.id;
-            
-            // Calculate time ago
-            const timeAgo = getTimeAgo(post.timestamp);
-            
-            // Media HTML
-            let mediaHtml = '';
-            if (post.media) {
-                if (post.media.type === 'video' || post.media.includes('.mp4') || post.media.includes('.webm')) {
-                    mediaHtml = `
-                        <div class="post-media">
-                            <video controls>
-                                <source src="${post.media}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div>
-                    `;
-                } else {
-                    mediaHtml = `
-                        <div class="post-media">
-                            <img src="${post.media}" alt="Post image" onerror="this.style.display='none'">
-                        </div>
-                    `;
-                }
-            }
-            
-            // Action text based on link type
-            const actionText = getActionText(post.linkType || 'visit');
-            
-            div.innerHTML = `
-                <div class="post-header" onclick="viewUserProfile('${post.userId || 'unknown'}')">
-                    <div class="avatar">
-                        ${post.userAvatar || 'U'}
-                    </div>
-                    <div class="post-meta">
-                        <div class="poster-name">${post.username || 'Anonymous'}</div>
-                        <div class="post-time">${timeAgo} • ${post.views || 0} views</div>
-                    </div>
-                </div>
-                <div class="post-content">${post.content || ''}</div>
-                ${mediaHtml}
-                <div class="earnings-bar">
-                    <span class="earnings-label">Earn up to ${(post.reward || 0).toLocaleString()} G-coins</span>
-                </div>
-                <div class="post-actions">
-                    <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-                                  ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
-                        </svg>
-                        <span>${post.likes || 0}</span>
-                    </button>
-                    <button class="action-btn" onclick="handleTaskAction('${post.id}', '${post.link || ''}', '${post.linkType || 'visit'}', ${post.reward || 0})">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>${actionText}</span>
-                    </button>
-                    <button class="action-btn" onclick="toggleComments('${post.id}')">
-                        <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
-                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>${(post.comments || []).length}</span>
-                    </button>
-                </div>
-                <div class="comments-section" id="comments-${post.id}">
-                    <div class="comments-container" id="comments-container-${post.id}">
-                        ${(post.comments || []).map(comment => `
-                            <div class="comment-item">
-                                <div class="comment-avatar">${comment.username.charAt(0)}</div>
-                                <div class="comment-content">
-                                    <div class="comment-author">${comment.username}</div>
-                                    <div class="comment-text">${comment.text}</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="comment-input-container">
-                        <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
-                        <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
-                    </div>
+function updateFeed() {
+    const feedContainer = document.getElementById('feedContainer');
+    if (!feedContainer) return;
+    
+    feedContainer.innerHTML = '';
+    
+    if (appState.posts.length === 0) {
+        feedContainer.innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 16V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 8H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <p>No posts yet. Be the first to create a viral post!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Display all posts (viral to all users)
+    appState.posts.forEach(post => {
+        const postElement = createPostElement(post);
+        feedContainer.appendChild(postElement);
+    });
+}
+
+function createPostElement(post) {
+    const div = document.createElement('div');
+    div.className = 'post-card';
+    div.dataset.postId = post.id;
+    
+    // Calculate time ago if timestamp is a date object
+    let timeAgo = post.timestamp;
+    if (post.createdAt) {
+        timeAgo = getTimeAgo(post.createdAt);
+    }
+    
+    // Media HTML - FIXED to properly handle both images and videos
+    let mediaHtml = '';
+    if (post.media) {
+        // Check if it's a video by file extension or type property
+        const isVideo = post.isVideo || 
+                       (typeof post.media === 'string' && 
+                        (post.media.includes('.mp4') || 
+                         post.media.includes('.webm') || 
+                         post.media.includes('.mov') ||
+                         post.media.includes('.avi'))) ||
+                       (post.mediaType === 'video');
+        
+        if (isVideo) {
+            mediaHtml = `
+                <div class="video-container">
+                    <video controls playsinline>
+                        <source src="${post.media}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
                 </div>
             `;
-            
-            return div;
+        } else {
+            // Handle images
+            mediaHtml = `
+                <div class="post-media">
+                    <img src="${post.media}" alt="Post image" 
+                         onerror="this.onerror=null; this.style.display='none'; 
+                                  this.parentElement.innerHTML='<div style=\'padding:40px;text-align:center;color:var(--text-secondary)\'>Image unavailable</div>'">
+                </div>
+            `;
         }
+    }
+    
+    // Action button based on link type
+    const actionText = getActionText(post.linkType || 'visit');
+    const showActionButton = post.link && post.linkType;
+    
+    // Action button HTML
+    const actionButtonHtml = showActionButton ? `
+        <button class="action-btn" onclick="handlePostAction('${post.id}', '${post.link}', '${post.linkType}', ${post.reward || 0})">
+            <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 2L8 8L14 2ZM14 2L9.5 14L8 8L2 6.5L14 2Z" 
+                      stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>${actionText}</span>
+        </button>
+    ` : '';
+    
+    div.innerHTML = `
+        <div class="post-header" onclick="viewUserProfile('${post.userId || 'unknown'}')">
+            <div class="avatar">
+                ${post.userAvatar || 'U'}
+            </div>
+            <div class="post-meta">
+                <div class="poster-name">${post.username || 'Anonymous'}</div>
+                <div class="post-time">${timeAgo || 'Just now'}</div>
+            </div>
+        </div>
+        <div class="post-content">${post.content || ''}</div>
+        ${mediaHtml}
+        <div class="earnings-bar">
+            <span class="earnings-label">Earn up to ${(post.reward || 0).toLocaleString()} G-coins</span>
+        </div>
+        <div class="post-stats">
+            <div class="stat-item">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>${post.likes || 0} likes</span>
+            </div>
+            <div class="stat-item">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>${(post.comments || []).length} comments</span>
+            </div>
+            <div class="stat-item">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 3L7 13L3 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>${post.views || 0} views</span>
+            </div>
+        </div>
+        <div class="post-actions">
+            <button class="action-btn ${post.userHasLiked ? 'liked' : ''}" onclick="handleLike('${post.id}', this)">
+                <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 14L2.5 8.5C1.5 7.5 1.5 5.8 2.5 4.8C3.5 3.8 5.2 3.8 6.2 4.8L8 6.6L9.8 4.8C10.8 3.8 12.5 3.8 13.5 4.8C14.5 5.8 14.5 7.5 13.5 8.5L8 14Z" 
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                          ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
+                </svg>
+                <span>Like</span>
+            </button>
+            ${actionButtonHtml}
+            <button class="action-btn" onclick="toggleComments('${post.id}')">
+                <svg class="action-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
+                          stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Comment</span>
+            </button>
+        </div>
+        <div class="comments-section" id="comments-${post.id}">
+            <div class="comments-container" id="comments-container-${post.id}">
+                ${(post.comments || []).map(comment => `
+                    <div class="comment-item">
+                        <div class="comment-avatar">${comment.username?.charAt(0) || 'U'}</div>
+                        <div class="comment-content">
+                            <div class="comment-author">${comment.username || 'User'}</div>
+                            <div class="comment-text">${comment.text || ''}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="comment-input-container">
+                <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
+                <button class="send-comment-btn" onclick="sendComment('${post.id}')">Send</button>
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+// Helper function for time display
+function getTimeAgo(dateString) {
+    if (!dateString) return 'Just now';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Just now';
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+    
+    if (diffSec < 60) return 'Just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHour < 24) return `${diffHour}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
+// Function to add new post (call this when user creates a post)
+function addNewPost(postData) {
+    // Add timestamp for storage
+    postData.createdAt = new Date().toISOString();
+    
+    // Ensure post has unique ID
+    if (!postData.id) {
+        postData.id = 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Add to beginning of posts array (newest first)
+    appState.posts.unshift(postData);
+    
+    // Save to localStorage for all users
+    saveViralPosts();
+    
+    // Update UI
+    updateFeed();
+    
+    // Send to bot if callback available
+    if (appState.botCallbackUrl) {
+        sendToBotWebhook('post_created', {
+            post_id: postData.id,
+            content_preview: postData.content?.substring(0, 200) || '',
+            reward: postData.reward || 0,
+            has_media: !!postData.media,
+            is_video: postData.isVideo || false,
+            timestamp: postData.createdAt
+        });
+    }
+    
+    return postData.id;
+}
+
+// Handle post action (like, comment, etc.)
+function handlePostAction(postId, link, linkType, reward) {
+    openBrowserModal(link, linkType);
+    
+    let duration = 60; // Default
+    if (linkType === 'watch') duration = 90;
+    if (linkType === 'install') duration = 120;
+    
+    startTimer(duration, 'post_action', { 
+        id: postId, 
+        linkType: linkType 
+    }, reward);
+}
+
+// Initialize posts on app start
+function initializePosts() {
+    loadViralPosts();
+}
 
         // ==================== TASKS DISPLAY ====================
         function updateTasks() {
