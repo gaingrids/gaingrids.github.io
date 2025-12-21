@@ -2380,30 +2380,64 @@ function handleBotPayload(payload) {
             vipBadge.textContent = vipInfo.text;
         }
 
-        // ==================== POSTS DISPLAY ====================
+// ==================== POSTS DISPLAY ====================
 function loadViralPosts() {
     try {
-        // Load posts from localStorage
-        const savedPosts = localStorage.getItem(STORAGE_KEYS.VIRAL_POSTS);
-        if (savedPosts) {
-            appState.posts = JSON.parse(savedPosts);
-        } else {
-            // If no saved posts, load demo posts
-            loadDemoPosts();
+        const viralPosts = JSON.parse(localStorage.getItem('gaingrid_viral_posts') || '[]');
+        appState.viralPosts = viralPosts;
+        
+        // Load user-specific posts if needed
+        if (appState.telegramUserId) {
+            const userPostsKey = `gaingrid_user_posts_${appState.telegramUserId}`;
+            const userPosts = JSON.parse(localStorage.getItem(userPostsKey) || '[]');
+            appState.userPosts = userPosts;
         }
+        
+        // Combine viral posts and user posts (viral posts first)
+        appState.allPosts = [...appState.viralPosts];
         updateFeed();
-    } catch (error) {
-        console.error('Error loading posts:', error);
-        loadDemoPosts();
-        updateFeed();
+    } catch (e) {
+        console.error('Error loading viral posts:', e);
+        appState.viralPosts = [];
+        appState.allPosts = [];
+        loadDefaultPosts();
     }
 }
 
-function saveViralPosts() {
+function saveViralPost(post) {
     try {
-        localStorage.setItem(STORAGE_KEYS.VIRAL_POSTS, JSON.stringify(appState.posts));
-    } catch (error) {
-        console.error('Error saving posts:', error);
+        // Add post to viral posts (visible to all users)
+        const viralPosts = JSON.parse(localStorage.getItem('gaingrid_viral_posts') || '[]');
+        viralPosts.unshift(post); // Add to beginning
+        
+        // Limit to 100 posts to avoid storage issues
+        if (viralPosts.length > 100) {
+            viralPosts.length = 100;
+        }
+        
+        localStorage.setItem('gaingrid_viral_posts', JSON.stringify(viralPosts));
+        
+        // Also save to user's specific posts
+        if (appState.telegramUserId) {
+            const userPostsKey = `gaingrid_user_posts_${appState.telegramUserId}`;
+            const userPosts = JSON.parse(localStorage.getItem(userPostsKey) || '[]');
+            userPosts.unshift(post);
+            
+            if (userPosts.length > 50) {
+                userPosts.length = 50;
+            }
+            
+            localStorage.setItem(userPostsKey, JSON.stringify(userPosts));
+        }
+        
+        // Update app state
+        appState.viralPosts = viralPosts;
+        appState.allPosts = [...viralPosts];
+        
+        return true;
+    } catch (e) {
+        console.error('Error saving viral post:', e);
+        return false;
     }
 }
 
@@ -2413,7 +2447,11 @@ function updateFeed() {
     
     feedContainer.innerHTML = '';
     
-    if (appState.posts.length === 0) {
+    // Use all posts (viral posts)
+    const postsToShow = appState.allPosts || appState.viralPosts || [];
+    
+    if (postsToShow.length === 0) {
+        // Show empty state
         feedContainer.innerHTML = `
             <div class="empty-state">
                 <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2427,8 +2465,8 @@ function updateFeed() {
         return;
     }
     
-    // Display all posts (viral to all users)
-    appState.posts.forEach(post => {
+    // Display posts in reverse chronological order (newest first)
+    postsToShow.forEach(post => {
         const postElement = createPostElement(post);
         feedContainer.appendChild(postElement);
     });
@@ -2439,27 +2477,25 @@ function createPostElement(post) {
     div.className = 'post-card';
     div.dataset.postId = post.id;
     
-    // Calculate time ago if timestamp is a date object
-    let timeAgo = post.timestamp;
-    if (post.createdAt) {
-        timeAgo = getTimeAgo(post.createdAt);
-    }
+    // Calculate time ago from timestamp
+    const timeAgo = post.timestamp === 'Just now' ? 'Just now' : 
+                   typeof post.timestamp === 'string' ? post.timestamp : 
+                   getTimeAgo(post.timestamp || new Date().toISOString());
     
-    // Media HTML - FIXED to properly handle both images and videos
+    // MEDIA HTML - FIXED: Properly display uploaded images and videos
     let mediaHtml = '';
     if (post.media) {
-        // Check if it's a video by file extension or type property
+        // Check if it's a video or image
         const isVideo = post.isVideo || 
                        (typeof post.media === 'string' && 
                         (post.media.includes('.mp4') || 
                          post.media.includes('.webm') || 
-                         post.media.includes('.mov') ||
-                         post.media.includes('.avi'))) ||
-                       (post.mediaType === 'video');
+                         post.media.includes('video/')));
         
         if (isVideo) {
+            // Video player with controls
             mediaHtml = `
-                <div class="video-container">
+                <div class="post-media video-container">
                     <video controls playsinline>
                         <source src="${post.media}" type="video/mp4">
                         Your browser does not support the video tag.
@@ -2467,18 +2503,17 @@ function createPostElement(post) {
                 </div>
             `;
         } else {
-            // Handle images
+            // Image display
             mediaHtml = `
                 <div class="post-media">
                     <img src="${post.media}" alt="Post image" 
-                         onerror="this.onerror=null; this.style.display='none'; 
-                                  this.parentElement.innerHTML='<div style=\'padding:40px;text-align:center;color:var(--text-secondary)\'>Image unavailable</div>'">
+                         onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<div style=\\'padding:40px;text-align:center;color:var(--text-secondary)\\'>Image failed to load</div>';">
                 </div>
             `;
         }
     }
     
-    // Action button based on link type
+    // Action text based on link type
     const actionText = getActionText(post.linkType || 'visit');
     const showActionButton = post.link && post.linkType;
     
@@ -2493,21 +2528,24 @@ function createPostElement(post) {
         </button>
     ` : '';
     
+    // Generate post HTML
     div.innerHTML = `
         <div class="post-header" onclick="viewUserProfile('${post.userId || 'unknown'}')">
             <div class="avatar">
-                ${post.userAvatar || 'U'}
+                ${post.userAvatar || (post.username ? post.username.charAt(0).toUpperCase() : 'U')}
             </div>
             <div class="post-meta">
                 <div class="poster-name">${post.username || 'Anonymous'}</div>
-                <div class="post-time">${timeAgo || 'Just now'}</div>
+                <div class="post-time">${timeAgo}</div>
             </div>
         </div>
         <div class="post-content">${post.content || ''}</div>
         ${mediaHtml}
-        <div class="earnings-bar">
-            <span class="earnings-label">Earn up to ${(post.reward || 0).toLocaleString()} G-coins</span>
-        </div>
+        ${post.reward ? `
+            <div class="earnings-bar">
+                <span class="earnings-label">Earn up to ${(post.reward || 0).toLocaleString()} G-coins</span>
+            </div>
+        ` : ''}
         <div class="post-stats">
             <div class="stat-item">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2537,7 +2575,7 @@ function createPostElement(post) {
                           stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                           ${post.userHasLiked ? 'fill="currentColor"' : 'fill="none"'}/>
                 </svg>
-                <span>Like</span>
+                <span>${post.likes || 0}</span>
             </button>
             ${actionButtonHtml}
             <button class="action-btn" onclick="toggleComments('${post.id}')">
@@ -2545,14 +2583,14 @@ function createPostElement(post) {
                     <path d="M14 11C14 11.5 13.5 12 13 12H4L2 14V3C2 2.5 2.5 2 3 2H13C13.5 2 14 2.5 14 3V11Z" 
                           stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                <span>Comment</span>
+                <span>${(post.comments || []).length}</span>
             </button>
         </div>
         <div class="comments-section" id="comments-${post.id}">
             <div class="comments-container" id="comments-container-${post.id}">
                 ${(post.comments || []).map(comment => `
                     <div class="comment-item">
-                        <div class="comment-avatar">${comment.username?.charAt(0) || 'U'}</div>
+                        <div class="comment-avatar">${(comment.username || 'U').charAt(0).toUpperCase()}</div>
                         <div class="comment-content">
                             <div class="comment-author">${comment.username || 'User'}</div>
                             <div class="comment-text">${comment.text || ''}</div>
@@ -2570,80 +2608,157 @@ function createPostElement(post) {
     return div;
 }
 
-// Helper function for time display
-function getTimeAgo(dateString) {
-    if (!dateString) return 'Just now';
-    
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Just now';
-    
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-    
-    if (diffSec < 60) return 'Just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHour < 24) return `${diffHour}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    
-    return date.toLocaleDateString();
+// Helper function to calculate time ago
+function getTimeAgo(timestamp) {
+    try {
+        const now = new Date();
+        const postDate = new Date(timestamp);
+        const diffMs = now - postDate;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHour = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHour / 24);
+        
+        if (diffDay > 0) {
+            return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`;
+        } else if (diffHour > 0) {
+            return diffHour === 1 ? '1 hour ago' : `${diffHour} hours ago`;
+        } else if (diffMin > 0) {
+            return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+        } else {
+            return 'Just now';
+        }
+    } catch (e) {
+        return 'Recently';
+    }
 }
 
-// Function to add new post (call this when user creates a post)
-function addNewPost(postData) {
-    // Add timestamp for storage
-    postData.createdAt = new Date().toISOString();
-    
-    // Ensure post has unique ID
-    if (!postData.id) {
-        postData.id = 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-    
-    // Add to beginning of posts array (newest first)
-    appState.posts.unshift(postData);
-    
-    // Save to localStorage for all users
-    saveViralPosts();
-    
-    // Update UI
-    updateFeed();
-    
-    // Send to bot if callback available
-    if (appState.botCallbackUrl) {
-        sendToBotWebhook('post_created', {
-            post_id: postData.id,
-            content_preview: postData.content?.substring(0, 200) || '',
+// Function to handle post creation (call this from submitPost)
+function createViralPost(postData) {
+    try {
+        const newPost = {
+            id: postData.id || Date.now().toString(),
+            userId: postData.userId || appState.telegramUserId || 'anonymous',
+            username: postData.username || appState.user?.username || 'Anonymous',
+            userAvatar: postData.userAvatar || getInitials(appState.user?.firstName, appState.user?.lastName) || 'A',
+            content: postData.content,
+            media: postData.media || null,
+            isVideo: postData.isVideo || false,
+            link: postData.link || null,
+            linkType: postData.linkType || null,
             reward: postData.reward || 0,
-            has_media: !!postData.media,
-            is_video: postData.isVideo || false,
-            timestamp: postData.createdAt
-        });
+            likes: 0,
+            comments: [],
+            shares: 0,
+            views: 0,
+            timestamp: new Date().toISOString(),
+            userHasLiked: false
+        };
+        
+        // Save to viral posts
+        const saved = saveViralPost(newPost);
+        
+        if (saved) {
+            // Update feed immediately
+            updateFeed();
+            
+            // Send to bot
+            sendToBotWebhook('post_created', {
+                post_id: newPost.id,
+                content_preview: newPost.content.substring(0, 200),
+                has_media: !!newPost.media,
+                is_video: newPost.isVideo,
+                reward: newPost.reward,
+                timestamp: newPost.timestamp
+            });
+            
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Error creating viral post:', error);
+        return false;
     }
-    
-    return postData.id;
 }
 
-// Handle post action (like, comment, etc.)
+// Function to load demo posts (only if no posts exist)
+function loadDefaultPosts() {
+    try {
+        const defaultPosts = [
+            {
+                id: 'demo1',
+                userId: 'admin_001',
+                username: 'GainGrid Team',
+                userAvatar: 'GG',
+                content: '🚀 Welcome to GainGrid! Start earning G-Coins by completing tasks, watching ads, and creating viral posts.',
+                media: null,
+                isVideo: false,
+                link: null,
+                linkType: null,
+                reward: 10000,
+                likes: 245,
+                comments: [
+                    { id: 'c1', userId: 'user1', username: 'Alex', text: 'Amazing platform!' },
+                    { id: 'c2', userId: 'user2', username: 'Sarah', text: 'Already earned 5000 G-Coins!' }
+                ],
+                shares: 89,
+                views: 1250,
+                timestamp: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+                userHasLiked: false
+            },
+            {
+                id: 'demo2',
+                userId: 'video_master',
+                username: 'Video Creator',
+                userAvatar: 'VC',
+                content: '🎬 Tutorial: How to maximize earnings on GainGrid! Like and share for extra rewards.',
+                media: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                isVideo: true,
+                link: null,
+                linkType: null,
+                reward: 8000,
+                likes: 312,
+                comments: [
+                    { id: 'c3', userId: 'user3', username: 'Tom', text: 'Great tutorial!' },
+                    { id: 'c4', userId: 'user4', username: 'Emma', text: 'Very helpful!' }
+                ],
+                shares: 67,
+                views: 2100,
+                timestamp: new Date(Date.now() - 10800000).toISOString(), // 3 hours ago
+                userHasLiked: false
+            }
+        ];
+        
+        // Save default posts to viral storage
+        localStorage.setItem('gaingrid_viral_posts', JSON.stringify(defaultPosts));
+        appState.viralPosts = defaultPosts;
+        appState.allPosts = defaultPosts;
+        updateFeed();
+        
+        return true;
+    } catch (e) {
+        console.error('Error loading default posts:', e);
+        return false;
+    }
+}
+
+// Function to handle post action (visit, join, etc.)
 function handlePostAction(postId, link, linkType, reward) {
+    if (!link) return;
+    
+    // Open browser modal with appropriate settings
     openBrowserModal(link, linkType);
     
+    // Start timer based on link type
     let duration = 60; // Default
     if (linkType === 'watch') duration = 90;
     if (linkType === 'install') duration = 120;
     
-    startTimer(duration, 'post_action', { 
-        id: postId, 
-        linkType: linkType 
-    }, reward);
+    startTimer(duration, 'post_action', { id: postId, linkType: linkType }, reward);
 }
-
-// Initialize posts on app start
-function initializePosts() {
-    loadViralPosts();
-}
+    
+    
+    
 
         // ==================== TASKS DISPLAY ====================
         function updateTasks() {
